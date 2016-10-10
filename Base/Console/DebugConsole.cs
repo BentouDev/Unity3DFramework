@@ -13,6 +13,7 @@ public class DebugConsole : MonoBehaviour
 {
     public bool Show;
     public bool PasueOnError;
+    public bool InterceptLogOutput;
 
     public string Prompt = " > ";
 
@@ -111,7 +112,10 @@ public class DebugConsole : MonoBehaviour
         CommandInput = string.Empty;
         UserInput = string.Empty;
 
-        Debug.logger.logHandler = new LogInterceptor(Controller, Debug.logger.logHandler, LogColor);
+        if (InterceptLogOutput)
+        {
+            Debug.logger.logHandler = new LogInterceptor(Controller, Debug.logger.logHandler, LogColor);
+        }
     }
 
     public void ToggleConsole()
@@ -195,7 +199,9 @@ public class DebugConsole : MonoBehaviour
         if (!Show)
             return;
 
-        GUI.skin = Skin;
+        if (Skin)
+            GUI.skin = Skin;
+
         GUI.Window(12345, DefaultWindowRect, HandleConsoleWindow, "Console");
     }
 

@@ -7,13 +7,18 @@ using UnityEngine.UI;
 
 public class MenuController : GUIBase
 {
+    [Header("Misc")]
     public bool Autostart = true;
+    public string BackButton = "Back";
 
+    [Header("Animation")]
     public float AnimDuration;
     
+    [Header("Main Menu References")]
     public MenuBase TitleMenu;
     public MenuBase MainMenu;
 
+    [Header("Audio")]
     public AudioMixer GameplayMixer;
 
     public string GameplayVolume;
@@ -22,7 +27,7 @@ public class MenuController : GUIBase
     public AudioSource UICancel;
 
     [Space]
-
+    
     public Button.ButtonClickedEvent OnStartingBack;
 
     private List<MenuBase> allMenus = new List<MenuBase>();
@@ -189,12 +194,11 @@ public class MenuController : GUIBase
 
     public void SwitchToMenu(MenuBase baseMenu, bool playEffect = true)
     {
-        Debug.Log("SWITCH MENU from " + (CurrentMenu ? CurrentMenu.name : "null") + " to " + (baseMenu ? baseMenu.name : "null") + " , last was " + (LastMenu ? LastMenu.name : "null"));
-
         if (playEffect && UIConfirm)
             UIConfirm.Play();
 
         LastMenu = CurrentMenu;
+
         if (LastMenu)
         {
             LastMenu.OnEnd();
@@ -218,7 +222,7 @@ public class MenuController : GUIBase
             CurrentMenu.FirstToSelect.Select();
         }
 
-        if (Input.GetButtonDown("Back"))
+        if (Input.GetButtonDown(BackButton))
         {
             GoBack(CurrentMenu);
         }
