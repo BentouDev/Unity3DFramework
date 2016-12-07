@@ -1,6 +1,7 @@
 ﻿// using Duel;
 
 using System.Linq;
+using Framework;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -143,8 +144,8 @@ public class AnimationDirector : MonoBehaviour
             cam.transform.rotation = FinalCamera.transform.rotation;
         }
 
-		var cameraBase = cam.GetComponent<CameraBase>();
-		if(cameraBase)
+	    var cameraBase = (ICinematicCamera) cam.GetComponent(typeof(ICinematicCamera));
+		if (cameraBase != null)
 			cameraBase.StartAnimating(speed, duration, rate);
 
 		IsFinishing	= true;

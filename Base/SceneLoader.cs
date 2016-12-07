@@ -1,71 +1,72 @@
 ﻿using UnityEngine;
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine.SceneManagement;
 
-public class SceneLoader : MonoBehaviour
+namespace Framework
 {
-    public MainGame Game;
-
-    public int BaseScene;
-
-    private static bool WaitForLoad;
-    private static int NextScene;
-
-    public int SceneToLoad;
-
-    public delegate void SceneLoad();
-    public event SceneLoad OnSceneLoad;
-
-    void Start()
+    public class SceneLoader : MonoBehaviour
     {
-        if (Game == null)
-            Game = FindObjectOfType<MainGame>();
+        public int BaseScene;
 
-        StartLoadScene(BaseScene);
-    }
+        private static bool WaitForLoad;
+        private static int NextScene;
 
-    void Update()
-    {
-    //    if (!Application.isLoadingLevel && WaitForLoad && !Game.IsReady)
-    //    {
-    //        EndLoadScene();
-    //    }
-    }
+        public int SceneToLoad;
+        public int CurrentScene { get; private set; }
+        public bool IsReady { get; private set; }
 
-    private void EndLoadScene()
-    {
-        Game.CurrentScene = NextScene;
-        Game.IsReady = true;
-        WaitForLoad = false;
-        Debug.Log("Loaded scene " + NextScene + "!");
+        public delegate void SceneLoad();
 
-        if (OnSceneLoad != null)
-            OnSceneLoad();
-    }
+        public event SceneLoad OnSceneLoad;
 
-    private IEnumerator ExecuteLoading(int scene)
-    {
-        AsyncOperation operation = SceneManager.LoadSceneAsync(scene);
-        yield return operation;
-
-        while (!WaitForLoad || Game.IsReady)
+        void Start()
         {
-            yield return null;
+            StartLoadScene(BaseScene);
         }
 
-        EndLoadScene();
-    }
+        void Update()
+        {
+            //    if (!Application.isLoadingLevel && WaitForLoad && !Game.IsReady)
+            //    {
+            //        EndLoadScene();
+            //    }
+        }
 
-    public void StartLoadScene(int i)
-    {
-        if (WaitForLoad || i == 0)
-            return;
+        private void EndLoadScene()
+        {
+            CurrentScene = NextScene;
+            IsReady = true;
+            WaitForLoad = false;
+            Debug.Log("Loaded scene " + NextScene + "!");
 
-        NextScene = i;
-        WaitForLoad = true;
-        Debug.Log("Loading scene " + i + " ...");
+            if (OnSceneLoad != null)
+                OnSceneLoad();
+        }
 
-        StartCoroutine(ExecuteLoading(i));
+        private IEnumerator ExecuteLoading(int scene)
+        {
+            AsyncOperation operation = SceneManager.LoadSceneAsync(scene);
+            yield return operation;
+
+            while (!WaitForLoad || IsReady)
+            {
+                yield return null;
+            }
+
+            EndLoadScene();
+        }
+
+        public void StartLoadScene(int i)
+        {
+            if (WaitForLoad || i == 0)
+                return;
+
+            NextScene = i;
+            IsReady = false;
+            WaitForLoad = true;
+            Debug.Log("Loading scene " + i + " ...");
+
+            StartCoroutine(ExecuteLoading(i));
+        }
     }
 }

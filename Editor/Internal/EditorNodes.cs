@@ -129,7 +129,7 @@ public class EditorNodes
                 {
                     connectIndex = 0;
                     isConnecting = false;
-                    ExampleNode.Selection = null;
+                    BaseNode.selected = null;
                     Event.current.Use();
                 }
                 break;

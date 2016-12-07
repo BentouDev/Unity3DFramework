@@ -1,26 +1,29 @@
 ﻿using UnityEngine;
 
-public abstract class GameState : MonoBehaviour, ILevelDependable
+namespace Framework
 {
-    protected MainGame Game;
-
-    void Start()
+    public abstract class GameState<T> : MonoBehaviour, ILevelDependable where T : Game<T>
     {
-        Game = FindObjectOfType<MainGame>();
-    }
+        protected T Game;
 
-    public abstract bool IsPlayable();
+        void Start()
+        {
+            Game = FindObjectOfType<T>();
+        }
 
-    public abstract void OnLevelLoaded();
+        public abstract bool IsPlayable();
 
-    public abstract void OnStart();
+        public abstract void OnLevelLoaded();
 
-    public abstract void OnRun();
+        public abstract void OnStart();
 
-    public abstract void OnEnd();
+        public abstract void OnRun();
 
-    public virtual void OnLevelCleanUp()
-    {
+        public abstract void OnEnd();
 
+        public virtual void OnLevelCleanUp()
+        {
+
+        }
     }
 }

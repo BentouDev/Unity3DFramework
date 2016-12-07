@@ -4,12 +4,12 @@ using NUnit.Framework;
 
 public class DebugConsoleTests
 {
-    private ConsoleController TestConsole;
+    private Framework.ConsoleController TestConsole;
 
     [TestFixtureSetUp]
     public void Init()
     {
-        TestConsole = new ConsoleController();
+        TestConsole = new Framework.ConsoleController();
     }
 
     [TestFixtureTearDown]

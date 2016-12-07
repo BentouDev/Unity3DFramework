@@ -5,8 +5,6 @@ using System.Linq;
 
 public class GUIController : MonoBehaviour
 {
-    private MainGame Game;
-    
     [System.Serializable]
     public struct FadeInfo
     {

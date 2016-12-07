@@ -37,7 +37,7 @@ public static class EditorMinMaxSlider
         float size = maxValue - minValue;
         EditorGUI.BeginChangeCheck();
         
-        var id = GUIUtility.GetControlID(MinMaxHash, FocusType.Native);
+        var id = GUIUtility.GetControlID(MinMaxHash, FocusType.Passive);
         
         object[] args = new object[]
         {
