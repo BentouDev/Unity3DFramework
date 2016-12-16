@@ -8,7 +8,7 @@ public abstract class BaseNode
     public static BaseNode selected = null;
     public static BaseNode toDelete = null;
 
-    public static Vector2 ConnectorSize = new Vector2(10, 10);
+    public static Vector2 ConnectorSize = new Vector2(20, 16);
     public static GUIStyle NormalButton;
     public static GUIStyle Connector;
 
@@ -70,6 +70,17 @@ public abstract class BaseNode
         return drawRect.max + ConnectorSize;
     }
 
+    public virtual Vector2 GetParentConnectPosition(BaseNode parent)
+    {
+        return drawRect.center;
+    }
+
+    public virtual Vector2 GetChildConnectPosition(BaseNode child)
+    {
+        return drawRect.center;
+    }
+
+    [System.Obsolete("Deprecated, use GetParentConnectPosition and GetChildConnectPosition")]
     public virtual Vector2 GetConnectPosition(int connectIndex)
     {
         if (connectIndex == 0)
@@ -91,11 +102,34 @@ public abstract class BaseNode
             );
     }
 
+    public static void MakeConnection(BaseNode parent, BaseNode child)
+    {
+        parent.connectedTo.Add(new ConnectionInfo()
+        {
+            Node = child
+        });
+
+        parent.OnConnectToChild(child);
+        child.OnConnectToParent(parent);
+    }
+
+    public virtual void OnConnectToChild(BaseNode node)
+    {
+
+    }
+
+    public virtual void OnConnectToParent(BaseNode parent)
+    {
+
+    }
+
+    [System.Obsolete("Deprecated, use CanMakeConnection(BaseNode parent, BaseNode child) instead")]
     public static bool CanMakeConnection(BaseNode left, int leftIndex, BaseNode right, int rightIndex)
     {
         return leftIndex != 0 && rightIndex != 0 && left != right && !left.connectedTo.Contains(new ConnectionInfo() {Node = right, IndexTo = rightIndex, IndexFrom = leftIndex});
     }
 
+    [System.Obsolete("Deprecated, use MakeConnection(BaseNode parent, BaseNode child) instead")]
     public static void MakeConnection(BaseNode left, int leftIndex, BaseNode right, int rightIndex)
     {
         left.connectedTo.Add(new ConnectionInfo() {Node = right, IndexTo = rightIndex, IndexFrom = leftIndex});
@@ -103,11 +137,13 @@ public abstract class BaseNode
         right.OnConnectToLeft(left, rightIndex, leftIndex);
     }
 
+    [System.Obsolete("Deprecated, use OnConnectToChild(BaseNode child)")]
     public virtual void OnConnectToRight(BaseNode node, int from, int to)
     {
         
     }
 
+    [System.Obsolete("Deprecated, use OnConnectToParent(BaseNode parent) instead")]
     public virtual void OnConnectToLeft(BaseNode node, int from, int to)
     {
         
