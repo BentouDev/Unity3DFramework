@@ -3,12 +3,12 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 
-public abstract class BaseNode
+public abstract class GraphNode
 {
-    public static BaseNode selected = null;
-    public static BaseNode toDelete = null;
+    public static GraphNode selected = null;
+    public static GraphNode toDelete = null;
 
-    public static Vector2 ConnectorSize = new Vector2(20, 16);
+    public static Vector2 ConnectorSize = new Vector2(16, 16);
     public static GUIStyle NormalButton;
     public static GUIStyle Connector;
 
@@ -22,7 +22,7 @@ public abstract class BaseNode
     public struct ConnectionInfo
     {
         [SerializeField]
-        public BaseNode Node;
+        public GraphNode Node;
 
         [SerializeField]
         public int IndexTo;
@@ -63,19 +63,24 @@ public abstract class BaseNode
         );
     }
 
-    public abstract int OnGUI(int id);
+    public abstract void OnGUI(int id);
 
     public virtual Vector2 GetMaxCoordinates()
     {
         return drawRect.max + ConnectorSize;
     }
+    
+    public virtual Color GetParentConnectColor(GraphNode childNode)
+    {
+        return Color.white;
+    }
 
-    public virtual Vector2 GetParentConnectPosition(BaseNode parent)
+    public virtual Vector2 GetParentConnectPosition(GraphNode parent)
     {
         return drawRect.center;
     }
 
-    public virtual Vector2 GetChildConnectPosition(BaseNode child)
+    public virtual Vector2 GetChildConnectPosition(GraphNode child)
     {
         return drawRect.center;
     }
@@ -102,7 +107,7 @@ public abstract class BaseNode
             );
     }
 
-    public static void MakeConnection(BaseNode parent, BaseNode child)
+    public static void MakeConnection(GraphNode parent, GraphNode child)
     {
         parent.connectedTo.Add(new ConnectionInfo()
         {
@@ -113,24 +118,24 @@ public abstract class BaseNode
         child.OnConnectToParent(parent);
     }
 
-    public virtual void OnConnectToChild(BaseNode node)
+    public virtual void OnConnectToChild(GraphNode node)
     {
 
     }
 
-    public virtual void OnConnectToParent(BaseNode parent)
+    public virtual void OnConnectToParent(GraphNode parent)
     {
 
     }
 
     [System.Obsolete("Deprecated, use CanMakeConnection(BaseNode parent, BaseNode child) instead")]
-    public static bool CanMakeConnection(BaseNode left, int leftIndex, BaseNode right, int rightIndex)
+    public static bool CanMakeConnection(GraphNode left, int leftIndex, GraphNode right, int rightIndex)
     {
         return leftIndex != 0 && rightIndex != 0 && left != right && !left.connectedTo.Contains(new ConnectionInfo() {Node = right, IndexTo = rightIndex, IndexFrom = leftIndex});
     }
 
     [System.Obsolete("Deprecated, use MakeConnection(BaseNode parent, BaseNode child) instead")]
-    public static void MakeConnection(BaseNode left, int leftIndex, BaseNode right, int rightIndex)
+    public static void MakeConnection(GraphNode left, int leftIndex, GraphNode right, int rightIndex)
     {
         left.connectedTo.Add(new ConnectionInfo() {Node = right, IndexTo = rightIndex, IndexFrom = leftIndex});
         left.OnConnectToRight(right, leftIndex, rightIndex);
@@ -138,13 +143,13 @@ public abstract class BaseNode
     }
 
     [System.Obsolete("Deprecated, use OnConnectToChild(BaseNode child)")]
-    public virtual void OnConnectToRight(BaseNode node, int from, int to)
+    public virtual void OnConnectToRight(GraphNode node, int from, int to)
     {
         
     }
 
     [System.Obsolete("Deprecated, use OnConnectToParent(BaseNode parent) instead")]
-    public virtual void OnConnectToLeft(BaseNode node, int from, int to)
+    public virtual void OnConnectToLeft(GraphNode node, int from, int to)
     {
         
     }
@@ -160,7 +165,7 @@ public abstract class BaseNode
         baseNode.OnBeingConnected(this, currentIndex);
     }*/
 
-    public virtual void RemoveConnection(BaseNode node)
+    public virtual void RemoveConnection(GraphNode node)
     {
         if (connectedTo.Any(c => c.Node == node))
             connectedTo.RemoveAll(c => c.Node == node);

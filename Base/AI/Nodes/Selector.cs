@@ -15,6 +15,11 @@ namespace Framework.AI
         {
             get { return "Returns success when any child return success, returns failrue when none"; }
         }
+
+        protected override NodeResult OnUpdate(AIController controller, Blackboard blackboard)
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }
 

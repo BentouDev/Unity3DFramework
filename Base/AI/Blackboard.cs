@@ -7,6 +7,11 @@ using UnityEngine;
 /// </summary>
 public class Blackboard : MonoBehaviour
 {
+    public class Required : PropertyAttribute
+    {
+        public string KeyName;
+    }
+
     public interface IValue
     {
 #if UNITY_EDITOR
@@ -44,7 +49,7 @@ public class Blackboard : MonoBehaviour
     }
     
     // Naive implementation
-    public Dictionary<string, IValue> Values;
+    public Dictionary<string, IValue> Values = new Dictionary<string, IValue>();
 
     public bool HasValue<T>(string name)
     {

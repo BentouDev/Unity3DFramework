@@ -1,12 +1,18 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using MyNamespace;
 using UnityEngine;
 
 namespace Framework.AI
 {
-    public abstract class CompositeNode : BehaviourTreeNode
+    public abstract class CompositeNode : ParentNode
     {
         public List<BehaviourTreeNode> ChildNodes { get; private set; }
+
+        protected CompositeNode()
+        {
+            ChildNodes = new List<BehaviourTreeNode>();
+        }
 
         public override List<BehaviourTreeNode> GetChildNodes()
         {
@@ -15,9 +21,6 @@ namespace Framework.AI
 
         public override void AddOrSetChild(BehaviourTreeNode newNode)
         {
-            if(ChildNodes == null)
-                ChildNodes = new List<BehaviourTreeNode>();
-
             newNode.Parent = this;
             ChildNodes.Add(newNode);
         }

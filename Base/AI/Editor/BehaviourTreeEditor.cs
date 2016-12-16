@@ -1,27 +1,40 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Framework.EditorUtils;
+using MyNamespace;
 using UnityEditor;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace Framework.AI
 {
     public class BehaviourTreeEditor : EditorWindow
     {
         private static BehaviourTreeEditor instance;
+
         private Vector2 editorSize = Vector2.zero;
-        private Vector2 errorScroll = Vector2.zero;
+        private Vector2 paramScroll = Vector2.zero;
 
         private BehaviourTree TreeAsset;
         private string AssetPath;
-        private UnityEditor.Editor AssetEditor;
+        
+        private readonly GraphNodeEditor Nodes = new GraphNodeEditor();
+        
+        private bool showParameters;
 
-        private BehaviourTreeGUINode RootGUINode;
-
-        private readonly NodeGraph Nodes = new NodeGraph();
-
-        private bool isLoaded;
+        private AIController RuntimeController;
+        
+        public static BehaviourTreeEditor GetInstance()
+        {
+            return instance;
+        }
+        
+        public BehaviourTree GetCurrentAsset()
+        {
+            return TreeAsset;
+        }
 
         [MenuItem("Gameplay/Behaviour Tree")]
         public static void ShowEditor()
@@ -31,16 +44,16 @@ namespace Framework.AI
 
         public BehaviourTreeEditor()
         {
-            isLoaded = false;
             Nodes.OnRightClick += CreateRootNode;
             Nodes.OnLeftClick += SelectTreeAsset;
             Nodes.OnDelete += HandleDelete;
-            BehaviourTreeGUINode.OnNewChildNode += CreateChildNode;
+            Nodes.OnConnectionEmptyDrop += CreateChildNode;
+            BehaviourTreeGraphNode.OnNewChildNode += Nodes.StartConnection; // CreateChildNode;
         }
-
+        
         private void HandleDelete()
         {
-            var node = BaseNode.toDelete as BehaviourTreeGUINode;
+            var node = GraphNode.toDelete as BehaviourTreeGraphNode;
             if (node != null)
             {
                 DeleteFromAsset(node.TreeNode);
@@ -49,7 +62,11 @@ namespace Framework.AI
 
         private void DestroyChildrenNodes(BehaviourTreeNode node)
         {
-            var children = node.GetChildNodes();
+            if (!node.IsParentNode())
+                return;
+
+            var asParent = node.AsParentNode();
+            var children = asParent.GetChildNodes();
             if (children != null && children.Count > 0)
             {
                 List<BehaviourTreeNode> toRemove = new List<BehaviourTreeNode>();
@@ -61,7 +78,7 @@ namespace Framework.AI
 
                 foreach (BehaviourTreeNode treeNode in toRemove)
                 {
-                    node.RemoveChild(treeNode);
+                    asParent.RemoveChild(treeNode);
                     DestroyImmediate(treeNode, true);
                 }
             }
@@ -70,12 +87,14 @@ namespace Framework.AI
         private bool RemoveNodeAssetRecursive(BehaviourTreeNode node, BehaviourTreeNode toRemove)
         {
             bool removed = false;
-            var childNodes = node.GetChildNodes();
-            if (childNodes != null && childNodes.Count > 0)
+
+            if (node.IsParentNode())
             {
+                var asParent = node.AsParentNode();
+                var childNodes = asParent.GetChildNodes();
                 if (childNodes.Contains(toRemove))
                 {
-                    node.RemoveChild(toRemove);
+                    asParent.RemoveChild(toRemove);
                     return true;
                 }
                 else
@@ -90,7 +109,7 @@ namespace Framework.AI
                     }
                 }
             }
-
+            
             return removed;
         }
 
@@ -123,7 +142,7 @@ namespace Framework.AI
             OnLoadAsset(TreeAsset);
         }
 
-        private void SelectTreeAsset()
+        private void SelectTreeAsset(Vector2 mousePosition)
         {
             if (Selection.activeObject != TreeAsset)
             {
@@ -138,9 +157,10 @@ namespace Framework.AI
             AssetDatabase.Refresh();
         }
 
-        private void CreateChildNode(BehaviourTreeNode node)
+        private void CreateChildNode(GraphNode node, Vector2 position)
         {
-            if (!TreeAsset)
+            var behNode = node as BehaviourTreeGraphNode;
+            if (!TreeAsset || behNode == null || !behNode.TreeNode.IsParentNode())
                 return;
 
             ShowNodeCreationMenu((type) =>
@@ -148,9 +168,11 @@ namespace Framework.AI
                 var obj = ScriptableObject.CreateInstance(type) as BehaviourTreeNode;
                 if (obj)
                 {
+                    obj.EditorPosition = position;
+
                     AddToAsset(obj);
 
-                    node.AddOrSetChild(obj);
+                    behNode.TreeNode.AsParentNode().AddOrSetChild(obj);
 
                     RecreateNodes();
                 }
@@ -161,7 +183,7 @@ namespace Framework.AI
             });
         }
 
-        private void CreateRootNode()
+        private void CreateRootNode(Vector2 position)
         {
             if (!TreeAsset)
                 return;
@@ -173,6 +195,8 @@ namespace Framework.AI
                     var obj = ScriptableObject.CreateInstance(type) as BehaviourTreeNode;
                     if (obj)
                     {
+                        obj.EditorPosition = position;
+
                         AddToAsset(obj);
 
                         TreeAsset.RootNode = obj;
@@ -193,22 +217,25 @@ namespace Framework.AI
 
             if (TreeAsset && TreeAsset.RootNode != null)
             {
-                CreateNodesRecursive(new BehaviourTreeGUINode(TreeAsset.RootNode));
+                CreateNodesRecursive(new BehaviourTreeGraphNode(TreeAsset.RootNode));
             }
         }
         
-        private void CreateNodesRecursive(BehaviourTreeGUINode guiNode)
+        private void CreateNodesRecursive(BehaviourTreeGraphNode graphNode)
         {
-            Nodes.AddNode(guiNode);
+            Nodes.AddNode(graphNode);
 
-            var childNodes = guiNode.TreeNode.GetChildNodes();
-            if (childNodes != null)
+            if (graphNode.TreeNode.IsParentNode())
             {
-                foreach (BehaviourTreeNode childNode in childNodes)
+                var childNodes = graphNode.TreeNode.AsParentNode().GetChildNodes();
+                if (childNodes != null)
                 {
-                    var newNode = new BehaviourTreeGUINode(childNode);
-                    BaseNode.MakeConnection(guiNode, newNode);
-                    CreateNodesRecursive(newNode);
+                    foreach (BehaviourTreeNode childNode in childNodes)
+                    {
+                        var newNode = new BehaviourTreeGraphNode(childNode);
+                        GraphNode.MakeConnection(graphNode, newNode);
+                        CreateNodesRecursive(newNode);
+                    }
                 }
             }
         }
@@ -221,13 +248,26 @@ namespace Framework.AI
             };
         }
 
+        private static string GetTypePrefix(System.Type type)
+        {
+            if (type.IsSubclassOf(typeof(CompositeNode)))
+                return "Composite";
+            if (type.IsSubclassOf(typeof(DecoratorNode)))
+                return "Decorator";
+            if (type.IsSubclassOf(typeof(TaskNode)))
+                return "Task";
+
+            return "Unknown";
+        }
+        
         private void ShowNodeCreationMenu(System.Action<Type> callback)
         {
             GenericMenu menu = new GenericMenu();
             
             foreach (Type type in Reflection.GetSubclasses<BehaviourTreeNode>())
             {
-                menu.AddItem(new GUIContent(type.Name), false, CreateNewNodeCallback(callback, type));
+                string title = string.Format("{0}/{1}", GetTypePrefix(type), type.Name);
+                menu.AddItem(new GUIContent(title), false, CreateNewNodeCallback(callback, type));
             }
 
             menu.ShowAsContext();
@@ -279,6 +319,32 @@ namespace Framework.AI
         void OnSelectionChange()
         {
             Reload();
+        //    CheckForRuntimeController();
+        }
+
+        public bool ExecuteInRuntime()
+        {
+            return EditorApplication.isPlaying && HasRuntimeController();
+        }
+
+        public bool HasRuntimeController()
+        {
+            return RuntimeController != null;
+        }
+
+        private void CheckForRuntimeController()
+        {
+            if (!EditorApplication.isPlaying || EditorApplication.isPaused)
+                return;
+
+            if (Selection.activeGameObject)
+            {
+                var controller = Selection.activeGameObject.GetComponent<AIController>();
+                if (controller)
+                {
+                    RuntimeController = controller;
+                }
+            }
         }
 
         private void Reload()
@@ -304,15 +370,6 @@ namespace Framework.AI
             if (asset == null)
             {
                 AssetPath = string.Empty;
-                // ActionAsset = null;
-                AssetEditor = null;
-            }
-            else
-            {
-                // ActionAsset = asset;
-                AssetEditor = Editor.CreateEditor(TreeAsset);
-
-                // UpdateActionData(ActionAsset);
             }
 
             RecreateNodes();
@@ -341,20 +398,53 @@ namespace Framework.AI
             return Selection.activeObject != null && Selection.activeObject == TreeAsset;
         }
 
+        void Update()
+        {
+            if (EditorApplication.isPlaying && !EditorApplication.isPaused)
+            {
+                CheckForRuntimeController();
+
+                if (HasRuntimeController())
+                {
+                    Repaint();
+                }
+            }
+        }
+
         void OnGUI()
         {
+            if (instance == null)
+                instance = this;
+
             editorSize = new Vector2(position.width, position.height);
 
             if (TreeAsset != null)
             {
 
                 GUILayout.BeginVertical();
-                DrawToolbar();
+                {
+                    DrawToolbar();
 
-                DrawContent();
+                    GUILayout.BeginHorizontal();
+                    {
+                        DrawNodeGraph();
 
-                DrawFooter();
+                        if (showParameters)
+                        {
+                            EditorGUILayout.BeginVertical(GUILayout.Width(300));
+                            {
+                                DrawParameterList();
+                            }
+                            EditorGUILayout.EndVertical();
+                        }
+                    }
+                    GUILayout.EndHorizontal();
+
+                    DrawFooter();
+                }
                 EditorGUILayout.EndVertical();
+
+                Nodes.HandleEvents();
             }
             else
             {
@@ -366,34 +456,129 @@ namespace Framework.AI
             }
         }
 
+        UnityEditor.GenericMenu.MenuFunction CreateNewParameterCallback(int index)
+        {
+            return () =>
+            {
+                EditorParameter.ParameterType type = (EditorParameter.ParameterType) Enum.GetValues(typeof(EditorParameter.ParameterType)).GetValue(index);
+                AddNewParameter(type);
+            };
+        }
+
+        private void AddNewParameter(EditorParameter.ParameterType type, UnityEngine.Object obj = null)
+        {
+            string paramName = string.Format("New {0}", type.ToString());
+
+            int i = 0;
+            while (TreeAsset.Parameters.Any(p => p.Name.Equals(paramName)))
+            {
+                paramName = string.Format("New {0} {1}", type.ToString(), i);
+                i++;
+            }
+
+            TreeAsset.Parameters.Add (
+                new EditorParameter(type)
+                {
+                    Name = paramName,
+                    ObjectValue = obj,
+                    Type = obj ? obj.GetType() : null
+                }
+            );
+        }
+        
+        private void DrawParameterList()
+        {
+            paramScroll = GUILayout.BeginScrollView(paramScroll);
+
+            EditorGUILayout.BeginHorizontal(EditorStyles.toolbar, GUILayout.ExpandWidth(true));
+            {
+                // GUILayout.TextField("Name", (GUIStyle)"ToolbarSeachTextFieldPopup");
+                if (GUILayout.Button("+", EditorStyles.toolbarButton))
+                {
+                    GenericMenu menu = new GenericMenu();
+
+                    var names = Enum.GetNames(typeof(EditorParameter.ParameterType));
+
+                    for (int i = 0; i < names.Length; i++)
+                    {
+                        menu.AddItem(new GUIContent(names[i]), false, CreateNewParameterCallback(i));
+                    }
+                    
+                    menu.ShowAsContext();
+                }
+            }
+            EditorGUILayout.EndHorizontal();
+
+            foreach (EditorParameter parameter in TreeAsset.Parameters)
+            {
+                EditorParamDrawer.DrawParameter(parameter);
+            }
+
+            GUILayout.EndScrollView();
+        }
+
         private void DrawToolbar()
         {
             EditorGUILayout.BeginHorizontal(EditorStyles.toolbar, GUILayout.ExpandWidth(true));
             {
-                GUILayout.FlexibleSpace();
                 GUILayout.Label(TreeAsset.name);
+                
+                if (ExecuteInRuntime())
+                {
+                    GUI.color = Color.yellow;
+
+                    GUILayout.Label("PLAYING : " + RuntimeController.name);
+
+                    GUI.color = Color.white;
+
+                    if (GUILayout.Button("select", EditorStyles.toolbarButton))
+                    {
+                        Selection.activeGameObject = RuntimeController.gameObject;
+                    }
+                }
+
                 GUILayout.FlexibleSpace();
+
+                showParameters = GUILayout.Toggle(showParameters, "Blackboard Parameters", EditorStyles.toolbarButton);
             }
             EditorGUILayout.EndHorizontal();
         }
 
-        private void DrawContent()
+        private void DrawNodeGraph()
         {
-            var rect = GUILayoutUtility.GetRect(GUIContent.none, GUIStyle.none, GUILayout.ExpandHeight(true), GUILayout.ExpandWidth(true));
-            editorSize = Nodes.GetMaxCoordinates();
+            GUILayout.BeginVertical(SpaceEditorStyles.GraphNodeEditorBackground);
+            {
+                var rect = GUILayoutUtility.GetRect(GUIContent.none, GUIStyle.none, GUILayout.ExpandHeight(true), GUILayout.ExpandWidth(true));
+                editorSize = Nodes.GetMaxCoordinates();
 
-            Nodes.Draw(this, rect, new Rect(0, 0, editorSize.x, editorSize.y));
-            Nodes.HandleEvents();
+                Nodes.Draw(this, rect, new Rect(0, 0, editorSize.x, editorSize.y));
+            }
+            GUILayout.EndVertical();
         }
 
         private void DrawFooter()
         {
-            EditorGUILayout.BeginHorizontal(GUI.skin.box, GUILayout.ExpandWidth(true));
+            EditorGUILayout.BeginHorizontal(GUILayout.ExpandWidth(true)); // GUI.skin.box, 
             {
                 GUILayout.Label(AssetPath);
                 GUILayout.FlexibleSpace();
             }
             EditorGUILayout.EndHorizontal();
+        }
+
+        public bool CanEditNode(BehaviourTreeNode node)
+        {
+            return TreeAsset.Contains(node);
+        }
+
+        public bool IsCurrentNode(BehaviourTreeNode treeNode)
+        {
+            if (HasRuntimeController())
+            {
+                return RuntimeController.CurrentActingNode == treeNode;
+            }
+
+            return false;
         }
     }
 }

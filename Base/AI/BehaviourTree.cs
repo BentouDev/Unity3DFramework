@@ -9,11 +9,15 @@ namespace Framework.AI
 #endif
     public class BehaviourTree : ScriptableObject
     {
+        [SerializeField]
+        public List<EditorParameter> Parameters;
+
         [HideInInspector]
+        [SerializeField]
         public BehaviourTreeNode RootNode;
 
-        private List<BehaviourTreeNode> NodeList;
-        
+        public List<BehaviourTreeNode> NodeList { get; set; }
+
         public void BuildEmptyBlackboard(Blackboard blackboard)
         {
             // Create empty parameters
@@ -24,7 +28,7 @@ namespace Framework.AI
             return NodeList != null && NodeList.Count > 0;
         }
 
-        public void PreprocessTree()
+        public void Preprocess()
         {
             NodeList.Clear();
             ProcessNodeRecurrent(RootNode);
@@ -34,11 +38,45 @@ namespace Framework.AI
         {
             NodeList.Add(node);
 
-            var children = node.GetChildNodes();
-            foreach (BehaviourTreeNode child in children)
+            if (node.IsParentNode())
             {
-                ProcessNodeRecurrent(child);
+                var children = node.AsParentNode().GetChildNodes();
+                foreach (BehaviourTreeNode child in children)
+                {
+                    ProcessNodeRecurrent(child);
+                }
             }
+        }
+
+        public bool Contains(BehaviourTreeNode node)
+        {
+            if (IsPreprocessed())
+                return NodeList.Contains(node);
+            else
+            {
+                return FindNodeRecursive(RootNode, node);
+            }
+        }
+
+        private bool FindNodeRecursive(BehaviourTreeNode node, BehaviourTreeNode toFind)
+        {
+            if (node == null)
+                return false;
+
+            if (node == toFind)
+                return true;
+
+            if (node.IsParentNode())
+            {
+                var childNodes = node.AsParentNode().GetChildNodes();
+                foreach (BehaviourTreeNode childNode in childNodes)
+                {
+                    if (FindNodeRecursive(childNode, toFind))
+                        return true;
+                }
+            }
+
+            return false;
         }
     }
 }

@@ -4,8 +4,8 @@ using UnityEngine;
 
 namespace Framework.AI
 {
-    public abstract class LeafNode : BehaviourTreeNode
+    public abstract class TaskNode : BehaviourTreeNode
     {
-        public abstract NodeResult OnUpdate();
+
     }
 }

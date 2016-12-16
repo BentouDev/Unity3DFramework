@@ -11,7 +11,7 @@ public static class SpaceEditorStyles
     {
         get
         {
-            if(_skin == null)
+            //if(_skin == null)
                 _skin = AssetDatabase.LoadAssetAtPath<GUISkin>("Assets/Gizmos/SpaceEditorGUI.guiskin");
             return _skin;
         }
@@ -179,6 +179,50 @@ public static class SpaceEditorStyles
             if(_timeRangeBackground == null)
                 _timeRangeBackground = (GUIStyle)"ShurikenEffectBg";
             return _timeRangeBackground;
+        }
+    }
+    
+    private static GUIStyle _graphNodeEditorBackground;
+    public static GUIStyle GraphNodeEditorBackground
+    {
+        get
+        {
+            if (_graphNodeEditorBackground == null)
+                _graphNodeEditorBackground = (GUIStyle)"flow background";
+            return _graphNodeEditorBackground;
+        }
+    }
+    
+    private static GUIStyle _graphNodeBackground;
+    public static GUIStyle GraphNodeBackground
+    {
+        get
+        {
+            if (_graphNodeBackground == null)
+                _graphNodeBackground = Skin.customStyles.First(s => s.name == "GraphNode");
+            return _graphNodeBackground;
+        }
+    }
+
+    private static GUIStyle _dotFlowTarget;
+    public static GUIStyle DotFlowTarget
+    {
+        get
+        {
+            if (_dotFlowTarget == null)
+                _dotFlowTarget = Skin.customStyles.First(s => s.name == "DotFlowTarget");
+            return _dotFlowTarget;
+        }
+    }
+
+    private static GUIStyle _dotFlowTargetFill;
+    public static GUIStyle DotFlowTargetFill
+    {
+        get
+        {
+            if (_dotFlowTargetFill == null)
+                _dotFlowTargetFill = Skin.customStyles.First(s => s.name == "DotFlowTargetFill");
+            return _dotFlowTargetFill;
         }
     }
 

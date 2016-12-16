@@ -15,5 +15,10 @@ namespace Framework.AI
         {
             get { return "Repeats given times"; }
         }
+
+        protected override NodeResult OnUpdate(AIController controller, Blackboard blackboard)
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }

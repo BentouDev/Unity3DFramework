@@ -2,11 +2,12 @@
 using System.Collections;
 using System.Collections.Generic;
 using Framework.AI;
+using MyNamespace;
 using UnityEngine;
 
 namespace Framework.AI
 {
-    public abstract class DecoratorNode : BehaviourTreeNode
+    public abstract class DecoratorNode : ParentNode
     {
         public BehaviourTreeNode DecoratedNode { get; private set; }
 

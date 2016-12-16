@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using MyNamespace;
 using UnityEngine;
 
 namespace Framework.AI
@@ -11,42 +12,50 @@ namespace Framework.AI
         public abstract string Name { get; }
         public abstract string Description { get; }
 
-        public BehaviourTreeNode Parent { get; set; }
+        public ParentNode Parent { get; set; }
 
-        public virtual List<BehaviourTreeNode> GetChildNodes()
+        public NodeResult LastResult { get; private set; }
+
+        public bool IsRootNode()
         {
-            return EmptyList;
+            return Parent == null;
         }
 
-        public virtual void AddOrSetChild(BehaviourTreeNode newNode)
+        public virtual bool IsParentNode()
         {
-            throw new System.InvalidOperationException(string.Format("Unabel to set children to node of type {0}",
-                GetType().Name));
+            return false;
         }
 
-        public virtual void RemoveChild(BehaviourTreeNode node)
+        public ParentNode AsParentNode()
         {
-            throw new System.InvalidOperationException(string.Format("Unabel to remove children from node of type {0}",
-                GetType().Name));
+            return (ParentNode) this;
         }
-        
-        public virtual void OnStart()
+
+        public virtual void Init()
         {
 
         }
 
-        public virtual void OnEnd()
+        public virtual void OnStart(AIController controller)
+        {
+
+        }
+
+        public NodeResult CallUpdate(AIController controller, Blackboard blackboard)
+        {
+            LastResult = OnUpdate(controller, blackboard);
+            return LastResult;
+        }
+
+        protected abstract NodeResult OnUpdate(AIController controller, Blackboard blackboard);
+
+        public virtual void OnEnd(AIController controller)
         {
 
         }
 
 #if UNITY_EDITOR
         [HideInInspector] public Vector2 EditorPosition;
-
-        public virtual bool HasChildrenSlots()
-        {
-            return false;
-        }
 #endif
     }
 }
