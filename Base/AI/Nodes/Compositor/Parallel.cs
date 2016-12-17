@@ -4,19 +4,19 @@ using UnityEngine;
 
 namespace Framework.AI
 {
-    public class Until : DecoratorNode
+    public class Parallel : CompositeNode
     {
         public override string Name
         {
-            get { return "Until"; }
+            get { return "Parallel"; }
         }
 
         public override string Description
         {
-            get { return "Repeats children until it returns success"; }
+            get { return "Executes children in parallel"; }
         }
 
-        protected override NodeResult OnUpdate(AIController controller, Blackboard blackboard)
+        protected override NodeResult OnUpdate()
         {
             throw new System.NotImplementedException();
         }

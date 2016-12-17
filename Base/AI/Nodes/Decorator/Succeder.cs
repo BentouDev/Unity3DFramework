@@ -4,19 +4,19 @@ using UnityEngine;
 
 namespace Framework.AI
 {
-    public class Negation : DecoratorNode
+    public class Succeder : DecoratorNode
     {
         public override string Name
         {
-            get { return "Inverter"; }
+            get { return "Succeder"; }
         }
 
         public override string Description
         {
-            get { return "Boolean negation"; }
+            get { return "Ignores children result and always returns success"; }
         }
 
-        protected override NodeResult OnUpdate(AIController controller, Blackboard blackboard)
+        protected override NodeResult OnUpdate()
         {
             throw new System.NotImplementedException();
         }

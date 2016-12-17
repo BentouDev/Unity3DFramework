@@ -29,19 +29,7 @@ static public class GameObjectExtensions {
         if (!typeof(T).IsInterface) throw new SystemException("Specified type is not an interface!");
         MonoBehaviour[] mObjs = gObj.GetComponents<MonoBehaviour>();
 
-        T[] koza = null;
-
-        try
-        {
-            koza = (from a in mObjs where a.GetType().GetInterfaces().Any(k => k == typeof(T)) select (T)(object)a).ToArray();
-        }
-        catch(NullReferenceException e)
-        {
-            // gotcha
-            int i;
-        }
-
-        return koza;
+        return (from a in mObjs where a.GetType().GetInterfaces().Any(k => k == typeof(T)) select (T)(object)a).ToArray();
     }
 
     /// <summary>

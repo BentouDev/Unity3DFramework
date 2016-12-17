@@ -9,7 +9,9 @@ namespace Framework.AI
 {
     public abstract class DecoratorNode : ParentNode
     {
-        public BehaviourTreeNode DecoratedNode { get; private set; }
+        [SerializeField]
+        [HideInInspector]
+        public BehaviourTreeNode DecoratedNode;
 
         public override List<BehaviourTreeNode> GetChildNodes()
         {

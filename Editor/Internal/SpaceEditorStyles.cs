@@ -17,6 +17,23 @@ public static class SpaceEditorStyles
         }
     }
     
+    private static GUIStyle _editableLabel;
+
+    public static GUIStyle EditableLabel
+    {
+        get
+        {
+            if (_editableLabel == null)
+            {
+                _editableLabel = new GUIStyle(EditorStyles.textField);
+                _editableLabel.normal = EditorStyles.label.normal;
+                _editableLabel.onNormal = EditorStyles.label.onNormal;
+            }
+
+            return _editableLabel;
+        }
+    }
+    
     private static GUIStyle _lightBackground;
     public static GUIStyle LightBackground
     {
@@ -223,6 +240,19 @@ public static class SpaceEditorStyles
             if (_dotFlowTargetFill == null)
                 _dotFlowTargetFill = Skin.customStyles.First(s => s.name == "DotFlowTargetFill");
             return _dotFlowTargetFill;
+        }
+    }
+
+    private static Texture2D _behaviourTreeIcon;
+    public static Texture2D BehaviourTreeIcon
+    {
+        get
+        {
+            if (_behaviourTreeIcon == null)
+            {
+                _behaviourTreeIcon = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Gizmos/BehaviourTreeEditorIcon.png");
+            }
+            return _behaviourTreeIcon;
         }
     }
 

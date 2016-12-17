@@ -102,8 +102,11 @@ public class InputBuffer<EnumType> : MonoBehaviour where EnumType : struct, ICon
         bool buffered = info.Frames < FramesInBuffer;
 
         info.Value = button;
-        result.State = (button && changed) || buffered ? ButtonState.Pressed : ButtonState.None;
-        // result.State = (!button && ((changed && clean) || buffered)) ? ButtonState.Pressed : ButtonState.None;
+        // This one was created before, has a bug when on release it sends pressed once again
+        // result.State = (button && changed) || buffered ? ButtonState.Pressed : ButtonState.None;
+
+        // This one was created after, to prevent from above bug
+        result.State = (!button && ((changed && clean) || buffered)) ? ButtonState.Pressed : ButtonState.None;
 
         if (!changed)
         {

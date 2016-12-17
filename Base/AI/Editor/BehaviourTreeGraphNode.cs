@@ -28,7 +28,9 @@ namespace Framework.AI
                 var childNodes = TreeNode.AsParentNode().GetChildNodes();
                 var childCount = childNodes.Count;
 
-                offset -= ConnectorSize.x * childCount * 0.5f;
+                if(TreeNode.AsParentNode().HasChildrenSlots())
+                    offset -= ConnectorSize.x * childCount * 0.5f;
+
                 offset += ConnectorSize.x * childNodes.IndexOf(childGUINode.TreeNode);
             }
             
@@ -85,7 +87,7 @@ namespace Framework.AI
 
             SetColor();
 
-            drawRect = GUI.Window(id, drawRect, WindowRoutine, GUIContent.none, GUIStyle.none);//, (GUIStyle) "flow node 0");//(GUIStyle)"flow node hex 0");
+            drawRect = GUI.Window(id, drawRect, WindowRoutine, GUIContent.none, SpaceEditorStyles.GraphNodeBackground);//, (GUIStyle) "flow node 0");//(GUIStyle)"flow node hex 0");
             position = drawRect.center;
 
             TreeNode.EditorPosition = Position;
@@ -101,7 +103,7 @@ namespace Framework.AI
         {
             SetColor();
 
-            GUILayout.BeginVertical(SpaceEditorStyles.GraphNodeBackground, GUILayout.ExpandHeight(true), GUILayout.ExpandWidth(true));
+            GUILayout.BeginVertical(GUILayout.ExpandHeight(true), GUILayout.ExpandWidth(true));
             {
                 GUILayout.FlexibleSpace();
                 GUILayout.BeginHorizontal();
@@ -153,16 +155,12 @@ namespace Framework.AI
                 {
                     case NodeResult.Success:
                         return Color.green;
-                        break;
                     case NodeResult.Failrue:
                         return Color.red;
-                        break;
                     case NodeResult.Running:
                         return Color.yellow;
-                        break;
                     default:
                         return TargetColor;
-                        break;
                 }
             }
             else if (TreeNode.IsRootNode())
@@ -212,7 +210,9 @@ namespace Framework.AI
                    GUIContent.none, SpaceEditorStyles.DotFlowTarget
                 );
 
-                GUI.color = CurrentColor;
+                if (BehaviourTreeEditor.GetInstance().ExecuteInRuntime())
+                    GUI.color = CurrentColor;
+
                 GUI.Box (
                    new Rect(dotRect.center.x - ConnectorSize.x * 0.5f, dotRect.yMin - ConnectorSize.y * 0.5f, ConnectorSize.x, ConnectorSize.y),
                    GUIContent.none, SpaceEditorStyles.DotFlowTargetFill
@@ -233,16 +233,19 @@ namespace Framework.AI
 
                 if (nodeCount > 0)
                 {
-                    offset.x -= ConnectorSize.x * nodeCount * 0.5f;
+                    if(asParent.HasChildrenSlots())
+                        offset.x -= ConnectorSize.x * nodeCount * 0.5f;
 
                     for (int i = 0; i < nodeCount; i++)
                     {
-                        GUI.Box(
+                        GUI.Box (
                             new Rect(dotRect.center.x - ConnectorSize.x * 0.5f + offset.x, dotRect.yMax - ConnectorSize.y * 0.25f, ConnectorSize.x, ConnectorSize.y),
                             new GUIContent(), SpaceEditorStyles.DotFlowTarget
                         );
 
-                        GUI.color = CurrentColor;
+                        if(BehaviourTreeEditor.GetInstance().ExecuteInRuntime())
+                            GUI.color = CurrentColor;
+
                         GUI.Box (
                             new Rect(dotRect.center.x - ConnectorSize.x * 0.5f + offset.x, dotRect.yMax - ConnectorSize.y * 0.25f, ConnectorSize.x, ConnectorSize.y),
                             new GUIContent(), SpaceEditorStyles.DotFlowTargetFill
@@ -272,17 +275,6 @@ namespace Framework.AI
                     }
 
                     GUI.Box(rect, GUIContent.none, SpaceEditorStyles.DotFlowTarget);
-
-                    /*if (GUI.Button(
-                        rect,
-                        new GUIContent("+")
-                    ))
-                    {
-                        if (OnNewChildNode != null)
-                        {
-                            OnNewChildNode(this, rect.center);
-                        }
-                    }*/
                 }
             }
         }

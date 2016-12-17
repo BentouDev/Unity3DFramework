@@ -10,7 +10,7 @@ namespace Framework.AI
     public class BehaviourTree : ScriptableObject
     {
         [SerializeField]
-        public List<EditorParameter> Parameters;
+        public List<GenericParameter> Parameters = new List<GenericParameter>();
 
         [HideInInspector]
         [SerializeField]
@@ -20,6 +20,8 @@ namespace Framework.AI
 
         public void BuildEmptyBlackboard(Blackboard blackboard)
         {
+            GenericParameter.BuildKnownTypeList();
+
             // Create empty parameters
         }
 

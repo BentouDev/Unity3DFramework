@@ -4,21 +4,22 @@ using UnityEngine;
 
 namespace Framework.AI
 {
-    public class Succeder : DecoratorNode
+    public class Selector : CompositeNode
     {
         public override string Name
         {
-            get { return "Succeder"; }
+            get { return "Selector"; }
         }
 
         public override string Description
         {
-            get { return "Ignores children result and always returns success"; }
+            get { return "Returns success when any child return success, returns failrue when none"; }
         }
 
-        protected override NodeResult OnUpdate(AIController controller, Blackboard blackboard)
+        protected override NodeResult OnUpdate()
         {
             throw new System.NotImplementedException();
         }
     }
 }
+

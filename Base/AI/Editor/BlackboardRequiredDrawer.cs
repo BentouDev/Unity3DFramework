@@ -1,5 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using Framework;
 using Framework.AI;
 using UnityEditor;
 using UnityEngine;
@@ -7,7 +9,7 @@ using UnityEngine;
 [CustomPropertyDrawer(typeof(Blackboard.Required))]
 public class BlackboardRequiredDrawer : PropertyDrawer
 {
-    public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+    /*public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
         var editor = BehaviourTreeEditor.GetInstance();
         if (!editor)
@@ -32,9 +34,27 @@ public class BlackboardRequiredDrawer : PropertyDrawer
         // EditorGUI.PropertyField(contentPosition, property.FindPropertyRelative("position"), GUIContent.none);
 
         EditorGUI.BeginChangeCheck();
+        
+        List<GUIContent> guiContent = new List<GUIContent>();
+        foreach (GenericParameter parameter in parameters)
+        {
+            guiContent.Add(new GUIContent(string.Format("{0} ({1})", parameter.Name, parameter.HoldType)));
+        }
 
+        int index = -1;
+        GenericParameter value;
+        if (asTaskNode.BlackboardRequired.TryGetValue(property.displayName, out value))
+        {
+            index = parameters.FindIndex(p => p.Name == value.Name && p.HoldType == value.HoldType);
+        }
 
-        EditorGUI.Popup(position, GUIContent.none, -1, new[] {new GUIContent("Sth"), new GUIContent("Other"), },(GUIStyle) "ObjectField");
+        int result = EditorGUI.Popup(position, GUIContent.none, index, guiContent.ToArray(), EditorStyles.objectField);
+
+        if (result >= 0 && result < parameters.Count)
+        {
+            var parameter = parameters[result];
+            asTaskNode.BlackboardRequired[property.displayName] = parameter;
+        }
 
         //if (GUI.Button(position, asTaskNode ? asTaskNode.Name : "null", (GUIStyle) "ObjectField"))
         {
@@ -48,13 +68,13 @@ public class BlackboardRequiredDrawer : PropertyDrawer
 
         EditorGUI.EndProperty();
 
-        /*EditorGUI.BeginChangeCheck();
+        /EditorGUI.BeginChangeCheck();
         var newScene = EditorGUI.ObjectField(position, oldPath, typeof(SceneAsset), false) as SceneAsset;
 
         if (EditorGUI.EndChangeCheck())
         {
             var newPath = AssetDatabase.GetAssetPath(newScene);
             property.stringValue = newPath;
-        }*/
-    }
+        }/
+    }*/
 }

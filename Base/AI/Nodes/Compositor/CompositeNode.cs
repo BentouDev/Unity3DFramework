@@ -5,9 +5,12 @@ using UnityEngine;
 
 namespace Framework.AI
 {
+    [System.Serializable]
     public abstract class CompositeNode : ParentNode
     {
-        public List<BehaviourTreeNode> ChildNodes { get; private set; }
+        [SerializeField]
+        [HideInInspector]
+        public List<BehaviourTreeNode> ChildNodes;
 
         protected CompositeNode()
         {

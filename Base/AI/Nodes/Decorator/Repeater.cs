@@ -4,22 +4,21 @@ using UnityEngine;
 
 namespace Framework.AI
 {
-    public class Selector : CompositeNode
+    public class Repeater : DecoratorNode
     {
         public override string Name
         {
-            get { return "Selector"; }
+            get { return "Repeater"; }
         }
 
         public override string Description
         {
-            get { return "Returns success when any child return success, returns failrue when none"; }
+            get { return "Repeats given times"; }
         }
 
-        protected override NodeResult OnUpdate(AIController controller, Blackboard blackboard)
+        protected override NodeResult OnUpdate()
         {
             throw new System.NotImplementedException();
         }
     }
 }
-

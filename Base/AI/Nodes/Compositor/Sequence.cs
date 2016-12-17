@@ -18,13 +18,13 @@ namespace Framework.AI
             get { return "Executes childs in sequence, stops execution and returns failrue on first failrue. Returns success when all childs returns success."; }
         }
         
-        public override void Init()
+        public override void OnInit()
         {
             CurrentIndex = 0;
             LastChildResult = NodeResult.Success;
         }
 
-        protected override NodeResult OnUpdate(AIController controller, Blackboard blackboard)
+        protected override NodeResult OnUpdate()
         {
             if (LastChildResult != NodeResult.Running)
             {
@@ -40,7 +40,7 @@ namespace Framework.AI
                         return NodeResult.Success;
                     }
 
-                    controller.ScheduleBefore(ChildNodes[CurrentIndex]);
+                    CurrentController.ScheduleBefore(ChildNodes[CurrentIndex]);
                 }
             }
 
