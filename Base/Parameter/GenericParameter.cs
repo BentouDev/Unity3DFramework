@@ -17,6 +17,8 @@ namespace Framework
 
         public class KnownTypeInfo
         {
+            protected internal System.Func<GenericParameter, Blackboard.IValue> Creator;
+
             public System.Type HoldType;
             public string GenericName;
 
@@ -104,6 +106,7 @@ namespace Framework
                 {
                     Getter = parameter => parameter._floats[0] > 0,
                     Setter = (parameter, value) => { parameter._floats[0] = value ? 1 : -1; },
+                    Creator = parameter => new Blackboard.Value<bool>(parameter.HoldType.Type)
                 }
             );
 
@@ -113,6 +116,7 @@ namespace Framework
                 {
                     Getter = parameter => Mathf.RoundToInt(parameter._floats[0]),
                     Setter = (parameter, value) => { parameter._floats[0] = value; },
+                    Creator = parameter => new Blackboard.Value<int>(parameter.HoldType.Type)
                 }
             );
 
@@ -121,7 +125,8 @@ namespace Framework
                 new KnownTypeInfo<float>("float")
                 {
                     Getter = parameter => parameter._floats[0],
-                    Setter = (parameter, value) => { parameter._floats[0] = value; }
+                    Setter = (parameter, value) => { parameter._floats[0] = value; },
+                    Creator = parameter => new Blackboard.Value<float>(parameter.HoldType.Type)
                 }
             );
 
@@ -130,7 +135,8 @@ namespace Framework
                 new KnownTypeInfo<Vector2>("Vector2")
                 {
                     Getter = parameter => new Vector2(parameter._floats[0], parameter._floats[1]),
-                    Setter = (parameter, vector2) => { parameter._floats[0] = vector2.x; parameter._floats[1] = vector2.y; }
+                    Setter = (parameter, vector2) => { parameter._floats[0] = vector2.x; parameter._floats[1] = vector2.y; },
+                    Creator = parameter => new Blackboard.Value<Vector2>(parameter.HoldType.Type)
                 }
             );
 
@@ -139,7 +145,8 @@ namespace Framework
                 new KnownTypeInfo<Vector3>("Vector3")
                 {
                     Getter = parameter => new Vector3(parameter._floats[0], parameter._floats[1], parameter._floats[2]),
-                    Setter = (parameter, vector3) => { parameter._floats[0] = vector3.x; parameter._floats[1] = vector3.y; parameter._floats[2] = vector3.z; }
+                    Setter = (parameter, vector3) => { parameter._floats[0] = vector3.x; parameter._floats[1] = vector3.y; parameter._floats[2] = vector3.z; },
+                    Creator = parameter => new Blackboard.Value<Vector3>(parameter.HoldType.Type)
                 }
             );
 
@@ -148,7 +155,8 @@ namespace Framework
                 new KnownTypeInfo<GameObject>("GameObject")
                 {
                     Getter = parameter => parameter._object as GameObject,
-                    Setter = (parameter, value) => { parameter._object = value; }
+                    Setter = (parameter, value) => { parameter._object = value; },
+                    Creator = parameter => new Blackboard.Value<GameObject>(parameter.HoldType.Type)
                 }
             );
 
@@ -157,7 +165,8 @@ namespace Framework
                 new KnownTypeInfo<Component>("MonoBehaviour...")
                 {
                     Getter = parameter => parameter._object as Component,
-                    Setter = (parameter, value) => { parameter._object = value; }
+                    Setter = (parameter, value) => { parameter._object = value; },
+                    Creator = parameter => new Blackboard.Value<Component>(parameter.HoldType.Type)
                 }
             );
 
@@ -166,7 +175,8 @@ namespace Framework
                 new KnownTypeInfo<ScriptableObject>("ScriptableObject...")
                 {
                     Getter = parameter => parameter._object as ScriptableObject,
-                    Setter = (parameter, value) => { parameter._object = value; }
+                    Setter = (parameter, value) => { parameter._object = value; },
+                    Creator = parameter => new Blackboard.Value<ScriptableObject>(parameter.HoldType.Type)
                 }
             );
         }
@@ -182,6 +192,24 @@ namespace Framework
             }
         }
         
+        public Blackboard.IValue CreateValue()
+        {
+#if UNITY_EDITOR
+            var knownType = GetKnownType(HoldType.Type);
+            if (knownType != null)
+            {
+                return knownType.Creator(this);
+            }
+            else
+            {
+                Debug.LogErrorFormat("Known type for {0} not found! Unable to crate IValue.", HoldType.Type);
+                return null;
+            }
+#else
+            return GetKnownType(HoldType.Type).Creator(this);
+#endif
+        }
+
         public void SetAs<T>(T value)
         {
             var type = typeof(T);
