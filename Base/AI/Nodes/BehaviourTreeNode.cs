@@ -15,9 +15,9 @@ namespace Framework.AI
 
         public abstract string Name { get; }
         public abstract string Description { get; }
-        
-        [HideInInspector]
+
         [SerializeField]
+        [HideInInspector]
         public ParentNode Parent;
 
         [SerializeField]
@@ -33,6 +33,8 @@ namespace Framework.AI
         public AIController CurrentController { get; private set; }
         public Blackboard CurrentBlackboard { get; private set; }
 
+        private bool IsInUpdate;
+
         public void SetRequiredParameter(string parameterName, GenericParameter parameter)
         {
             BlackboardRequired[parameterName] = parameter;
@@ -47,18 +49,19 @@ namespace Framework.AI
         {
             int result = -1;
 
-            if (BlackboardRequired != null)
+            if (BlackboardRequired == null)
+                return result;
+
+            GenericParameter value;
+
+            if (!BlackboardRequired.TryGetValue(parameterName, out value))
+                return result;
+
+            if(value.HoldType.Type == type)
             {
-                GenericParameter value;
-                if (BlackboardRequired.TryGetValue(parameterName, out value))
-                {
-                    if(value.HoldType.Type == type)
-                    {
-                        result = parameters.FindIndex(p => p.Name.Equals(value.Name)
-                                                    && p.HoldType.Equals(value.HoldType)
-                                                    && p.HoldType.Type == type);
-                    }
-                }
+                result = parameters.FindIndex(p => p.Name.Equals(value.Name)
+                                                   && p.HoldType.Equals(value.HoldType)
+                                                   && p.HoldType.Type == type);
             }
 
             return result;
@@ -107,19 +110,32 @@ namespace Framework.AI
 
         public virtual void OnEnd(AIController controller) { }
         
-        private void GetFromBlackboard()
+        private void GetFromBlackboard(Blackboard blackboard)
         {
             foreach (var pair in BlackboardRequired)
             {
-                CurrentBlackboard.SetToParameter(pair.Value);
+                blackboard.SetToParameter(pair.Value);
             }
         }
 
-        private void SetToBlackboard()
+        private void SetToBlackboard(Blackboard blackboard)
         {
             foreach (var pair in BlackboardRequired)
             {
-                CurrentBlackboard.GetFromParameter(pair.Value);
+                blackboard.GetFromParameter(pair.Value);
+            }
+        }
+
+        protected void SwitchToNode(BehaviourTreeNode node)
+        {
+            if (IsInUpdate && CurrentController)
+            {
+                CurrentController.RequestSwitchToNode(this, node);
+            }
+            else
+            {
+                CurrentController.RequestSwitchToNode(null, null);
+                Debug.LogError("Unable to switch state outside of OnUpdate()!", this);
             }
         }
 
@@ -128,11 +144,18 @@ namespace Framework.AI
             CurrentController = controller;
             CurrentBlackboard = blackboard;
             
-            GetFromBlackboard();
+            GetFromBlackboard(CurrentBlackboard);
+
+            IsInUpdate = true;
 
             var result = OnUpdate();
-            
-            SetToBlackboard();
+
+            IsInUpdate = false;
+
+            SetToBlackboard(CurrentBlackboard);
+
+            CurrentController = null;
+            CurrentBlackboard = null;
 
             return result;
         }
