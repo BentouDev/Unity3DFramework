@@ -6,7 +6,8 @@ namespace Framework.AI
 {
     public class Sequence : CompositeNode
     {
-        protected int CurrentIndex;
+        [Blackboard.Required]
+        public int CurrentChildIndex;
 
         public override string Name
         {
@@ -20,27 +21,35 @@ namespace Framework.AI
         
         public override void OnInit()
         {
-            CurrentIndex = 0;
-            LastChildResult = NodeResult.Success;
+
         }
 
         protected override NodeResult OnUpdate()
         {
-            if (LastChildResult != NodeResult.Running)
+            var currentChild = GetChildNodes()[CurrentChildIndex];
+            var currentChildResult = CurrentController.CheckNodeStatus(currentChild);
+            if (currentChildResult != NodeResult.Running)
             {
-                if (LastChildResult == NodeResult.Failrue)
+                if (currentChildResult == NodeResult.Failrue)
+                {
                     return NodeResult.Failrue;
+                }
+                if (currentChildResult == NodeResult.Suspended)
+                {
+                    SwitchToNode(ChildNodes[CurrentChildIndex]);
+                    return NodeResult.Running;
+                }
                 else
                 {
-                    CurrentIndex++;
+                    CurrentChildIndex++;
 
-                    if (CurrentIndex == ChildNodes.Count)
+                    if (CurrentChildIndex == ChildNodes.Count)
                     {
-                        CurrentIndex = 0;
+                        CurrentChildIndex = 0;
                         return NodeResult.Success;
                     }
 
-                    CurrentController.ScheduleBefore(ChildNodes[CurrentIndex]);
+                    SwitchToNode(ChildNodes[CurrentChildIndex]);
                 }
             }
 

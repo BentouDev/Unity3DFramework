@@ -8,26 +8,22 @@ namespace Framework.AI
     {
         public override string Name
         {
-            get { return "Inverter"; }
+            get { return "Negation"; }
         }
 
         public override string Description
         {
-            get { return "Boolean negation"; }
+            get { return "Boolean negation of child result"; }
         }
-
-        public override void OnInit()
-        {
-            LastChildResult = NodeResult.Success;
-        }
-
+        
         protected override NodeResult OnUpdate()
         {
-            if (LastChildResult != NodeResult.Running)
+            var childResult = CurrentController.CheckNodeStatus(DecoratedNode);
+            if (childResult != NodeResult.Running)
             {
-                if (LastChildResult == NodeResult.Success)
+                if (childResult == NodeResult.Success)
                     return NodeResult.Failrue;
-                else if (LastChildResult == NodeResult.Failrue)
+                else if (childResult == NodeResult.Failrue)
                     return NodeResult.Success;
             }
 

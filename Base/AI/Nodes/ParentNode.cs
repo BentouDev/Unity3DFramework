@@ -7,8 +7,6 @@ namespace MyNamespace
 {
     public abstract class ParentNode : BehaviourTreeNode
     {
-        public NodeResult LastChildResult { get; set; }
-
         public virtual List<BehaviourTreeNode> GetChildNodes()
         {
             return EmptyList;
