@@ -123,11 +123,11 @@ public class BlackboardRequiredDrawer : PropertyDrawer
                 {
                     var parameter = Parameters[result - 1];
 
-                    AsNode.SetRequiredParameter(property.displayName, parameter);
+                    AsNode.SetRequiredParameter(property.name, parameter);
                 }
                 else
                 {
-                    AsNode.ClearRequiredParamerer(property.displayName);
+                    AsNode.ClearRequiredParamerer(property.name);
                 }
             }
             if (EditorGUI.EndChangeCheck())
