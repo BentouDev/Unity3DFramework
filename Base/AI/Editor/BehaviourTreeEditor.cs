@@ -147,6 +147,11 @@ namespace Framework.AI
             return RuntimeController != null;
         }
 
+        public NodeResult CheckNodeStatus(BehaviourTreeNode node)
+        {
+            return RuntimeController.CheckNodeStatus(node);
+        }
+
         private void CheckForRuntimeController()
         {
             if (!EditorApplication.isPlaying || EditorApplication.isPaused)

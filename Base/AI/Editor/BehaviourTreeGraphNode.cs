@@ -151,10 +151,10 @@ namespace Framework.AI
             if (BehaviourTreeEditor.GetInstance() != null
             &&  BehaviourTreeEditor.GetInstance().ExecuteInRuntime())
             {
-                // TODO : Expose last result from AIController here
-
-                /*switch (TreeNode.LastResult)
+                switch (BehaviourTreeEditor.GetInstance().CheckNodeStatus(TreeNode))
                 {
+                    //case NodeResult.Suspended:
+                      //  return Color.gray;
                     case NodeResult.Success:
                         return Color.green;
                     case NodeResult.Failrue:
@@ -163,9 +163,7 @@ namespace Framework.AI
                         return Color.yellow;
                     default:
                         return TargetColor;
-                }*/
-
-                return TargetColor;
+                }
             }
             else if (TreeNode.IsRootNode())
             {
