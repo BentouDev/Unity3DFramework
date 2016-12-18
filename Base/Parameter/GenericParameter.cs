@@ -1,6 +1,8 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -16,8 +18,8 @@ namespace Framework
 
         public class KnownTypeInfo
         {
-            public string DisplayedName;
             public System.Type HoldType;
+            public string GenericName;
 
 #if UNITY_EDITOR
             public DrawFunc DrawFunc;
@@ -32,7 +34,7 @@ namespace Framework
 
             protected internal KnownTypeInfo(string name)
             {
-                DisplayedName = name;
+                GenericName = name;
                 HoldType = typeof(T);
             }
         }
@@ -46,13 +48,24 @@ namespace Framework
         public string Name;
         
         [SerializeField]
-        public readonly SerializedType HoldType;
+        public SerializedType HoldType;
 
         [SerializeField]
         private Object _object;
 
         [SerializeField]
-        private readonly float[] _floats = new float[4];
+        private float[] _floats = new float[4];
+
+        private static System.Type _componentType;
+        private static System.Type ComponentType
+        {
+            get
+            {
+                if (_componentType == null)
+                    _componentType = typeof(Component);
+                return _componentType;
+            }
+        }
 
         private static readonly Dictionary<string, KnownTypeInfo> KnownTypes = new Dictionary<string, KnownTypeInfo>();
 
@@ -70,7 +83,7 @@ namespace Framework
 
         private static void InsertKnownType<T>(KnownTypeInfo<T> info)
         {
-            KnownTypes[typeof(T).Name] = info;
+            KnownTypes[typeof(T).FullName] = info;
         }
 
         public static void BuildKnownTypeList()
@@ -81,6 +94,15 @@ namespace Framework
                 {
                     Getter = parameter => parameter._floats[0] > 0,
                     Setter = (parameter, value) => { parameter._floats[0] = value ? 1 : -1; },
+                }
+            );
+
+            InsertKnownType
+            (
+                new KnownTypeInfo<int>("int")
+                {
+                    Getter = parameter => Mathf.RoundToInt(parameter._floats[0]),
+                    Setter = (parameter, value) => { parameter._floats[0] = value; },
                 }
             );
 
@@ -122,9 +144,9 @@ namespace Framework
 
             InsertKnownType
             (
-                new KnownTypeInfo<MonoBehaviour>("MonoBehaviour...")
+                new KnownTypeInfo<Component>("MonoBehaviour...")
                 {
-                    Getter = parameter => parameter._object as MonoBehaviour,
+                    Getter = parameter => parameter._object as Component,
                     Setter = (parameter, value) => { parameter._object = value; }
                 }
             );
@@ -132,15 +154,11 @@ namespace Framework
 
         private void TypeGuard(System.Type type)
         {
-            System.Func<Vector2> getter = () => new Vector2();
-
-            System.Action<Vector2> setter = (v) => { };
-
-            if (type != HoldType.Type)
+            if (type != HoldType.Type && !HoldType.Type.IsSubclassOf(type))
             {
                 throw new System.InvalidOperationException (
                     string.Format("Unable to use type '{0}' on parameter of type {1}!", 
-                    type.AssemblyQualifiedName, HoldType.SerializedTypeName)
+                    type.FullName, HoldType.Type.FullName)
                 );
             }
         }
@@ -150,7 +168,7 @@ namespace Framework
             var type = typeof(T);
             TypeGuard(type);
 
-            ((KnownTypeInfo<T>)KnownTypes[type.Name]).Setter(this, value);
+            ((KnownTypeInfo<T>)KnownTypes[type.FullName]).Setter(this, value);
         }
 
         public T GetAs<T>()
@@ -158,13 +176,13 @@ namespace Framework
             var type = typeof(T);
             TypeGuard(type);
 
-            return ((KnownTypeInfo<T>)KnownTypes[type.Name]).Getter(this);
+            return ((KnownTypeInfo<T>)KnownTypes[type.FullName]).Getter(this);
         }
 
 #if UNITY_EDITOR
         public static void Layout(GenericParameter parameter)
         {
-            var typename = parameter.HoldType.Type.Name;
+            var typename = parameter.HoldType.Type.FullName;
 
             KnownTypeInfo info;
             if(KnownTypes.TryGetValue(typename, out info))
@@ -175,13 +193,55 @@ namespace Framework
 
         public static void Draw(Rect drawRect, GenericParameter parameter)
         {
-            var typename = parameter.HoldType.Type.Name;
+            var typename = parameter.HoldType.Type.FullName;
 
             KnownTypeInfo info;
             if (KnownTypes.TryGetValue(typename, out info))
             {
                 info.DrawFunc(drawRect, parameter);
             }
+        }
+
+        public static string GetDisplayedName(Type type)
+        {
+            var typename = type.FullName;
+
+            KnownTypeInfo info;
+            if (KnownTypes.TryGetValue(typename, out info))
+            {
+                return info.GenericName;
+            }
+
+            if (type.IsSubclassOf(ComponentType)
+            && KnownTypes.ContainsKey(ComponentType.FullName))
+            {   
+                return type.Name;
+            }
+
+            return null;
+        }
+
+        public static KnownTypeInfo GetKnownType(Type type)
+        {
+            var typename = type.FullName;
+
+            KnownTypeInfo info;
+            if (KnownTypes.TryGetValue(typename, out info))
+            {
+                return info;
+            }
+
+            if (type.IsSubclassOf(ComponentType))
+            {
+                typename = ComponentType.FullName;
+
+                if (KnownTypes.TryGetValue(typename, out info))
+                {
+                    return info;
+                }
+            }
+
+            return null;
         }
 #endif
     }

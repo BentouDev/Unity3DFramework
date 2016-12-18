@@ -1,9 +1,10 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 [System.Serializable]
-public class SerializedType
+public class SerializedType : IEquatable<SerializedType>
 {
     [SerializeField]
     private string _serializedTypeName;
@@ -47,5 +48,10 @@ public class SerializedType
     {
         _type = type;
         _serializedTypeName = _type != null ? _type.AssemblyQualifiedName : null;
+    }
+
+    public bool Equals(SerializedType other)
+    {
+        return string.Equals(this._serializedTypeName, other._serializedTypeName);
     }
 }

@@ -15,7 +15,7 @@ namespace Framework.AI
 
         public override string Description
         {
-            get { return "Executes childs in sequence, stops execution and returns failrue on first failrue. Returns success when all childs returns success."; }
+            get { return "Executes childs in sequence, stops execution and returns failrue on first failrue.\nReturns success when all childs returns success."; }
         }
         
         public override void OnInit()

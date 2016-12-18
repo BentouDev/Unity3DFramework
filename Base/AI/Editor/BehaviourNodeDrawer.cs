@@ -17,11 +17,11 @@ public class BehaviourNodeDrawer : Editor
     public override void OnInspectorGUI()
     {
         GUILayout.Label("Description", EditorStyles.boldLabel);
-        EditorGUILayout.LabelField(Node.Description);
+        EditorGUILayout.TextArea(Node.Description, SpaceEditorStyles.MultilineLabel);
 
         EditorGUILayout.Space();
         GUILayout.Label("Parameters", EditorStyles.boldLabel);
 
-        DrawDefaultInspector();
+        InspectorUtils.DrawDefaultInspectorWithoutScriptField(serializedObject);
     }
 }

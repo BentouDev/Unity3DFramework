@@ -1,80 +1,140 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Linq.Expressions;
+using System.Reflection;
 using Framework;
 using Framework.AI;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Events;
+using Debug = UnityEngine.Debug;
 
 [CustomPropertyDrawer(typeof(Blackboard.Required))]
 public class BlackboardRequiredDrawer : PropertyDrawer
 {
-    /*public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+    private static readonly int BoxBackgroundHeight = 4;
+    private static readonly int BoxBackgroundMargin = 2;
+    private static readonly int FieldHeight = 22;
+
+    private List<GenericParameter> Parameters { get; set; }
+
+    private BehaviourTreeNode AsNode { get; set; }
+
+    private BehaviourTreeEditor Editor { get; set; }
+
+    private List<GUIContent> ParameterListContent { get; set; }
+
+    private string Typename { get; set; }
+
+    public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
     {
-        var editor = BehaviourTreeEditor.GetInstance();
-        if (!editor)
+        return FieldHeight;
+    }
+
+    private void DrawBackground(Rect position, Color color)
+    {
+        var boxRect = position;
+            boxRect.height += BoxBackgroundHeight;
+        
+        GUI.color = color;
+        GUI.Box(boxRect, GUIContent.none);
+        GUI.color = Color.white;
+    }
+    
+    private void SetContentForParameters()
+    {
+        if(ParameterListContent == null)
+            ParameterListContent = new List<GUIContent>();
+
+        ParameterListContent.Clear();
+
+        ParameterListContent.Add(new GUIContent(string.Format("none ({0})", Typename)));
+
+        foreach (GenericParameter parameter in Parameters.Where(p => p.HoldType.Type == fieldInfo.FieldType))
+        {
+            ParameterListContent.Add(new GUIContent(parameter.Name));
+        }
+    }
+
+    private bool Initialize(ref Rect position, SerializedProperty property, GUIContent label)
+    {
+        position.height = base.GetPropertyHeight(property, label);
+
+        Editor = BehaviourTreeEditor.GetInstance();
+        if (!Editor)
+        {
+            EditorGUI.HelpBox(position, "Unable to get BehaviourTreeEditor instance!", MessageType.Error);
+            return false;
+        }
+
+        Parameters = Editor.GetCurrentAsset().Parameters;
+
+        AsNode = (BehaviourTreeNode) property.serializedObject.targetObject;
+
+        Typename = GenericParameter.GetDisplayedName(fieldInfo.FieldType);
+        if (Typename == null)
+        {
+            EditorGUI.HelpBox(position, string.Format("Type {0} is not a known type!", fieldInfo.FieldType), MessageType.Error);
+            return false;
+        }
+        
+        if (!Editor.CanEditNode(AsNode))
+        {
+            EditorGUI.HelpBox(position, "Unable to edit this node!", MessageType.Error);
+            return false;
+        }
+
+        if (!(attribute is Blackboard.Required))
+        {
+            EditorGUI.HelpBox(position, "Unable to get Required attribute!", MessageType.Error);
+            return false;
+        }
+
+        SetContentForParameters();
+
+        return true;
+    }
+
+    public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+    {
+        if (!Initialize(ref position, property, label))
             return;
 
-        // Check if nodes tree is the same as editor asset
-        // If so, allow editing
-        // On click on field show popup with available blackboard parameters, check type in there
-        // Save key name 
+        int index = AsNode.GetGenericParameterIndex(property.name, Parameters);
 
-        var asTaskNode = (TaskNode)property.serializedObject.targetObject;
-
-        if (!editor.CanEditNode(asTaskNode))
-            return;
-
-        var parameters = editor.GetCurrentAsset().Parameters;
+        DrawBackground(position, index == -1 ? Color.red : Color.white);
 
         label = EditorGUI.BeginProperty(position, label, property);
-        position = EditorGUI.PrefixLabel(position, new GUIContent(property.displayName));
-        
-        EditorGUI.indentLevel = 0;
-        // EditorGUI.PropertyField(contentPosition, property.FindPropertyRelative("position"), GUIContent.none);
-
-        EditorGUI.BeginChangeCheck();
-        
-        List<GUIContent> guiContent = new List<GUIContent>();
-        foreach (GenericParameter parameter in parameters)
         {
-            guiContent.Add(new GUIContent(string.Format("{0} ({1})", parameter.Name, parameter.HoldType)));
-        }
+            position.y += BoxBackgroundHeight * 0.5f;
+            position    = EditorGUI.PrefixLabel(position, new GUIContent(property.displayName));
 
-        int index = -1;
-        GenericParameter value;
-        if (asTaskNode.BlackboardRequired.TryGetValue(property.displayName, out value))
-        {
-            index = parameters.FindIndex(p => p.Name == value.Name && p.HoldType == value.HoldType);
-        }
+            EditorGUI.indentLevel = 0;
+            EditorGUI.BeginChangeCheck();
+            {
+                var objectFieldRect = position;
+                    objectFieldRect.y += BoxBackgroundMargin;
 
-        int result = EditorGUI.Popup(position, GUIContent.none, index, guiContent.ToArray(), EditorStyles.objectField);
+                int result = EditorGUI.Popup(objectFieldRect, GUIContent.none, index + 1, ParameterListContent.ToArray(), (GUIStyle)"ShurikenObjectField");
+                
+                if (result > 0 && result <= Parameters.Count)
+                {
+                    var parameter = Parameters[result - 1];
 
-        if (result >= 0 && result < parameters.Count)
-        {
-            var parameter = parameters[result];
-            asTaskNode.BlackboardRequired[property.displayName] = parameter;
-        }
+                    AsNode.SetRequiredParameter(property.displayName, parameter);
+                }
+                else
+                {
+                    AsNode.ClearRequiredParamerer(property.displayName);
+                }
+            }
+            if (EditorGUI.EndChangeCheck())
+            {
 
-        //if (GUI.Button(position, asTaskNode ? asTaskNode.Name : "null", (GUIStyle) "ObjectField"))
-        {
-            
+            }
         }
-        
-        if (EditorGUI.EndChangeCheck())
-        {
-            
-        }
-
         EditorGUI.EndProperty();
-
-        /EditorGUI.BeginChangeCheck();
-        var newScene = EditorGUI.ObjectField(position, oldPath, typeof(SceneAsset), false) as SceneAsset;
-
-        if (EditorGUI.EndChangeCheck())
-        {
-            var newPath = AssetDatabase.GetAssetPath(newScene);
-            property.stringValue = newPath;
-        }/
-    }*/
+    }
 }

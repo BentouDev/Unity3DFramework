@@ -350,6 +350,7 @@ namespace Framework.AI
                 if (obj)
                 {
                     obj.EditorPosition = position;
+                    obj.name = obj.Name;
 
                     behNode.TreeNode.AsParentNode().AddOrSetChild(obj);
 
@@ -377,6 +378,7 @@ namespace Framework.AI
                     if (obj)
                     {
                         obj.EditorPosition = position;
+                        obj.name = obj.Name + " (Root)";
 
                         AddToAsset(obj);
 
@@ -503,7 +505,7 @@ namespace Framework.AI
             for (int i = 0; i < types.Count; i++)
             {
                 var type = types[i];
-                menu.AddItem(new GUIContent(type.DisplayedName), false, CreateNewParameterCallback(type.HoldType));
+                menu.AddItem(new GUIContent(type.GenericName), false, CreateNewParameterCallback(type.HoldType));
             }
 
             menu.ShowAsContext();

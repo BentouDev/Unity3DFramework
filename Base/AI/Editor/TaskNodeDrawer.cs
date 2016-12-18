@@ -16,12 +16,12 @@ public class TaskNodeDrawer : Editor
 
     public override void OnInspectorGUI()
     {
-        GUILayout.TextArea("Description", EditorStyles.boldLabel);
-        EditorGUILayout.LabelField(Node.Description);
+        GUILayout.Label("Description", EditorStyles.boldLabel);
+        EditorGUILayout.TextArea(Node.Description, SpaceEditorStyles.MultilineLabel);
 
         EditorGUILayout.Space();
         GUILayout.Label("Parameters", EditorStyles.boldLabel);
 
-        DrawDefaultInspector();
+        InspectorUtils.DrawDefaultInspectorWithoutScriptField(serializedObject);
     }
 }

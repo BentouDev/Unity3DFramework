@@ -5,12 +5,20 @@ using UnityEngine;
 
 namespace Framework
 {
+    [InitializeOnLoad]
     public static class GenericParamUtils
     {
         public static int LabelWidth = 100;
         public static int FieldWidth = 150;
         public static int FieldHeight = 16;
-        
+
+        static GenericParamUtils()
+        {
+            GenericParameter.BuildKnownTypeList();
+            SetDrawersForKnownTypes();
+            Debug.LogFormat("Regenerated GenericParam for : {0} types", GenericParameter.GetKnownTypeDictionary().Count);
+        }
+
         public static void SetDrawersForKnownTypes()
         {
             SetDrawerForKnownType<int>(DrawAsInt, LayoutAsInt);
@@ -18,15 +26,25 @@ namespace Framework
             SetDrawerForKnownType<float>(DrawAsFloat, LayoutAsFloat);
             SetDrawerForKnownType<Vector2>(DrawAsVec2, LayoutAsVec2);
             SetDrawerForKnownType<Vector3>(DrawAsVec3, LayoutAsVec3);
-            SetDrawerForKnownType<GameObject>(DrawAsObject, LayoutAsObject);
-            SetDrawerForKnownType<MonoBehaviour>(DrawAsObject, LayoutAsObject);
+            SetDrawerForKnownType<GameObject>(DrawAsObject<GameObject>, LayoutAsGenericObject);
+            SetDrawerForKnownType<MonoBehaviour>(DrawAsGenericObject, LayoutAsGenericObject);
         }
 
         private static void SetDrawerForKnownType<T>(GenericParameter.DrawFunc draw, GenericParameter.LayoutFunc layout)
         {
-            var info = GenericParameter.GetKnownTypeDictionary()[typeof(T).Name];
-            info.DrawFunc = draw;
-            info.LayoutFunc = layout;
+            var typename = typeof(T).FullName;
+            var dic = GenericParameter.GetKnownTypeDictionary();
+            GenericParameter.KnownTypeInfo info;
+
+            if(dic.TryGetValue(typename, out info))
+            {
+                info.DrawFunc = draw;
+                info.LayoutFunc = layout;
+            }
+            else
+            {
+                Debug.LogErrorFormat("GenericParameter for type {0} was not found", typename);
+            }
         }
 
         public static void DrawParameter(Rect drawRect, GenericParameter parameter)
@@ -41,7 +59,21 @@ namespace Framework
 
         #region Draw
 
-        private static void DrawAsObject(Rect rect, GenericParameter parameter)
+        private static void DrawAsObject<T>(Rect rect, GenericParameter parameter) where T : UnityEngine.Object
+        {
+            var width = rect.width;
+            rect.width = width * 0.45f;
+
+            parameter.Name = EditorGUI.TextField(rect, parameter.Name, SpaceEditorStyles.EditableLabel);
+
+            rect.width = width * 0.5f;
+            rect.x += rect.width;
+
+            T result = (T) EditorGUI.ObjectField(rect, parameter.GetAs<T>(), parameter.HoldType.Type, true);
+            parameter.SetAs(result);
+        }
+
+        private static void DrawAsGenericObject(Rect rect, GenericParameter parameter)
         {
             var width = rect.width;
             rect.width = width * 0.45f;
@@ -135,13 +167,24 @@ namespace Framework
         #endregion
 
         #region Layout
-
-        private static void LayoutAsObject(GenericParameter parameter)
+        
+        private static void LayoutAsObject<T>(GenericParameter parameter) where T : UnityEngine.Object
         {
             EditorGUILayout.BeginHorizontal();
             {
                 parameter.Name = EditorGUILayout.TextField(parameter.Name, GUILayout.Width(LabelWidth));
-                var result = EditorGUILayout.ObjectField(parameter.GetAs<Object>(), parameter.HoldType.Type, false, GUILayout.Width(FieldWidth));
+                T result = (T) EditorGUILayout.ObjectField(parameter.GetAs<T>(), parameter.HoldType.Type, true, GUILayout.Width(FieldWidth));
+                parameter.SetAs(result);
+            }
+            EditorGUILayout.EndHorizontal();
+        }
+
+        private static void LayoutAsGenericObject(GenericParameter parameter)
+        {
+            EditorGUILayout.BeginHorizontal();
+            {
+                parameter.Name = EditorGUILayout.TextField(parameter.Name, GUILayout.Width(LabelWidth));
+                var result = EditorGUILayout.ObjectField(parameter.GetAs<Object>(), parameter.HoldType.Type, true, GUILayout.Width(FieldWidth));
                 parameter.SetAs(result);
             }
             EditorGUILayout.EndHorizontal();

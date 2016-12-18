@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using MyNamespace;
 using UnityEngine;
 using UnityEngine.Events;
@@ -8,7 +9,7 @@ using UnityEngine.Events;
 namespace Framework.AI
 {
     [System.Serializable]
-    public abstract class BehaviourTreeNode : ScriptableObject
+    public abstract class BehaviourTreeNode : ScriptableObject, ISerializationCallbackReceiver
     {
         protected static readonly List<BehaviourTreeNode> EmptyList = new List<BehaviourTreeNode>();
 
@@ -20,13 +21,64 @@ namespace Framework.AI
         public ParentNode Parent;
 
         [SerializeField]
+        [HideInInspector]
+        private List<string> RequiredKeys;
+
+        [SerializeField]
+        [HideInInspector]
+        private List<GenericParameter> RequiredParameters;
+
         public Dictionary<string, GenericParameter> BlackboardRequired = new Dictionary<string, GenericParameter>();
-        
+
         public AIController CurrentController { get; private set; }
         public Blackboard CurrentBlackboard { get; private set; }
 
         public NodeResult LastResult { get; private set; }
-        
+
+        public void SetRequiredParameter(string parameterName, GenericParameter parameter)
+        {
+            BlackboardRequired[parameterName] = parameter;
+        }
+
+        public void ClearRequiredParamerer(string parameterName)
+        {
+            BlackboardRequired.Remove(parameterName);
+        }
+
+        public int GetGenericParameterIndex(string parameterName, List<GenericParameter> parameters)
+        {
+            int result = -1;
+
+            if (BlackboardRequired != null)
+            {
+                GenericParameter value;
+                if (BlackboardRequired.TryGetValue(parameterName, out value))
+                {
+                    result = parameters.FindIndex(p => p.Name.Equals(value.Name) && p.HoldType.Equals(value.HoldType));
+                }
+            }
+
+            return result;
+        }
+
+        public void OnBeforeSerialize()
+        {
+            RequiredKeys = BlackboardRequired.Keys.ToList();
+            RequiredParameters = BlackboardRequired.Values.ToList();
+        }
+
+        public void OnAfterDeserialize()
+        {
+            BlackboardRequired = new Dictionary<string, GenericParameter>();
+            for (int i = 0; i < RequiredKeys.Count; i++)
+            {
+                BlackboardRequired[RequiredKeys[i]] = RequiredParameters[i];
+            }
+
+            RequiredKeys.Clear();
+            RequiredParameters.Clear();
+        }
+
         public bool IsRootNode()
         {
             return Parent == null;
@@ -54,7 +106,7 @@ namespace Framework.AI
         
         private void GetFromBlackboard()
         {
-            foreach (var requirement in BlackboardRequired)
+            // foreach (var requirement in BlackboardRequired)
             {
                 // CurrentBlackboard.SetToParameter(requirement.Value);
                 // requirement.Value.SetParameter.Invoke(CurrentBlackboard.GetValue(parameter.Type, parameter.Name));
@@ -63,7 +115,7 @@ namespace Framework.AI
 
         private void SetToBlackboard()
         {
-            foreach (var requirement in BlackboardRequired)
+            // foreach (var requirement in BlackboardRequired)
             {
                 // CurrentBlackboard.GetFromParameter(requirement.Value);
                 // Maybe blackboard set parameter? And throw exception?

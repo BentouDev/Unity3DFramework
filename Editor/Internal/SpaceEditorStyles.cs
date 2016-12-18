@@ -16,9 +16,23 @@ public static class SpaceEditorStyles
             return _skin;
         }
     }
-    
-    private static GUIStyle _editableLabel;
 
+    private static GUIStyle _multilineLabel;
+    public static GUIStyle MultilineLabel
+    {
+        get
+        {
+            if (_multilineLabel == null)
+            {
+                _multilineLabel = new GUIStyle(EditorStyles.label);
+                _multilineLabel.wordWrap = true;
+            }
+
+            return _multilineLabel;
+        }
+    }
+
+    private static GUIStyle _editableLabel;
     public static GUIStyle EditableLabel
     {
         get
