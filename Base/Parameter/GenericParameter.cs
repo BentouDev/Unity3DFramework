@@ -56,6 +56,17 @@ namespace Framework
         [SerializeField]
         private float[] _floats = new float[4];
 
+        private static System.Type _scriptableObjectType;
+        private static System.Type ScriptableObjectType
+        {
+            get
+            {
+                if (_scriptableObjectType == null)
+                    _scriptableObjectType = typeof(ScriptableObject);
+                return _scriptableObjectType;
+            }
+        }
+
         private static System.Type _componentType;
         private static System.Type ComponentType
         {
@@ -150,6 +161,15 @@ namespace Framework
                     Setter = (parameter, value) => { parameter._object = value; }
                 }
             );
+
+            InsertKnownType
+            (
+                new KnownTypeInfo<ScriptableObject>("ScriptableObject...")
+                {
+                    Getter = parameter => parameter._object as ScriptableObject,
+                    Setter = (parameter, value) => { parameter._object = value; }
+                }
+            );
         }
 
         private void TypeGuard(System.Type type)
@@ -200,6 +220,18 @@ namespace Framework
             {
                 info.DrawFunc(drawRect, parameter);
             }
+
+            if (parameter.HoldType.Type.IsSubclassOf(ComponentType)
+            && KnownTypes.TryGetValue(ComponentType.FullName, out info))
+            {
+                info.DrawFunc(drawRect, parameter);
+            }
+
+            if (parameter.HoldType.Type.IsSubclassOf(ScriptableObjectType)
+            && KnownTypes.TryGetValue(ScriptableObjectType.FullName, out info))
+            {
+                info.DrawFunc(drawRect, parameter);
+            }
         }
 
         public static string GetDisplayedName(Type type)
@@ -215,6 +247,12 @@ namespace Framework
             if (type.IsSubclassOf(ComponentType)
             && KnownTypes.ContainsKey(ComponentType.FullName))
             {   
+                return type.Name;
+            }
+
+            if (type.IsSubclassOf(ScriptableObjectType)
+            && KnownTypes.ContainsKey(ScriptableObjectType.FullName))
+            {
                 return type.Name;
             }
 
@@ -234,6 +272,16 @@ namespace Framework
             if (type.IsSubclassOf(ComponentType))
             {
                 typename = ComponentType.FullName;
+
+                if (KnownTypes.TryGetValue(typename, out info))
+                {
+                    return info;
+                }
+            }
+
+            if (type.IsSubclassOf(ScriptableObjectType))
+            {
+                typename = ScriptableObjectType.FullName;
 
                 if (KnownTypes.TryGetValue(typename, out info))
                 {

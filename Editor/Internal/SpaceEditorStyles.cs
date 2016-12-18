@@ -17,18 +17,41 @@ public static class SpaceEditorStyles
         }
     }
 
-    private static GUIStyle _multilineLabel;
-    public static GUIStyle MultilineLabel
+    private static GUIStyle _listItem;
+    public static GUIStyle ListItem
     {
         get
         {
-            if (_multilineLabel == null)
+            if (_listItem == null)
             {
-                _multilineLabel = new GUIStyle(EditorStyles.label);
-                _multilineLabel.wordWrap = true;
+                _listItem = new GUIStyle(EditorStyles.label);
+                _listItem.onActive.background = ActiveBackground;
+                _listItem.active.background = ActiveBackground;
+                _listItem.onFocused.background = ActiveBackground;
+                _listItem.focused.background = ActiveBackground;
             }
 
-            return _multilineLabel;
+            return _listItem;
+        }
+    }
+
+    private static GUIStyle _selectedListItem;
+    public static GUIStyle SelectedListItem
+    {
+        get
+        {
+            if (_selectedListItem == null)
+            {
+                _selectedListItem = new GUIStyle(EditorStyles.label);
+                _selectedListItem.onNormal.background = ActiveBackground;
+                _selectedListItem.normal.background = ActiveBackground;
+                _selectedListItem.onActive.background = ActiveBackground;
+                _selectedListItem.active.background = ActiveBackground;
+                _selectedListItem.onFocused.background = ActiveBackground;
+                _selectedListItem.focused.background = ActiveBackground;
+            }
+
+            return _selectedListItem;
         }
     }
 

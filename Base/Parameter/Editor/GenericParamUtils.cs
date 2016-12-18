@@ -27,7 +27,8 @@ namespace Framework
             SetDrawerForKnownType<Vector2>(DrawAsVec2, LayoutAsVec2);
             SetDrawerForKnownType<Vector3>(DrawAsVec3, LayoutAsVec3);
             SetDrawerForKnownType<GameObject>(DrawAsObject<GameObject>, LayoutAsGenericObject);
-            SetDrawerForKnownType<MonoBehaviour>(DrawAsGenericObject, LayoutAsGenericObject);
+            SetDrawerForKnownType<Component>(DrawAsObject<Component>, LayoutAsGenericObject);
+            SetDrawerForKnownType<ScriptableObject>(DrawAsObject<ScriptableObject>, LayoutAsGenericObject);
         }
 
         private static void SetDrawerForKnownType<T>(GenericParameter.DrawFunc draw, GenericParameter.LayoutFunc layout)

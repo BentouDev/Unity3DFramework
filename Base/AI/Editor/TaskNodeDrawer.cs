@@ -17,7 +17,7 @@ public class TaskNodeDrawer : Editor
     public override void OnInspectorGUI()
     {
         GUILayout.Label("Description", EditorStyles.boldLabel);
-        EditorGUILayout.TextArea(Node.Description, SpaceEditorStyles.MultilineLabel);
+        EditorGUILayout.TextArea(Node.Description, EditorStyles.wordWrappedLabel);
 
         EditorGUILayout.Space();
         GUILayout.Label("Parameters", EditorStyles.boldLabel);

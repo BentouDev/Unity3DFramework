@@ -525,21 +525,37 @@ namespace Framework.AI
         {
             return () =>
             {
-                AddNewParameter(type);
+                OnAddNewParameter(type);
             };
         }
 
-        private void AddNewParameter(Type type)
+        private void AddNewParam(Type type)
         {
             string paramName = StringUtils.MakeUnique(string.Format("New {0}", type.Name), TreeAsset.Parameters.Select(p => p.Name));
 
-            if(type != typeof(MonoBehaviour))
-                TreeAsset.Parameters.Add (
-                    new GenericParameter(type)
-                    {
-                        Name = paramName
-                    }
-                );
+            TreeAsset.Parameters.Add(
+               new GenericParameter(type)
+               {
+                   Name = paramName
+               }
+           );
+        }
+
+        private void OnObjectReferenceTypeSelected(System.Type type)
+        {
+            AddNewParam(type);
+        }
+
+        private void OnAddNewParameter(Type type)
+        {
+            if (type.IsSubclassOf(typeof(UnityEngine.Object)) && type != typeof(GameObject))
+            {
+                TypeReferencePicker.ShowWindow(OnObjectReferenceTypeSelected, t => t.IsSubclassOf(type));
+            }
+            else
+            {
+                AddNewParam(type);
+            }
         }
 
         #endregion

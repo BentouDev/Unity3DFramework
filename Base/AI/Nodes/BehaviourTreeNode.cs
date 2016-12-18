@@ -45,7 +45,7 @@ namespace Framework.AI
             BlackboardRequired.Remove(parameterName);
         }
 
-        public int GetGenericParameterIndex(string parameterName, List<GenericParameter> parameters)
+        public int GetGenericParameterIndex(string parameterName, System.Type type, List<GenericParameter> parameters)
         {
             int result = -1;
 
@@ -54,7 +54,12 @@ namespace Framework.AI
                 GenericParameter value;
                 if (BlackboardRequired.TryGetValue(parameterName, out value))
                 {
-                    result = parameters.FindIndex(p => p.Name.Equals(value.Name) && p.HoldType.Equals(value.HoldType));
+                    if(value.HoldType.Type == type)
+                    {
+                        result = parameters.FindIndex(p => p.Name.Equals(value.Name)
+                                                    && p.HoldType.Equals(value.HoldType)
+                                                    && p.HoldType.Type == type);
+                    }
                 }
             }
 

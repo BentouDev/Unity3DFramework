@@ -52,7 +52,7 @@ public class BlackboardRequiredDrawer : PropertyDrawer
 
         ParameterListContent.Add(new GUIContent(string.Format("none ({0})", Typename)));
 
-        foreach (GenericParameter parameter in Parameters.Where(p => p.HoldType.Type == fieldInfo.FieldType))
+        foreach (GenericParameter parameter in Parameters)
         {
             ParameterListContent.Add(new GUIContent(parameter.Name));
         }
@@ -69,7 +69,7 @@ public class BlackboardRequiredDrawer : PropertyDrawer
             return false;
         }
 
-        Parameters = Editor.GetCurrentAsset().Parameters;
+        Parameters = Editor.GetCurrentAsset().Parameters.Where(p => p.HoldType.Type == fieldInfo.FieldType).ToList();
 
         AsNode = (BehaviourTreeNode) property.serializedObject.targetObject;
 
@@ -102,7 +102,7 @@ public class BlackboardRequiredDrawer : PropertyDrawer
         if (!Initialize(ref position, property, label))
             return;
 
-        int index = AsNode.GetGenericParameterIndex(property.name, Parameters);
+        int index = AsNode.GetGenericParameterIndex(property.name, fieldInfo.FieldType, Parameters);
 
         DrawBackground(position, index == -1 ? Color.red : Color.white);
 
