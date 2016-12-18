@@ -16,6 +16,8 @@ public class TaskNodeDrawer : Editor
 
     public override void OnInspectorGUI()
     {
+        InspectorUtils.DrawDefaultScriptField(serializedObject);
+
         GUILayout.Label("Description", EditorStyles.boldLabel);
         EditorGUILayout.TextArea(Node.Description, EditorStyles.wordWrappedLabel);
 

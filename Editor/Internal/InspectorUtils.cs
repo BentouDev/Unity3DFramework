@@ -5,18 +5,40 @@ using UnityEditor;
 
 public static class InspectorUtils
 {
-    public static bool DrawDefaultInspectorWithoutScriptField(SerializedObject serializedObject)
+    public static void DrawDefaultScriptField(SerializedObject obj)
     {
-        return DrawDefaultInspector(serializedObject, (p) =>
+        obj.Update();
+        SerializedProperty iterator = obj.GetIterator();
+
+        GUI.enabled = false;
+
+        bool firstChild = true;
+        while (iterator.NextVisible(true) && firstChild)
         {
-            var fieldInfo = serializedObject.targetObject.GetType().GetField(p.name);
-            if (fieldInfo != null)
+            EditorGUILayout.PropertyField(iterator, true);
+            firstChild = false;
+        }
+
+        GUI.enabled = true;
+    }
+
+    public static bool DrawDefaultInspectorWithoutScriptField(SerializedObject obj)
+    {
+        EditorGUI.BeginChangeCheck();
+        obj.Update();
+        SerializedProperty iterator = obj.GetIterator();
+        bool enterChildren = true;
+        while (iterator.NextVisible(enterChildren))
+        {
+            if (!enterChildren)
             {
-                return fieldInfo.FieldType != typeof(MonoScript);
+                EditorGUILayout.PropertyField(iterator, true);
             }
 
-            return false;
-        });
+            enterChildren = false;
+        }
+        obj.ApplyModifiedProperties();
+        return EditorGUI.EndChangeCheck();
     }
 
     public static bool DrawDefaultInspector(SerializedObject obj, System.Predicate<SerializedProperty> predicate = null)
