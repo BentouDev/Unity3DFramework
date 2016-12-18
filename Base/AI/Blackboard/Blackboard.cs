@@ -21,13 +21,13 @@ public class Blackboard : MonoBehaviour
 
     public class Value<T> : IValue
     {
-        private static System.Type _type;
+        private readonly System.Type _type;
 
         private T value;
         
-        static Value()
+        public Value(System.Type storedType)
         {
-            _type = typeof(T);
+            _type = storedType;
         }
 
         public System.Type GetValueType()
@@ -58,7 +58,15 @@ public class Blackboard : MonoBehaviour
     
     // Naive implementation
     public Dictionary<string, IValue> Values = new Dictionary<string, IValue>();
-
+    
+    public void InsertFromParameter(GenericParameter parameter)
+    {
+        if (!HasValue(parameter.HoldType.Type, parameter.Name))
+        {
+            Values[parameter.Name] = parameter.CreateValue();
+        }
+    }
+    
     public void GetFromParameter(GenericParameter parameter)
     {
         IValue storedValue;

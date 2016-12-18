@@ -23,6 +23,10 @@ namespace Framework.AI
             GenericParameter.BuildKnownTypeList();
 
             // Create empty parameters
+            foreach (GenericParameter parameter in Parameters)
+            {
+                blackboard.InsertFromParameter(parameter);
+            }
         }
 
         public bool IsPreprocessed()
@@ -52,9 +56,9 @@ namespace Framework.AI
 
         public bool Contains(BehaviourTreeNode node)
         {
-            if (IsPreprocessed())
-                return NodeList.Contains(node);
-            else
+            //if (IsPreprocessed())
+            //    return NodeList.Contains(node);
+            //else
             {
                 return FindNodeRecursive(RootNode, node);
             }
