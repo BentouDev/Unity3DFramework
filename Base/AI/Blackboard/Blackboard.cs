@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using Framework;
 using UnityEngine;
@@ -9,35 +8,23 @@ using UnityEngine;
 /// </summary>
 public class Blackboard : MonoBehaviour
 {
-    public class OfTypeAttribute : PropertyAttribute
-    {
-        public readonly Type RequiredType;
-        
-        public OfTypeAttribute(Type type)
-        {
-            RequiredType = type;
-        }
-    }
-
-    public class Required : PropertyAttribute
-    {
-        public string KeyName;
-    }
+    public class Required : PropertyAttribute { }
 
     public interface IValue
     {
-#if UNITY_EDITOR
         System.Type GetValueType();
-#endif
+
+        void SetTo(GenericParameter parameter);
+
+        void GetFrom(GenericParameter parameter);
     }
 
     public class Value<T> : IValue
     {
-        T value;
-
-#if UNITY_EDITOR
         private static System.Type _type;
 
+        private T value;
+        
         static Value()
         {
             _type = typeof(T);
@@ -47,7 +34,16 @@ public class Blackboard : MonoBehaviour
         {
             return _type;
         }
-#endif
+
+        public void SetTo(GenericParameter parameter)
+        {
+            parameter.SetAs<T>(value);
+        }
+
+        public void GetFrom(GenericParameter parameter)
+        {
+            value = parameter.GetAs<T>();
+        }
 
         public T Get()
         {
@@ -63,7 +59,32 @@ public class Blackboard : MonoBehaviour
     // Naive implementation
     public Dictionary<string, IValue> Values = new Dictionary<string, IValue>();
 
-    // TODO : try to make this faster, maybe hash of type?
+    public void GetFromParameter(GenericParameter parameter)
+    {
+        IValue storedValue;
+        if (Values.TryGetValue(parameter.Name, out storedValue) && storedValue.GetValueType() == parameter.HoldType.Type)
+        {
+            storedValue.GetFrom(parameter);
+        }
+        else
+        {
+            Debug.LogError(string.Format("No key '{0}' of type '{1}' in Blackboard", parameter.Name, parameter.HoldType.Type.Name), this);
+        }
+    }
+
+    public void SetToParameter(GenericParameter parameter)
+    {
+        IValue storedValue;
+        if (Values.TryGetValue(parameter.Name, out storedValue) && storedValue.GetValueType() == parameter.HoldType.Type)
+        {
+            storedValue.SetTo(parameter);
+        }
+        else
+        {
+            Debug.LogError(string.Format("No key '{0}' of type '{1}' in Blackboard", parameter.Name, parameter.HoldType.Type.Name), this);
+        }
+    }
+    
     public bool HasValue(System.Type type, string name)
     {
         IValue value;
@@ -129,52 +150,4 @@ public class Blackboard : MonoBehaviour
 #endif
         }
     }
-
-    /*public void SetToParameter(GenericParameter parameter)
-    {
-        IValue storedValue;
-        if (Values.TryGetValue(parameter.Name, out storedValue))
-        {
-            switch (parameter.HoldTypeEnum)
-            {
-                case GenericParameter.ParameterType.Bool:
-                    parameter.BoolValue = ((Value<bool>) storedValue).Get();
-                    break;
-                case GenericParameter.ParameterType.Float:
-                    parameter.FloatValue = ((Value<float>) storedValue).Get();
-                    break;
-                case GenericParameter.ParameterType.Int:
-                    parameter.IntValue = ((Value<int>) storedValue).Get();
-                    break;
-                case GenericParameter.ParameterType.Vec2:
-                    parameter.Vec2Value = ((Value<Vector2>) storedValue).Get();
-                    break;
-                case GenericParameter.ParameterType.Vec3:
-                    parameter.Vec3Value = ((Value<Vector3>) storedValue).Get();
-                    break;
-                case GenericParameter.ParameterType.GameObject:
-                    parameter.ObjectValue = ((Value<GameObject>)storedValue).Get();
-                    break;
-                case GenericParameter.ParameterType.MonoBehaviour:
-                    parameter.ObjectValue = ((Value<MonoBehaviour>) storedValue).Get();
-                    break;
-            }
-        }
-        else
-        {
-            Debug.LogError(string.Format("No key '{0}' of type '{1}' in Blackboard", parameter.Name, parameter.HoldType.Name), this);
-        }
-    }
-
-    public void GetFromParameter(GenericParameter parameter)
-    {
-        if (HasValue(parameter.HoldType, parameter.Name))
-        {
-
-        }
-        else
-        {
-            Debug.LogError(string.Format("No key '{0}' of type '{1}' in Blackboard", parameter.Name, parameter.HoldType.Name), this);
-        }
-    }*/
 }

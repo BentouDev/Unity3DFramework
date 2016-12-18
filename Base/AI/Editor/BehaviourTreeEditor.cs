@@ -78,6 +78,8 @@ namespace Framework.AI
             name = " Behaviour   ";
             titleContent.image = SpaceEditorStyles.BehaviourTreeIcon;
             titleContent.text = name;
+
+            RecreateParameterList();
             RecreateNodes();
         }
 
@@ -460,6 +462,9 @@ namespace Framework.AI
 
         private void RecreateParameterList()
         {
+            if (!TreeAsset)
+                return;
+
             ParameterList = new ReorderableList
             (
                 TreeAsset.Parameters, typeof(GenericParameter),

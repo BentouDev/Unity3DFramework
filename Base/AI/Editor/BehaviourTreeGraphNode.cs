@@ -151,7 +151,9 @@ namespace Framework.AI
             if (BehaviourTreeEditor.GetInstance() != null
             &&  BehaviourTreeEditor.GetInstance().ExecuteInRuntime())
             {
-                switch (TreeNode.LastResult)
+                // TODO : Expose last result from AIController here
+
+                /*switch (TreeNode.LastResult)
                 {
                     case NodeResult.Success:
                         return Color.green;
@@ -161,7 +163,9 @@ namespace Framework.AI
                         return Color.yellow;
                     default:
                         return TargetColor;
-                }
+                }*/
+
+                return TargetColor;
             }
             else if (TreeNode.IsRootNode())
             {

@@ -33,8 +33,6 @@ namespace Framework.AI
         public AIController CurrentController { get; private set; }
         public Blackboard CurrentBlackboard { get; private set; }
 
-        public NodeResult LastResult { get; private set; }
-
         public void SetRequiredParameter(string parameterName, GenericParameter parameter)
         {
             BlackboardRequired[parameterName] = parameter;
@@ -111,20 +109,17 @@ namespace Framework.AI
         
         private void GetFromBlackboard()
         {
-            // foreach (var requirement in BlackboardRequired)
+            foreach (var pair in BlackboardRequired)
             {
-                // CurrentBlackboard.SetToParameter(requirement.Value);
-                // requirement.Value.SetParameter.Invoke(CurrentBlackboard.GetValue(parameter.Type, parameter.Name));
+                CurrentBlackboard.SetToParameter(pair.Value);
             }
         }
 
         private void SetToBlackboard()
         {
-            // foreach (var requirement in BlackboardRequired)
+            foreach (var pair in BlackboardRequired)
             {
-                // CurrentBlackboard.GetFromParameter(requirement.Value);
-                // Maybe blackboard set parameter? And throw exception?
-                // CurrentBlackboard.SetValue(parameter.Value.Name);
+                CurrentBlackboard.GetFromParameter(pair.Value);
             }
         }
 
@@ -132,14 +127,14 @@ namespace Framework.AI
         {
             CurrentController = controller;
             CurrentBlackboard = blackboard;
+            
+            GetFromBlackboard();
 
-            // update blackboard
+            var result = OnUpdate();
+            
+            SetToBlackboard();
 
-            LastResult = OnUpdate();
-
-            // update blackboard
-
-            return LastResult;
+            return result;
         }
 
         protected abstract NodeResult OnUpdate();

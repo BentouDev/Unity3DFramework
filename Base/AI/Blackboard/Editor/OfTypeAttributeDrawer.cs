@@ -6,7 +6,7 @@ using Framework.AI;
 using UnityEditor;
 using UnityEngine;
 
-[CustomPropertyDrawer(typeof(Blackboard.OfTypeAttribute))]
+//[CustomPropertyDrawer(typeof(Blackboard.OfTypeAttribute))]
 public class OfTypeAttributeDrawer : PropertyDrawer
 {
     /*public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)

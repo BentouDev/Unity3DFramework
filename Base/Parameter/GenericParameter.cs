@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
@@ -182,7 +181,7 @@ namespace Framework
                 );
             }
         }
-
+        
         public void SetAs<T>(T value)
         {
             var type = typeof(T);
@@ -234,7 +233,7 @@ namespace Framework
             }
         }
 
-        public static string GetDisplayedName(Type type)
+        public static string GetDisplayedName(System.Type type)
         {
             var typename = type.FullName;
 
@@ -259,7 +258,7 @@ namespace Framework
             return null;
         }
 
-        public static KnownTypeInfo GetKnownType(Type type)
+        public static KnownTypeInfo GetKnownType(System.Type type)
         {
             var typename = type.FullName;
 
