@@ -470,6 +470,8 @@ namespace Framework.AI
             if (!TreeAsset)
                 return;
 
+            GenericParamUtils.SetDrawersForKnownTypes();
+
             ParameterList = new ReorderableList
             (
                 TreeAsset.Parameters, typeof(GenericParameter),
