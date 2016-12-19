@@ -84,6 +84,7 @@ namespace Framework.AI
             
             DrawConnectDots(drawRect);
             DrawParentDot(drawRect);
+            DrawIndexInParent(drawRect);
 
             SetColor();
 
@@ -101,6 +102,8 @@ namespace Framework.AI
 
         void WindowRoutine(int id)
         {
+            DrawIndexInParent(new Rect(0, 0, drawRect.width, drawRect.height));
+
             SetColor();
 
             GUILayout.BeginVertical(GUILayout.ExpandHeight(true), GUILayout.ExpandWidth(true));
@@ -153,8 +156,8 @@ namespace Framework.AI
             {
                 switch (BehaviourTreeEditor.GetInstance().CheckNodeStatus(TreeNode))
                 {
-                    //case NodeResult.Suspended:
-                      //  return Color.gray;
+                    case NodeResult.Suspended:
+                        return Color.gray;
                     case NodeResult.Success:
                         return Color.green;
                     case NodeResult.Failrue:
@@ -162,7 +165,7 @@ namespace Framework.AI
                     case NodeResult.Running:
                         return Color.yellow;
                     default:
-                        return TargetColor;
+                        return Color.clear;
                 }
             }
             else if (TreeNode.IsRootNode())
@@ -193,6 +196,20 @@ namespace Framework.AI
             }
 
             GUI.color = CurrentColor;
+        }
+
+        void DrawIndexInParent(Rect drawRect)
+        {
+            var parent = TreeNode.Parent;
+            if (parent)
+            {
+                var children = parent.GetChildNodes();
+                var index = children.IndexOf(TreeNode);
+                if (index >= 0 && index < children.Count)
+                {
+                    GUI.Box(new Rect(drawRect.xMax - 12, drawRect.center.y - 12, 24, 24), index.ToString(), SpaceEditorStyles.CountBadge);
+                }
+            }
         }
 
         void DrawBigTitle(string title)
