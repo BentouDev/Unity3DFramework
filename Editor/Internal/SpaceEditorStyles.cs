@@ -25,8 +25,14 @@ public static class SpaceEditorStyles
             if (_listItem == null)
             {
                 _listItem = new GUIStyle(EditorStyles.label);
+
+                _listItem.margin = new RectOffset();
+
+                _listItem.onActive.textColor = _listItem.onNormal.textColor;
+                _listItem.active.textColor = _listItem.normal.textColor;
                 _listItem.onActive.background = ActiveBackground;
                 _listItem.active.background = ActiveBackground;
+
                 _listItem.onFocused.background = ActiveBackground;
                 _listItem.focused.background = ActiveBackground;
             }
@@ -43,10 +49,17 @@ public static class SpaceEditorStyles
             if (_selectedListItem == null)
             {
                 _selectedListItem = new GUIStyle(EditorStyles.label);
+
+                _selectedListItem.margin = new RectOffset();
+
                 _selectedListItem.onNormal.background = ActiveBackground;
                 _selectedListItem.normal.background = ActiveBackground;
+
+                _selectedListItem.onActive.textColor = _selectedListItem.onNormal.textColor;
+                _selectedListItem.active.textColor = _selectedListItem.normal.textColor;
                 _selectedListItem.onActive.background = ActiveBackground;
                 _selectedListItem.active.background = ActiveBackground;
+
                 _selectedListItem.onFocused.background = ActiveBackground;
                 _selectedListItem.focused.background = ActiveBackground;
             }
@@ -70,7 +83,18 @@ public static class SpaceEditorStyles
             return _editableLabel;
         }
     }
-    
+
+    private static GUIStyle _countBadge;
+    public static GUIStyle CountBadge
+    {
+        get
+        {
+            if (_countBadge == null)
+                _countBadge = (GUIStyle)"CN CountBadge";
+            return _countBadge;
+        }
+    }
+
     private static GUIStyle _lightBackground;
     public static GUIStyle LightBackground
     {
