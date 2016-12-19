@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -12,6 +13,8 @@ public class TypeReferencePicker : EditorWindow
 
     private System.Action<System.Type> OnTypePicked;
     private System.Predicate<System.Type> TypePredicate;
+
+    private List<System.Type> AllTypes = new List<Type>();
 
     public static void ShowWindow(System.Action<System.Type> onObjectPicked,
         System.Predicate<System.Type> predicate = null)
@@ -34,13 +37,14 @@ public class TypeReferencePicker : EditorWindow
         _instance = null;
     }
 
-    void OnInit(
+    void OnInit (
         System.Action<System.Type> onTypePicked,
         System.Predicate<System.Type> predicate
     )
     {
         OnTypePicked = onTypePicked;
         TypePredicate = predicate;
+        AllTypes = BuildTypeList(string.Empty, TypePredicate).ToList();
     }
 
     IEnumerable<System.Type> GetTypesFromAssembly(Assembly assembly, string nameSearch,
@@ -57,7 +61,7 @@ public class TypeReferencePicker : EditorWindow
             );
     }
 
-    IEnumerable<System.Type> GetObjectReferenceList(string nameSearch, System.Predicate<System.Type> predicate = null)
+    IEnumerable<System.Type> BuildTypeList(string nameSearch, System.Predicate<System.Type> predicate = null)
     {
         var typeList = new List<System.Type>();
 
@@ -71,21 +75,25 @@ public class TypeReferencePicker : EditorWindow
                 var assembly = Assembly.Load(assemblyName.Name);
                 typeList.AddRange(GetTypesFromAssembly(assembly, nameSearch, predicate));
             }
-            catch (System.Exception)
+            catch (System.Exception e)
             {
-
+                Debug.LogException(e);
             }
         }
 
-        return typeList;
-        
-        /*return Assembly.GetExecutingAssembly()//GetAssembly(typeof(UnityEngine.Object))
-            .GetTypes()
-            .Where(t => t.IsClass 
-                && !t.IsAbstract 
-                && t.IsSubclassOf(typeof(UnityEngine.Object))
-                && (string.IsNullOrEmpty(nameSearch) || t.FullName.Contains(nameSearch))
-                && (predicate == null || predicate(t)));*/
+        return typeList.OrderBy(t=>t.FullName);
+    }
+
+    IEnumerable<System.Type> FilterTypeList(string nameSearch, System.Predicate<System.Type> predicate = null)
+    {
+        return AllTypes.Where(t => t.IsClass
+                                && t.IsSubclassOf(typeof(UnityEngine.Object))
+                                && t.IsPublic
+                                && !t.IsAbstract
+                                && !t.IsGenericType
+                                && (predicate == null || predicate(t))
+                                && (string.IsNullOrEmpty(nameSearch) || t.FullName.Contains(nameSearch))
+        );
     }
 
     private Vector2 scrollPosition;
@@ -111,7 +119,7 @@ public class TypeReferencePicker : EditorWindow
             
             scrollPosition = GUILayout.BeginScrollView(scrollPosition);
             {
-                foreach (System.Type type in GetObjectReferenceList(SearchString, TypePredicate))
+                foreach (System.Type type in FilterTypeList(SearchString, TypePredicate))
                 {
                     var isSelected = type == SelectedType;
                     if (GUILayout.Toggle(isSelected, new GUIContent(type.FullName), isSelected ? SpaceEditorStyles.SelectedListItem : SpaceEditorStyles.ListItem,
