@@ -10,36 +10,6 @@ namespace Framework
     [System.Serializable]
     public class GenericParameter
     {
-#if UNITY_EDITOR
-        public delegate void DrawFunc(Rect rect, GenericParameter param);
-        public delegate void LayoutFunc(GenericParameter param);
-#endif
-
-        public class KnownTypeInfo
-        {
-            protected internal System.Func<GenericParameter, Blackboard.IValue> Creator;
-
-            public System.Type HoldType;
-            public string GenericName;
-
-#if UNITY_EDITOR
-            public DrawFunc DrawFunc;
-            public LayoutFunc LayoutFunc;
-#endif
-        }
-
-        class KnownTypeInfo<T> : KnownTypeInfo
-        {
-            protected internal System.Func<GenericParameter, T> Getter;
-            protected internal System.Action<GenericParameter, T> Setter;
-
-            protected internal KnownTypeInfo(string name)
-            {
-                GenericName = name;
-                HoldType = typeof(T);
-            }
-        }
-        
         public GenericParameter(System.Type type)
         {
             HoldType = new SerializedType(type);
@@ -57,52 +27,11 @@ namespace Framework
         [SerializeField]
         private float[] _floats = new float[4];
 
-        private static System.Type _scriptableObjectType;
-        private static System.Type ScriptableObjectType
-        {
-            get
-            {
-                if (_scriptableObjectType == null)
-                    _scriptableObjectType = typeof(ScriptableObject);
-                return _scriptableObjectType;
-            }
-        }
-
-        private static System.Type _componentType;
-        private static System.Type ComponentType
-        {
-            get
-            {
-                if (_componentType == null)
-                    _componentType = typeof(Component);
-                return _componentType;
-            }
-        }
-
-        private static readonly Dictionary<string, KnownTypeInfo> KnownTypes = new Dictionary<string, KnownTypeInfo>();
-
-#if UNITY_EDITOR
-        public static Dictionary<string, KnownTypeInfo> GetKnownTypeDictionary()
-        {
-            return KnownTypes;
-        }
-#endif
-
-        public static List<KnownTypeInfo> GetKnownTypes()
-        {
-            return KnownTypes.Values.ToList();
-        }
-
-        private static void InsertKnownType<T>(KnownTypeInfo<T> info)
-        {
-            KnownTypes[typeof(T).FullName] = info;
-        }
-
         public static void BuildKnownTypeList()
         {
-            InsertKnownType
+            KnownType.InsertKnownType
             (
-                new KnownTypeInfo<bool>("bool")
+                new KnownType<bool>("bool")
                 {
                     Getter = parameter => parameter._floats[0] > 0,
                     Setter = (parameter, value) => { parameter._floats[0] = value ? 1 : -1; },
@@ -110,9 +39,9 @@ namespace Framework
                 }
             );
 
-            InsertKnownType
+            KnownType.InsertKnownType
             (
-                new KnownTypeInfo<int>("int")
+                new KnownType<int>("int")
                 {
                     Getter = parameter => Mathf.RoundToInt(parameter._floats[0]),
                     Setter = (parameter, value) => { parameter._floats[0] = value; },
@@ -120,9 +49,9 @@ namespace Framework
                 }
             );
 
-            InsertKnownType
+            KnownType.InsertKnownType
             (
-                new KnownTypeInfo<float>("float")
+                new KnownType<float>("float")
                 {
                     Getter = parameter => parameter._floats[0],
                     Setter = (parameter, value) => { parameter._floats[0] = value; },
@@ -130,9 +59,9 @@ namespace Framework
                 }
             );
 
-            InsertKnownType
+            KnownType.InsertKnownType
             (
-                new KnownTypeInfo<Vector2>("Vector2")
+                new KnownType<Vector2>("Vector2")
                 {
                     Getter = parameter => new Vector2(parameter._floats[0], parameter._floats[1]),
                     Setter = (parameter, vector2) => { parameter._floats[0] = vector2.x; parameter._floats[1] = vector2.y; },
@@ -140,9 +69,9 @@ namespace Framework
                 }
             );
 
-            InsertKnownType
+            KnownType.InsertKnownType
             (
-                new KnownTypeInfo<Vector3>("Vector3")
+                new KnownType<Vector3>("Vector3")
                 {
                     Getter = parameter => new Vector3(parameter._floats[0], parameter._floats[1], parameter._floats[2]),
                     Setter = (parameter, vector3) => { parameter._floats[0] = vector3.x; parameter._floats[1] = vector3.y; parameter._floats[2] = vector3.z; },
@@ -150,9 +79,9 @@ namespace Framework
                 }
             );
 
-            InsertKnownType
+            KnownType.InsertKnownType
             (
-                new KnownTypeInfo<GameObject>("GameObject")
+                new KnownType<GameObject>("GameObject")
                 {
                     Getter = parameter => parameter._object as GameObject,
                     Setter = (parameter, value) => { parameter._object = value; },
@@ -160,9 +89,9 @@ namespace Framework
                 }
             );
 
-            InsertKnownType
+            KnownType.InsertKnownType
             (
-                new KnownTypeInfo<Component>("MonoBehaviour...")
+                new KnownType<Component>("MonoBehaviour...")
                 {
                     Getter = parameter => parameter._object as Component,
                     Setter = (parameter, value) => { parameter._object = value; },
@@ -170,9 +99,9 @@ namespace Framework
                 }
             );
 
-            InsertKnownType
+            KnownType.InsertKnownType
             (
-                new KnownTypeInfo<ScriptableObject>("ScriptableObject...")
+                new KnownType<ScriptableObject>("ScriptableObject...")
                 {
                     Getter = parameter => parameter._object as ScriptableObject,
                     Setter = (parameter, value) => { parameter._object = value; },
@@ -215,7 +144,7 @@ namespace Framework
             var type = typeof(T);
             TypeGuard(type);
 
-            ((KnownTypeInfo<T>)KnownTypes[type.FullName]).Setter(this, value);
+            ((KnownType<T>)KnownType.Register[type.FullName]).Setter(this, value);
         }
 
         public T GetAs<T>()
@@ -223,7 +152,7 @@ namespace Framework
             var type = typeof(T);
             TypeGuard(type);
 
-            return ((KnownTypeInfo<T>)KnownTypes[type.FullName]).Getter(this);
+            return ((KnownType<T>)KnownType.Register[type.FullName]).Getter(this);
         }
 
 #if UNITY_EDITOR
@@ -231,8 +160,8 @@ namespace Framework
         {
             var typename = parameter.HoldType.Type.FullName;
 
-            KnownTypeInfo info;
-            if(KnownTypes.TryGetValue(typename, out info))
+            KnownType info;
+            if(KnownType.Register.TryGetValue(typename, out info))
             {
                 info.LayoutFunc(parameter);
             }
@@ -242,20 +171,22 @@ namespace Framework
         {
             var typename = parameter.HoldType.Type.FullName;
 
-            KnownTypeInfo info;
-            if (KnownTypes.TryGetValue(typename, out info))
+            KnownType info;
+            if (KnownType.Register.TryGetValue(typename, out info) && info.DrawFunc != null)
             {
                 info.DrawFunc(drawRect, parameter);
             }
 
-            if (parameter.HoldType.Type.IsSubclassOf(ComponentType)
-            && KnownTypes.TryGetValue(ComponentType.FullName, out info))
+            if (parameter.HoldType.Type.IsSubclassOf(KnownType.ComponentType)
+            && KnownType.Register.TryGetValue(KnownType.ComponentType.FullName, out info)
+            && info.DrawFunc != null)
             {
                 info.DrawFunc(drawRect, parameter);
             }
 
-            if (parameter.HoldType.Type.IsSubclassOf(ScriptableObjectType)
-            && KnownTypes.TryGetValue(ScriptableObjectType.FullName, out info))
+            if (parameter.HoldType.Type.IsSubclassOf(KnownType.ScriptableObjectType)
+            && KnownType.Register.TryGetValue(KnownType.ScriptableObjectType.FullName, out info) 
+            && info.DrawFunc != null)
             {
                 info.DrawFunc(drawRect, parameter);
             }
@@ -265,20 +196,20 @@ namespace Framework
         {
             var typename = type.FullName;
 
-            KnownTypeInfo info;
-            if (KnownTypes.TryGetValue(typename, out info))
+            KnownType info;
+            if (KnownType.Register.TryGetValue(typename, out info))
             {
                 return info.GenericName;
             }
 
-            if (type.IsSubclassOf(ComponentType)
-            && KnownTypes.ContainsKey(ComponentType.FullName))
+            if (type.IsSubclassOf(KnownType.ComponentType)
+            && KnownType.Register.ContainsKey(KnownType.ComponentType.FullName))
             {   
                 return type.Name;
             }
 
-            if (type.IsSubclassOf(ScriptableObjectType)
-            && KnownTypes.ContainsKey(ScriptableObjectType.FullName))
+            if (type.IsSubclassOf(KnownType.ScriptableObjectType)
+            && KnownType.Register.ContainsKey(KnownType.ScriptableObjectType.FullName))
             {
                 return type.Name;
             }
@@ -286,31 +217,31 @@ namespace Framework
             return null;
         }
 
-        public static KnownTypeInfo GetKnownType(System.Type type)
+        public static KnownType GetKnownType(System.Type type)
         {
             var typename = type.FullName;
 
-            KnownTypeInfo info;
-            if (KnownTypes.TryGetValue(typename, out info))
+            KnownType info;
+            if (KnownType.Register.TryGetValue(typename, out info))
             {
                 return info;
             }
 
-            if (type.IsSubclassOf(ComponentType))
+            if (type.IsSubclassOf(KnownType.ComponentType))
             {
-                typename = ComponentType.FullName;
+                typename = KnownType.ComponentType.FullName;
 
-                if (KnownTypes.TryGetValue(typename, out info))
+                if (KnownType.Register.TryGetValue(typename, out info))
                 {
                     return info;
                 }
             }
 
-            if (type.IsSubclassOf(ScriptableObjectType))
+            if (type.IsSubclassOf(KnownType.ScriptableObjectType))
             {
-                typename = ScriptableObjectType.FullName;
+                typename = KnownType.ScriptableObjectType.FullName;
 
-                if (KnownTypes.TryGetValue(typename, out info))
+                if (KnownType.Register.TryGetValue(typename, out info))
                 {
                     return info;
                 }

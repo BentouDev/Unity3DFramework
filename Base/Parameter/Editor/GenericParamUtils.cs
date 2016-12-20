@@ -16,7 +16,7 @@ namespace Framework
         {
             GenericParameter.BuildKnownTypeList();
             SetDrawersForKnownTypes();
-            Debug.LogFormat("Regenerated GenericParam for : {0} types", GenericParameter.GetKnownTypeDictionary().Count);
+            Debug.LogFormat("Regenerated GenericParam for : {0} types", KnownType.Register.Count);
         }
 
         public static void SetDrawersForKnownTypes()
@@ -31,13 +31,12 @@ namespace Framework
             SetDrawerForKnownType<ScriptableObject>(DrawAsObject<ScriptableObject>, LayoutAsGenericObject);
         }
 
-        private static void SetDrawerForKnownType<T>(GenericParameter.DrawFunc draw, GenericParameter.LayoutFunc layout)
+        private static void SetDrawerForKnownType<T>(KnownType.TypeDrawFunc draw, KnownType.TypeLayoutFunc layout)
         {
             var typename = typeof(T).FullName;
-            var dic = GenericParameter.GetKnownTypeDictionary();
-            GenericParameter.KnownTypeInfo info;
-
-            if(dic.TryGetValue(typename, out info))
+            
+            KnownType info;
+            if(KnownType.Register.TryGetValue(typename, out info))
             {
                 info.DrawFunc = draw;
                 info.LayoutFunc = layout;
