@@ -47,9 +47,9 @@ namespace Framework.AI
             if (node.IsParentNode())
             {
                 var children = node.AsParentNode().GetChildNodes();
-                foreach (BehaviourTreeNode child in children)
+                for (int i = 0; i < children.Count; i++)
                 {
-                    ProcessNodeRecurrent(child);
+                    ProcessNodeRecurrent(children[i]);
                 }
             }
         }
@@ -75,9 +75,9 @@ namespace Framework.AI
             if (node.IsParentNode())
             {
                 var childNodes = node.AsParentNode().GetChildNodes();
-                foreach (BehaviourTreeNode childNode in childNodes)
+                for(int i = 0; i < childNodes.Count; i++)
                 {
-                    if (FindNodeRecursive(childNode, toFind))
+                    if (FindNodeRecursive(childNodes[i], toFind))
                         return true;
                 }
             }

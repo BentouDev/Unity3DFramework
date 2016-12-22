@@ -1,6 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using MyNamespace;
+using Framework.AI;
 using UnityEditor;
 using UnityEngine;
 

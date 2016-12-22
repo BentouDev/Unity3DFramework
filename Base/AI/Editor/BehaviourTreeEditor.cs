@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Framework.EditorUtils;
-using MyNamespace;
+using Framework;
 using UnityEditor;
 using UnityEditorInternal;
 using UnityEngine;
@@ -512,8 +512,7 @@ namespace Framework.AI
         {
             GenericMenu menu = new GenericMenu();
 
-            var types = GenericParameter.GetKnownTypes();
-
+            var types = KnownType.GetKnownTypes();
             for (int i = 0; i < types.Count; i++)
             {
                 var type = types[i];
@@ -562,7 +561,7 @@ namespace Framework.AI
         {
             if (type.IsSubclassOf(typeof(UnityEngine.Object)) && type != typeof(GameObject))
             {
-                TypeReferencePicker.ShowWindow(OnObjectReferenceTypeSelected, t => t.IsSubclassOf(type));
+                ReferenceTypePicker.ShowWindow(type, OnObjectReferenceTypeSelected, t => t.IsSubclassOf(type));
             }
             else
             {
