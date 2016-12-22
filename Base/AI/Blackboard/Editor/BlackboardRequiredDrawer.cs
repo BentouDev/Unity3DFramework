@@ -1,15 +1,10 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection;
 using Framework;
 using Framework.AI;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.Events;
-using Debug = UnityEngine.Debug;
 
 [CustomPropertyDrawer(typeof(Blackboard.Required))]
 public class BlackboardRequiredDrawer : PropertyDrawer
@@ -118,16 +113,19 @@ public class BlackboardRequiredDrawer : PropertyDrawer
                     objectFieldRect.y += BoxBackgroundMargin;
 
                 int result = EditorGUI.Popup(objectFieldRect, GUIContent.none, index + 1, ParameterListContent.ToArray(), (GUIStyle)"ShurikenObjectField");
-                
-                if (result > 0 && result <= Parameters.Count)
-                {
-                    var parameter = Parameters[result - 1];
 
-                    AsNode.SetRequiredParameter(property.name, parameter);
-                }
-                else
+                if (!Editor.ExecuteInRuntime())
                 {
-                    AsNode.ClearRequiredParamerer(property.name);
+                    if (result > 0 && result <= Parameters.Count)
+                    {
+                        var parameter = Parameters[result - 1];
+
+                        AsNode.SetRequiredParameter(property.name, parameter);
+                    }
+                    else
+                    {
+                        AsNode.ClearRequiredParamerer(property.name);
+                    }
                 }
             }
             if (EditorGUI.EndChangeCheck())
