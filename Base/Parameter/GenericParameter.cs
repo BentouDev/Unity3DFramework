@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Framework.AI;
 using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -35,7 +36,7 @@ namespace Framework
                 {
                     Getter = parameter => parameter._floats[0] > 0,
                     Setter = (parameter, value) => { parameter._floats[0] = value ? 1 : -1; },
-                    Creator = parameter => new Blackboard.Value<bool>(parameter.HoldType.Type)
+                    ValueCreator = parameter => new Blackboard.Value<bool>(parameter.HoldType.Type)
                 }
             );
 
@@ -45,7 +46,7 @@ namespace Framework
                 {
                     Getter = parameter => Mathf.RoundToInt(parameter._floats[0]),
                     Setter = (parameter, value) => { parameter._floats[0] = value; },
-                    Creator = parameter => new Blackboard.Value<int>(parameter.HoldType.Type)
+                    ValueCreator = parameter => new Blackboard.Value<int>(parameter.HoldType.Type)
                 }
             );
 
@@ -55,7 +56,7 @@ namespace Framework
                 {
                     Getter = parameter => parameter._floats[0],
                     Setter = (parameter, value) => { parameter._floats[0] = value; },
-                    Creator = parameter => new Blackboard.Value<float>(parameter.HoldType.Type)
+                    ValueCreator = parameter => new Blackboard.Value<float>(parameter.HoldType.Type)
                 }
             );
 
@@ -65,7 +66,7 @@ namespace Framework
                 {
                     Getter = parameter => new Vector2(parameter._floats[0], parameter._floats[1]),
                     Setter = (parameter, vector2) => { parameter._floats[0] = vector2.x; parameter._floats[1] = vector2.y; },
-                    Creator = parameter => new Blackboard.Value<Vector2>(parameter.HoldType.Type)
+                    ValueCreator = parameter => new Blackboard.Value<Vector2>(parameter.HoldType.Type)
                 }
             );
 
@@ -75,7 +76,7 @@ namespace Framework
                 {
                     Getter = parameter => new Vector3(parameter._floats[0], parameter._floats[1], parameter._floats[2]),
                     Setter = (parameter, vector3) => { parameter._floats[0] = vector3.x; parameter._floats[1] = vector3.y; parameter._floats[2] = vector3.z; },
-                    Creator = parameter => new Blackboard.Value<Vector3>(parameter.HoldType.Type)
+                    ValueCreator = parameter => new Blackboard.Value<Vector3>(parameter.HoldType.Type)
                 }
             );
 
@@ -85,7 +86,7 @@ namespace Framework
                 {
                     Getter = parameter => parameter._object as GameObject,
                     Setter = (parameter, value) => { parameter._object = value; },
-                    Creator = parameter => new Blackboard.Value<GameObject>(parameter.HoldType.Type)
+                    ValueCreator = parameter => new Blackboard.Value<GameObject>(parameter.HoldType.Type)
                 }
             );
 
@@ -95,7 +96,7 @@ namespace Framework
                 {
                     Getter = parameter => parameter._object as Component,
                     Setter = (parameter, value) => { parameter._object = value; },
-                    Creator = parameter => new Blackboard.Value<Component>(parameter.HoldType.Type)
+                    ValueCreator = parameter => new Blackboard.Value<Component>(parameter.HoldType.Type)
                 }
             );
 
@@ -105,7 +106,7 @@ namespace Framework
                 {
                     Getter = parameter => parameter._object as ScriptableObject,
                     Setter = (parameter, value) => { parameter._object = value; },
-                    Creator = parameter => new Blackboard.Value<ScriptableObject>(parameter.HoldType.Type)
+                    ValueCreator = parameter => new Blackboard.Value<ScriptableObject>(parameter.HoldType.Type)
                 }
             );
         }
@@ -120,6 +121,20 @@ namespace Framework
                 );
             }
         }
+
+        public PropertyReference CreatePropertyReference<T>(T instance, string name)
+        {
+            var knownType = GetKnownType(HoldType.Type);
+            if (knownType != null)
+            {
+                return knownType.CreateProperty(instance, name);
+            }
+            else
+            {
+                Debug.LogErrorFormat("Known type for {0} not found! Unable to crate IValue.", HoldType.Type);
+                return null;
+            }
+        }
         
         public Blackboard.IValue CreateValue()
         {
@@ -127,7 +142,7 @@ namespace Framework
             var knownType = GetKnownType(HoldType.Type);
             if (knownType != null)
             {
-                return knownType.Creator(this);
+                return knownType.ValueCreator(this);
             }
             else
             {

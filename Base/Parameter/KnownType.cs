@@ -1,13 +1,14 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Framework.AI;
 using UnityEngine;
 
 namespace Framework
 {
-    public class KnownType
+    public abstract class KnownType
     {
-        protected internal System.Func<GenericParameter, Blackboard.IValue> Creator;
+        protected internal System.Func<GenericParameter, Blackboard.IValue> ValueCreator;
 
         public System.Type HoldType;
         public string GenericName;
@@ -19,6 +20,8 @@ namespace Framework
         public TypeDrawFunc DrawFunc;
         public TypeLayoutFunc LayoutFunc;
 #endif
+
+        public abstract PropertyReference CreateProperty<T>(T instance, string name);
 
         private static readonly Dictionary<string, KnownType> _knownTypes = new Dictionary<string, KnownType>();
         public static Dictionary<string, KnownType> Register
@@ -41,6 +44,7 @@ namespace Framework
         }
 
         private static System.Type _componentType;
+
         public static System.Type ComponentType
         {
             get
@@ -71,6 +75,11 @@ namespace Framework
         {
             GenericName = name;
             HoldType = typeof(T);
+        }
+
+        public override PropertyReference CreateProperty<U>(U instance, string name)
+        {
+            return new PropertyReference<U, T>(instance, name);
         }
     }
 }
