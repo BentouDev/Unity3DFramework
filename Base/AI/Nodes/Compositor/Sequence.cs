@@ -4,10 +4,10 @@ using UnityEngine;
 
 namespace Framework.AI
 {
-    public class Sequence : CompositeNode
+    public class Sequence : CompositeNode<Sequence>
     {
         [Blackboard.Required]
-        public int CurrentChildIndex;
+        public int CurrentChildIndex { get; set; }
 
         public override string Name
         {
@@ -19,11 +19,6 @@ namespace Framework.AI
             get { return "Executes childs in sequence, stops execution and returns failrue on first failrue.\nReturns success when all childs returns success."; }
         }
         
-        public override void OnInit()
-        {
-
-        }
-
         protected override NodeResult OnUpdate()
         {
             var currentChild = GetChildNodes()[CurrentChildIndex];
@@ -32,6 +27,7 @@ namespace Framework.AI
             {
                 if (currentChildResult == NodeResult.Failrue)
                 {
+                    CurrentChildIndex = 0;
                     return NodeResult.Failrue;
                 }
                 if (currentChildResult == NodeResult.Suspended)

@@ -1,6 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using MyNamespace;
+using Framework.AI;
 using UnityEngine;
 
 namespace Framework.AI
@@ -39,5 +39,13 @@ namespace Framework.AI
             return true;
         }
 #endif
+    }
+
+    public abstract class CompositeNode<T> : CompositeNode where T : BehaviourTreeNode
+    {
+        protected sealed override void OnSetupRequiredParameters()
+        {
+            base.SetupParametersForType<T>(this as T);
+        }
     }
 }

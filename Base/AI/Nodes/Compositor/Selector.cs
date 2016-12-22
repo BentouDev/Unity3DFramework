@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Framework.AI
 {
-    public class Selector : CompositeNode
+    public class Selector : CompositeNode<Selector>
     {
         public override string Name
         {

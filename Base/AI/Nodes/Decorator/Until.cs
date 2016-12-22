@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Framework.AI
 {
-    public class Until : DecoratorNode
+    public class Until : DecoratorNode<Until>
     {
         public override string Name
         {

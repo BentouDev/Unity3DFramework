@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using Framework.AI;
-using MyNamespace;
 using UnityEngine;
 
 namespace Framework.AI
@@ -46,5 +44,13 @@ namespace Framework.AI
             return DecoratedNode == null;
         }
 #endif
+    }
+
+    public abstract class DecoratorNode<T> : DecoratorNode where T : BehaviourTreeNode
+    {
+        protected override void OnSetupRequiredParameters()
+        {
+            base.SetupParametersForType<T>(this as T);
+        }
     }
 }

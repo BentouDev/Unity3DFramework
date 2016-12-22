@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Framework.AI
 {
-    public class Succeder : DecoratorNode
+    public class Succeder : DecoratorNode<Succeder>
     {
         public override string Name
         {

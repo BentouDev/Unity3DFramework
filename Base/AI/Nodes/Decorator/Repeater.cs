@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Framework.AI
 {
-    public class Repeater : DecoratorNode
+    public class Repeater : DecoratorNode<Repeater>
     {
         public override string Name
         {

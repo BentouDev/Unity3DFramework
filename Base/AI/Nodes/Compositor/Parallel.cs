@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Framework.AI
 {
-    public class Parallel : CompositeNode
+    public class Parallel : CompositeNode<Parallel>
     {
         public override string Name
         {

@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Framework.AI
 {
-    public class Negation : DecoratorNode
+    public class Negation : DecoratorNode<Negation>
     {
         public override string Name
         {

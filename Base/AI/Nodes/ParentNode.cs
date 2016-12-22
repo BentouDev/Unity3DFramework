@@ -1,9 +1,8 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using Framework.AI;
 using UnityEngine;
 
-namespace MyNamespace
+namespace Framework.AI
 {
     public abstract class ParentNode : BehaviourTreeNode
     {
