@@ -190,7 +190,7 @@ public class ReferenceTypePicker : EditorWindow
         }
         GUILayout.EndVertical();
 
-        if (SelectedType != null)
+        GUI.enabled = SelectedType != null;
         {
             if (GUILayout.Button("Select"))
             {
@@ -198,6 +198,7 @@ public class ReferenceTypePicker : EditorWindow
                 Close();
             }
         }
+        GUI.enabled = true;
     }
 
     private void BuildInheritanceLine(StringBuilder builder, Type type)
