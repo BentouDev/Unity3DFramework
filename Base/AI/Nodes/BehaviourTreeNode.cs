@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using MyNamespace;
+using System.Reflection;
 using UnityEngine;
-using UnityEngine.Events;
 
 namespace Framework.AI
 {
@@ -12,7 +10,7 @@ namespace Framework.AI
     public abstract class BehaviourTreeNode : ScriptableObject, ISerializationCallbackReceiver
     {
         protected static readonly List<BehaviourTreeNode> EmptyList = new List<BehaviourTreeNode>();
-
+        
         public abstract string Name { get; }
         public abstract string Description { get; }
 
@@ -26,18 +24,31 @@ namespace Framework.AI
 
         [SerializeField]
         [HideInInspector]
-        private List<GenericParameter> RequiredParameters;
+        private List<ParametrizedProperty> Parameters;
 
-        public Dictionary<string, GenericParameter> BlackboardRequired = new Dictionary<string, GenericParameter>();
+        public Dictionary<string, ParametrizedProperty> BlackboardRequired = new Dictionary<string, ParametrizedProperty>();
 
         public AIController CurrentController { get; private set; }
-        public Blackboard CurrentBlackboard { get; private set; }
+        public Blackboard   CurrentBlackboard { get; private set; }
 
         private bool IsInUpdate;
+        
+        protected abstract void OnSetupRequiredParameters();
+
+        protected void SetupParametersForType<T>(T instance) where T : BehaviourTreeNode
+        {
+            foreach (var key in BlackboardRequired.Keys.ToList())
+            {
+                var paramProp = BlackboardRequired[key];
+                    paramProp.CreateProperty<T>(instance, key);
+
+                BlackboardRequired[key] = paramProp;
+            }
+        }
 
         public void SetRequiredParameter(string parameterName, GenericParameter parameter)
         {
-            BlackboardRequired[parameterName] = parameter;
+            BlackboardRequired[parameterName] = new ParametrizedProperty() { Parameter = parameter };
         }
 
         public void ClearRequiredParamerer(string parameterName)
@@ -52,16 +63,16 @@ namespace Framework.AI
             if (BlackboardRequired == null)
                 return result;
 
-            GenericParameter value;
+            ParametrizedProperty value;
 
             if (!BlackboardRequired.TryGetValue(parameterName, out value))
                 return result;
 
-            if(value.HoldType.Type == type)
+            if(value.Parameter.HoldType.Type == type)
             {
-                result = parameters.FindIndex(p => p.Name.Equals(value.Name)
-                                                   && p.HoldType.Equals(value.HoldType)
-                                                   && p.HoldType.Type == type);
+                result = parameters.FindIndex(p => p.Name.Equals(value.Parameter.Name)
+                                                && p.HoldType.Equals(value.Parameter.HoldType)
+                                                && p.HoldType.Type == type);
             }
 
             return result;
@@ -69,20 +80,21 @@ namespace Framework.AI
 
         public void OnBeforeSerialize()
         {
-            RequiredKeys = BlackboardRequired.Keys.ToList();
-            RequiredParameters = BlackboardRequired.Values.ToList();
+            RequiredKeys = BlackboardRequired.Keys  .ToList();
+            Parameters   = BlackboardRequired.Values.ToList();
         }
 
         public void OnAfterDeserialize()
         {
-            BlackboardRequired = new Dictionary<string, GenericParameter>();
+            BlackboardRequired = new Dictionary<string, ParametrizedProperty>();
+
             for (int i = 0; i < RequiredKeys.Count; i++)
             {
-                BlackboardRequired[RequiredKeys[i]] = RequiredParameters[i];
+                BlackboardRequired[RequiredKeys[i]] = Parameters[i];
             }
 
             RequiredKeys.Clear();
-            RequiredParameters.Clear();
+            Parameters  .Clear();
         }
 
         public bool IsRootNode()
@@ -99,30 +111,38 @@ namespace Framework.AI
         {
 #if UNITY_EDITOR
             if(!IsParentNode())
-                throw new InvalidOperationException(string.Format("Cannot Node {0} is not a Parent Node!", GetType().Name));
+                throw new System.InvalidOperationException(string.Format("Cannot Node {0} is not a Parent Node!", GetType().Name));
 #endif
             return (ParentNode) this;
         }
 
-        public virtual void OnInit() { }
+        public void Init()
+        {
+            OnSetupRequiredParameters();
+            OnInit();
+        }
+
+        protected virtual void OnInit() { }
 
         public virtual void OnStart(AIController controller) { }
 
         public virtual void OnEnd(AIController controller) { }
         
-        private void GetFromBlackboard(Blackboard blackboard)
+        protected void GetFromBlackboard(Blackboard blackboard)
         {
             foreach (var pair in BlackboardRequired)
             {
-                blackboard.SetToParameter(pair.Value);
+                blackboard.SetToParameter(pair.Value.Parameter);
+                pair.Value.Property.GetFromParameter(pair.Value.Parameter);
             }
         }
-
-        private void SetToBlackboard(Blackboard blackboard)
+        
+        protected void SetToBlackboard(Blackboard blackboard)
         {
             foreach (var pair in BlackboardRequired)
             {
-                blackboard.GetFromParameter(pair.Value);
+                pair.Value.Property.SetToParameter(pair.Value.Parameter);
+                blackboard.GetFromParameter(pair.Value.Parameter);
             }
         }
 
