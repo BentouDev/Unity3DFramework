@@ -8,7 +8,10 @@ namespace Framework.EditorUtils
 {
     public class GraphNodeEditor
     {
+        private float zoom = 1;
         private Vector2 scrollPos = Vector2.zero;
+
+        public float ZoomSpeed = 0.05f;
 
         private int connectIndex;
 
@@ -31,6 +34,14 @@ namespace Framework.EditorUtils
         public event GraphEditorMouseEvent OnRightClick;
         public event GraphEditorMouseEvent OnLeftClick;
         public event GraphEditorEvent OnDelete;
+
+        public Vector2 ScrollPos { get { return scrollPos; } }
+
+        public float ZoomLevel
+        {
+            get { return zoom; }
+            set { zoom = Mathf.Clamp(value, 0.25f, 1); }
+        }
 
         public enum ConnectionStyle
         {
@@ -62,6 +73,28 @@ namespace Framework.EditorUtils
             nodes.Add(node);
         }
 
+        public Rect GetCoordinateBound()
+        {
+            var min = GetMinCoordinates();
+            return new Rect(min, GetMaxCoordinates() - min);
+        }
+
+        public Vector2 GetMinCoordinates()
+        {
+            Vector2 min = new Vector2(float.MaxValue, float.MaxValue);
+
+            foreach (GraphNode node in nodes)
+            {
+                var minPos = node.GetMinCoordinates();
+                if (minPos.x < min.x)
+                    min.x = minPos.x;
+                if (minPos.y < min.y)
+                    min.y = minPos.y;
+            }
+
+            return min;
+        }
+
         public Vector2 GetMaxCoordinates()
         {
             Vector2 max = Vector2.zero;
@@ -79,16 +112,16 @@ namespace Framework.EditorUtils
         }
 
         public void Draw (
-            EditorWindow editor, Rect position, Rect viewRect, 
+            EditorWindow editor, Rect viewRect, 
             ConnectionStyle style = ConnectionStyle.BezierVertical
         )
         {
-            scrollPos = GUI.BeginScrollView(position, scrollPos, viewRect);
+            EditorAreaUtils.BeginZoomArea(ZoomLevel, viewRect);
             {
                 DrawWindows(editor);
                 DrawConnections(style);
             }
-            GUI.EndScrollView();
+            EditorAreaUtils.EndZoomArea();
         }
         
         void DrawConnections(ConnectionStyle style)
@@ -144,13 +177,13 @@ namespace Framework.EditorUtils
                 switch (style)
                 {
                     case ConnectionStyle.Line:
-                        DrawNodeConnectionLine(CurrentConnectionStart - scrollPos, Event.current.mousePosition, Color.cyan);
+                        DrawNodeConnectionLine(CurrentConnectionStart, Event.current.mousePosition, Color.cyan);
                         break;
                     case ConnectionStyle.BezierHorizontal:
-                        DrawNodeConnectionBezierHorizontal(CurrentConnectionStart - scrollPos, Event.current.mousePosition, Color.cyan);
+                        DrawNodeConnectionBezierHorizontal(CurrentConnectionStart, Event.current.mousePosition, Color.cyan);
                         break;
                     case ConnectionStyle.BezierVertical:
-                        DrawNodeConnectionBezierVertical(CurrentConnectionStart - scrollPos, Event.current.mousePosition, Color.cyan);
+                        DrawNodeConnectionBezierVertical(CurrentConnectionStart, Event.current.mousePosition, Color.cyan);
                         break;
                 }
 
@@ -199,7 +232,7 @@ namespace Framework.EditorUtils
             {
                 for (int i = 0; i < nodes.Count; i++)
                 {
-                    nodes[i].OnGUI(i);
+                    nodes[i].OnGUI(i, scrollPos * -1);
                 }
             }
             editor.EndWindows();
@@ -227,6 +260,10 @@ namespace Framework.EditorUtils
         {
             switch (Event.current.type)
             {
+                case EventType.ScrollWheel:
+                    ZoomLevel -= Event.current.delta.y * ZoomSpeed;
+                    Event.current.Use();
+                    break;
                 case EventType.mouseUp:
                     if (Event.current.button == 0)
                     {

@@ -63,13 +63,18 @@ public abstract class GraphNode
         );
     }
 
-    public abstract void OnGUI(int id);
+    public abstract void OnGUI(int id, Vector2 scrollPos);
 
     public virtual Vector2 GetMaxCoordinates()
     {
         return drawRect.max + ConnectorSize;
     }
     
+    public virtual Vector2 GetMinCoordinates()
+    {
+        return drawRect.min - ConnectorSize;
+    }
+
     public virtual Color GetParentConnectColor(GraphNode childNode)
     {
         return Color.white;

@@ -16,7 +16,7 @@ namespace Framework.AI
         private static readonly int ReorderableListOffset = 14;
 
         private static BehaviourTreeEditor instance;
-
+        
         private Vector2 editorSize = Vector2.zero;
         private Vector2 paramScroll = Vector2.zero;
 
@@ -87,12 +87,7 @@ namespace Framework.AI
         {
             ReloadFromSelection();
         }
-
-        //void OnInspectorUpdate()
-        //{
-        //    OnLoadAsset(ActionAsset);
-        //}
-
+        
         void OnProjectChange()
         {
             ReloadFromSelection();
@@ -101,7 +96,6 @@ namespace Framework.AI
         void OnSelectionChange()
         {
             ReloadFromSelection();
-            //    CheckForRuntimeController();
         }
 
         #endregion
@@ -139,7 +133,7 @@ namespace Framework.AI
 
         public bool ExecuteInRuntime()
         {
-            return EditorApplication.isPlaying && HasRuntimeController();
+            return EditorApplication.isPlaying && HasRuntimeController() && RuntimeController.IsReady;
         }
 
         public bool HasRuntimeController()
@@ -154,9 +148,6 @@ namespace Framework.AI
 
         private void CheckForRuntimeController()
         {
-            if (!EditorApplication.isPlaying || EditorApplication.isPaused)
-                return;
-
             if (Selection.activeGameObject)
             {
                 var controller = Selection.activeGameObject.GetComponent<AIController>();
@@ -416,24 +407,28 @@ namespace Framework.AI
         private void ReloadFromSelection()
         {
             if (!ShouldReloadFromSelection())
+            {
+                CheckForRuntimeController();
                 return;
+            }
 
-            AssetPath = string.Empty;
-            TreeAsset = null;
+            string path = string.Empty;
+            BehaviourTree asset = null;
 
             var filtered = Selection.GetFiltered(typeof(BehaviourTree), SelectionMode.Assets);
             if (filtered.Length == 1)
             {
-                TreeAsset = (BehaviourTree) filtered[0];
+                asset = (BehaviourTree) filtered[0];
             }
 
-            OnLoadAsset(TreeAsset);
+            OnLoadAsset(asset);
         }
 
         private void OnLoadAsset(BehaviourTree asset)
         {
             if (asset == null)
             {
+                TreeAsset = null;
                 AssetPath = string.Empty;
             }
             else
@@ -542,9 +537,10 @@ namespace Framework.AI
 
         private void AddNewParam(Type type)
         {
-            string paramName = StringUtils.MakeUnique(string.Format("New {0}", type.Name), TreeAsset.Parameters.Select(p => p.Name));
+            string typename  = GenericParameter.GetDisplayedName(type);
+            string paramName = StringUtils.MakeUnique(string.Format("New {0}", typename), TreeAsset.Parameters.Select(p => p.Name));
 
-            TreeAsset.Parameters.Add(
+            TreeAsset.Parameters.Add (
                new GenericParameter(type)
                {
                    Name = paramName
@@ -631,11 +627,11 @@ namespace Framework.AI
                     }
                     GUILayout.EndHorizontal();
 
+                    Nodes.HandleEvents();
+
                     DrawFooter();
                 }
                 EditorGUILayout.EndVertical();
-
-                Nodes.HandleEvents();
             }
             else
             {
@@ -646,7 +642,7 @@ namespace Framework.AI
                 }
             }
         }
-
+        
         private void DrawParameterList()
         {
             paramScroll = GUILayout.BeginScrollView(paramScroll);
@@ -716,10 +712,10 @@ namespace Framework.AI
         {
             GUILayout.BeginVertical(SpaceEditorStyles.GraphNodeEditorBackground);
             {
-                var rect = GUILayoutUtility.GetRect(GUIContent.none, GUIStyle.none, GUILayout.ExpandHeight(true), GUILayout.ExpandWidth(true));
-                editorSize = Nodes.GetMaxCoordinates();
-
-                Nodes.Draw(this, rect, new Rect(0, 0, editorSize.x, editorSize.y));
+                // Reserve space for graph
+                GUILayoutUtility.GetRect(GUIContent.none, GUIStyle.none, GUILayout.ExpandHeight(true), GUILayout.ExpandWidth(true));
+                
+                Nodes.Draw(this, new Rect(0, 16, position.width, position.height - 21));
             }
             GUILayout.EndVertical();
         }
@@ -730,6 +726,8 @@ namespace Framework.AI
             {
                 GUILayout.Label(AssetPath);
                 GUILayout.FlexibleSpace();
+                GUILayout.Label("so:"+Nodes.ScrollPos);
+                Nodes.ZoomLevel = GUILayout.HorizontalSlider(Nodes.ZoomLevel, 0.25f, 1, GUILayout.Width(64));
             }
             EditorGUILayout.EndHorizontal();
         }

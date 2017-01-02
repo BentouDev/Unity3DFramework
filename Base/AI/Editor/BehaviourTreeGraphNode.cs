@@ -16,6 +16,8 @@ namespace Framework.AI
 
         private Color TargetColor;
         private Color CurrentColor;
+
+        private Vector2 currentScrollPos;
         
         public override Vector2 GetChildConnectPosition(GraphNode child)
         {
@@ -37,7 +39,7 @@ namespace Framework.AI
             return new Vector2 (
                 drawRect.center.x + offset,
                 drawRect.yMax  + ConnectorSize.y * 0.1f
-            );
+            ) + currentScrollPos;
         }
 
         public override Vector2 GetParentConnectPosition(GraphNode parent)
@@ -45,7 +47,7 @@ namespace Framework.AI
             return new Vector2 (
                 drawRect.center.x,
                 drawRect.yMin // - ConnectorSize.y
-            );
+            ) + currentScrollPos;
         }
 
         public override Color GetParentConnectColor(GraphNode childNode)
@@ -77,8 +79,11 @@ namespace Framework.AI
             TargetColor = GetColor();//Color.white;
         }
 
-        public override void OnGUI(int id)
+        public override void OnGUI(int id, Vector2 scrollPos)
         {
+            currentScrollPos = scrollPos;
+            drawRect.center += scrollPos;
+
             if (TreeNode.IsRootNode())
                 DrawBigTitle("Root");
             
@@ -89,7 +94,7 @@ namespace Framework.AI
             SetColor();
 
             drawRect = GUI.Window(id, drawRect, WindowRoutine, GUIContent.none, SpaceEditorStyles.GraphNodeBackground);//, (GUIStyle) "flow node 0");//(GUIStyle)"flow node hex 0");
-            position = drawRect.center;
+            position = drawRect.center - scrollPos;
 
             TreeNode.EditorPosition = Position;
             Position = new Vector2 ( 
