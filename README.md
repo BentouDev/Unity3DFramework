@@ -1,6 +1,8 @@
 # Unity3D Framework
 Basic framework for all my Unity3D games
 
+> Work in progress
+
 Will include features like :
 - Buffered input
 - Event based behaviour tree with graphical editor
