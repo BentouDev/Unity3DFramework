@@ -8,19 +8,20 @@ namespace Framework
 {
     public abstract class KnownType
     {
-        protected internal System.Func<GenericParameter, Blackboard.IValue> ValueCreator;
+        // protected internal System.Func<GenericParameter, Blackboard.IValue> ValueCreator;
 
         public System.Type HoldType;
         public string GenericName;
 
 #if UNITY_EDITOR
-        public delegate void TypeDrawFunc(Rect rect, GenericParameter param);
-        public delegate void TypeLayoutFunc(GenericParameter param);
+        public delegate void TypeDrawFunc(Rect rect, GenericParameter param, bool label);
+        public delegate void TypeLayoutFunc(GenericParameter param, bool label);
         
         public TypeDrawFunc DrawFunc;
         public TypeLayoutFunc LayoutFunc;
 #endif
 
+        public abstract Blackboard.IValue CreateValue(GenericParameter param);
         public abstract PropertyReference CreateProperty<T>(T instance, string name);
 
         private static readonly Dictionary<string, KnownType> _knownTypes = new Dictionary<string, KnownType>();
@@ -75,6 +76,11 @@ namespace Framework
         {
             GenericName = name;
             HoldType = typeof(T);
+        }
+
+        public override Blackboard.IValue CreateValue(GenericParameter param)
+        {
+            return new Blackboard.Value<T>(param.HoldType.Type);
         }
 
         public override PropertyReference CreateProperty<U>(U instance, string name)

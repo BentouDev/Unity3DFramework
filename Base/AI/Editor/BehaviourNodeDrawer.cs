@@ -10,9 +10,9 @@ using UnityEngine;
 [CustomEditor(typeof(BehaviourTreeNode), true)]
 public class BehaviourNodeDrawer : Editor
 {
-    private static readonly int BoxBackgroundHeight = 4;
-    private static readonly int BoxBackgroundMargin = 2;
     private static readonly int FieldHeight = 22;
+    private static readonly int FieldLeftShift = 32;
+    private static readonly int LockSize = 16;
 
     public BehaviourTreeNode Node
     {
@@ -62,7 +62,8 @@ public class BehaviourNodeDrawer : Editor
         GUILayout.Label("Parameters", EditorStyles.boldLabel);
 
         EditorGUI.BeginChangeCheck();
-        
+
+        EditorGUIUtility.labelWidth -= FieldLeftShift;
         var requiredParameters = Node.GetType().GetProperties().Where(p => System.Attribute.IsDefined(p, typeof(Blackboard.Required)));
         foreach (PropertyInfo propertyInfo in requiredParameters)
         {
@@ -81,44 +82,42 @@ public class BehaviourNodeDrawer : Editor
 
             var matchingParameters = Parameters.Where(p => p.HoldType.Type == propertyInfo.PropertyType).ToList();
 
-            int index = Node.GetGenericParameterIndex(propertyInfo.Name, propertyInfo.PropertyType, matchingParameters);
-
-            var paramListContent = new List<GUIContent>(matchingParameters.Count() + 1);
-                
-            paramListContent.Add(new GUIContent(string.Format("none ({0})", typename)));
-
-            foreach (GenericParameter parameter in matchingParameters)
-            {
-                paramListContent.Add(new GUIContent(parameter.Name));
-            }
-
-            GUI.color = index == -1 ? Color.red : Color.white;
-            GUILayout.BeginVertical(GUI.skin.box, GUILayout.ExpandWidth(true), GUILayout.Height(FieldHeight));
-            {
-                GUI.color = Color.white;
-                GUILayout.BeginHorizontal();//GUILayout.ExpandWidth(true), GUILayout.Height(FieldHeight));
+            int  oldIndex    = Node.GetGenericParameterIndex(propertyInfo.Name, propertyInfo.PropertyType, matchingParameters);
+            bool wasConstant = Node.IsGenericParameterConstant(propertyInfo.Name);
+            
+            BeginPanelBackground(wasConstant, oldIndex == -1);
+            { 
+                GUILayout.BeginHorizontal();
                 {
-                    GUILayout.BeginVertical();
-                    {
-                        GUILayout.FlexibleSpace();
-                        EditorGUILayout.PrefixLabel(new GUIContent(propertyInfo.Name));
-                        GUILayout.FlexibleSpace();
-                    }
-                    GUILayout.EndVertical();
+                    DrawLabel(propertyInfo.Name);
+
+                    var fieldRect = EditorGUILayout.GetControlRect(true, LockSize, SpaceEditorStyles.LightObjectField);
+                    var lockRect  = new Rect(fieldRect.x + fieldRect.width - LockSize, fieldRect.y + 2, LockSize, fieldRect.height);
+
+                    bool isConstant = EditorGUI.Toggle(lockRect, wasConstant, SpaceEditorStyles.LockButton);
+
+                    fieldRect.width -= LockSize;
                     
-                    int result = EditorGUILayout.Popup(GUIContent.none, index + 1, paramListContent.ToArray(), (GUIStyle)"ShurikenObjectField");
-
-                    if (!Editor.ExecuteInRuntime())
+                    if (isConstant)
                     {
-                        if (result > 0 && result <= matchingParameters.Count)
-                        {
-                            var parameter = matchingParameters[result - 1];
+                        GenericParameter parameter = wasConstant
+                            ? Node.ParametrizedProperties[propertyInfo.Name].Parameter
+                            : new GenericParameter(propertyInfo.PropertyType);
 
-                            Node.SetRequiredParameter(propertyInfo.Name, parameter);
-                        }
-                        else
+                        GenericParamUtils.DrawParameter(fieldRect, parameter, false);
+
+                        Node.SetRequiredParameter(propertyInfo.Name, parameter, true);
+                    }
+                    else
+                    {
+                        fieldRect.y += 2;
+
+                        var paramListContent = BuildParameterGUIList(typename, matchingParameters);
+                        int newIndex = EditorGUI.Popup(fieldRect, GUIContent.none, oldIndex + 1, paramListContent.ToArray(), SpaceEditorStyles.LightObjectField);
+
+                        if (!Editor.ExecuteInRuntime() && (oldIndex != (newIndex - 1) || (isConstant != wasConstant)))
                         {
-                            Node.ClearRequiredParamerer(propertyInfo.Name);
+                            ProcessSelectionResult(newIndex, propertyInfo, matchingParameters);
                         }
                     }
                 }
@@ -129,5 +128,56 @@ public class BehaviourNodeDrawer : Editor
 
         if(EditorGUI.EndChangeCheck())
             serializedObject.ApplyModifiedProperties();
+    }
+
+    private void BeginPanelBackground(bool isConstant, bool hasIndex)
+    {
+        GUI.color = hasIndex ? Color.red : Color.white;
+        GUI.color = isConstant ? new Color(1,0.75f,0.125f) : GUI.color;
+        
+        GUILayout.BeginVertical(GUI.skin.box, GUILayout.ExpandWidth(true), GUILayout.Height(FieldHeight));
+        
+        GUI.color = Color.white;
+    }
+
+    private void DrawLabel(string label)
+    {
+        GUILayout.BeginVertical();
+        {
+            GUILayout.FlexibleSpace();
+
+            EditorGUILayout.PrefixLabel(new GUIContent(label));
+
+            GUILayout.FlexibleSpace();
+        }
+        GUILayout.EndVertical();
+    }
+    
+    private List<GUIContent> BuildParameterGUIList(string typename, List<GenericParameter> matchingParameters)
+    {
+        var paramListContent = new List<GUIContent>(matchingParameters.Count() + 1);
+
+        paramListContent.Add(new GUIContent(string.Format("None ({0})", typename)));
+
+        foreach (GenericParameter parameter in matchingParameters)
+        {
+            paramListContent.Add(new GUIContent(parameter.Name));
+        }
+        
+        return paramListContent;
+    }
+
+    private void ProcessSelectionResult(int result, PropertyInfo propertyInfo, List<GenericParameter> matchingParameters)
+    {
+        if (result > 0 && result <= matchingParameters.Count)
+        {
+            var parameter = matchingParameters[result - 1];
+
+            Node.SetRequiredParameter(propertyInfo.Name, parameter);
+        }
+        else
+        {
+            Node.ClearRequiredParamerer(propertyInfo.Name);
+        }
     }
 }

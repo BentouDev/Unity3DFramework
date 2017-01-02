@@ -26,7 +26,7 @@ namespace Framework.AI
         [HideInInspector]
         private List<ParametrizedProperty> Parameters;
 
-        public Dictionary<string, ParametrizedProperty> BlackboardRequired = new Dictionary<string, ParametrizedProperty>();
+        public Dictionary<string, ParametrizedProperty> ParametrizedProperties = new Dictionary<string, ParametrizedProperty>();
 
         public AIController CurrentController { get; private set; }
         public Blackboard   CurrentBlackboard { get; private set; }
@@ -37,35 +37,53 @@ namespace Framework.AI
 
         protected void SetupParametersForType<T>(T instance) where T : BehaviourTreeNode
         {
-            foreach (var key in BlackboardRequired.Keys.ToList())
+            foreach (var key in ParametrizedProperties.Keys.ToList())
             {
-                var paramProp = BlackboardRequired[key];
+                var paramProp = ParametrizedProperties[key];
                     paramProp.CreateProperty<T>(instance, key);
 
-                BlackboardRequired[key] = paramProp;
+                if (paramProp.Constant)
+                {
+                    paramProp.Property.GetFromParameter(paramProp.Parameter);
+                }
+
+                ParametrizedProperties[key] = paramProp;
             }
         }
 
-        public void SetRequiredParameter(string parameterName, GenericParameter parameter)
+        public void SetRequiredParameter(string parameterName, GenericParameter parameter, bool constant = false)
         {
-            BlackboardRequired[parameterName] = new ParametrizedProperty() { Parameter = parameter };
+            ParametrizedProperties[parameterName] = new ParametrizedProperty() { Parameter = parameter, Constant = constant };
         }
 
         public void ClearRequiredParamerer(string parameterName)
         {
-            BlackboardRequired.Remove(parameterName);
+            ParametrizedProperties.Remove(parameterName);
         }
 
+        public bool IsGenericParameterConstant(string parameterName)
+        {
+            if (ParametrizedProperties == null)
+                return false;
+
+            ParametrizedProperty value;
+
+            if (ParametrizedProperties.TryGetValue(parameterName, out value))
+                return value.Constant;
+
+            return false;
+        }
+        
         public int GetGenericParameterIndex(string parameterName, System.Type type, List<GenericParameter> parameters)
         {
             int result = -1;
 
-            if (BlackboardRequired == null)
+            if (ParametrizedProperties == null)
                 return result;
 
             ParametrizedProperty value;
 
-            if (!BlackboardRequired.TryGetValue(parameterName, out value))
+            if (!ParametrizedProperties.TryGetValue(parameterName, out value))
                 return result;
 
             if(value.Parameter.HoldType.Type == type)
@@ -80,17 +98,17 @@ namespace Framework.AI
 
         public void OnBeforeSerialize()
         {
-            RequiredKeys = BlackboardRequired.Keys  .ToList();
-            Parameters   = BlackboardRequired.Values.ToList();
+            RequiredKeys = ParametrizedProperties.Keys  .ToList();
+            Parameters   = ParametrizedProperties.Values.ToList();
         }
 
         public void OnAfterDeserialize()
         {
-            BlackboardRequired = new Dictionary<string, ParametrizedProperty>();
+            ParametrizedProperties = new Dictionary<string, ParametrizedProperty>();
 
             for (int i = 0; i < RequiredKeys.Count; i++)
             {
-                BlackboardRequired[RequiredKeys[i]] = Parameters[i];
+                ParametrizedProperties[RequiredKeys[i]] = Parameters[i];
             }
 
             RequiredKeys.Clear();
@@ -130,7 +148,7 @@ namespace Framework.AI
         
         protected void GetFromBlackboard(Blackboard blackboard)
         {
-            foreach (var pair in BlackboardRequired)
+            foreach (var pair in ParametrizedProperties.Where(p => !p.Value.Constant))
             {
                 blackboard.SetToParameter(pair.Value.Parameter);
                 pair.Value.Property.GetFromParameter(pair.Value.Parameter);
@@ -139,7 +157,7 @@ namespace Framework.AI
         
         protected void SetToBlackboard(Blackboard blackboard)
         {
-            foreach (var pair in BlackboardRequired)
+            foreach (var pair in ParametrizedProperties.Where(p => !p.Value.Constant))
             {
                 pair.Value.Property.SetToParameter(pair.Value.Parameter);
                 blackboard.GetFromParameter(pair.Value.Parameter);

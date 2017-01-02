@@ -14,6 +14,7 @@ namespace Framework
         public GenericParameter(System.Type type)
         {
             HoldType = new SerializedType(type);
+            _curve   = new AnimationCurve();
         }
         
         [SerializeField]
@@ -21,6 +22,12 @@ namespace Framework
         
         [SerializeField]
         public SerializedType HoldType;
+
+        [SerializeField]
+        private string _string;
+
+        [SerializeField]
+        private AnimationCurve _curve;
 
         [SerializeField]
         private Object _object;
@@ -32,11 +39,19 @@ namespace Framework
         {
             KnownType.InsertKnownType
             (
+                new KnownType<string>("string")
+                {
+                    Getter = parameter => parameter._string,
+                    Setter = (parameter, value) => { parameter._string = value; }
+                }
+            );
+
+            KnownType.InsertKnownType
+            (
                 new KnownType<bool>("bool")
                 {
                     Getter = parameter => parameter._floats[0] > 0,
-                    Setter = (parameter, value) => { parameter._floats[0] = value ? 1 : -1; },
-                    ValueCreator = parameter => new Blackboard.Value<bool>(parameter.HoldType.Type)
+                    Setter = (parameter, value) => { parameter._floats[0] = value ? 1 : -1; }
                 }
             );
 
@@ -45,8 +60,7 @@ namespace Framework
                 new KnownType<int>("int")
                 {
                     Getter = parameter => Mathf.RoundToInt(parameter._floats[0]),
-                    Setter = (parameter, value) => { parameter._floats[0] = value; },
-                    ValueCreator = parameter => new Blackboard.Value<int>(parameter.HoldType.Type)
+                    Setter = (parameter, value) => { parameter._floats[0] = value; }
                 }
             );
 
@@ -55,8 +69,25 @@ namespace Framework
                 new KnownType<float>("float")
                 {
                     Getter = parameter => parameter._floats[0],
-                    Setter = (parameter, value) => { parameter._floats[0] = value; },
-                    ValueCreator = parameter => new Blackboard.Value<float>(parameter.HoldType.Type)
+                    Setter = (parameter, value) => { parameter._floats[0] = value; }
+                }
+            );
+
+            KnownType.InsertKnownType
+            (
+                new KnownType<AnimationCurve>("Animation Curve")
+                {
+                    Getter = parameter => parameter._curve,
+                    Setter = (parameter, curve) => { parameter._curve = curve; }
+                }
+            );
+
+            KnownType.InsertKnownType
+            (
+                new KnownType<Color>("Color")
+                {
+                    Getter = parameter => new Color(parameter._floats[0], parameter._floats[1], parameter._floats[2], parameter._floats[3]),
+                    Setter = (parameter, color) => { parameter._floats[0] = color.r; parameter._floats[1] = color.g; parameter._floats[2] = color.b; parameter._floats[3] = color.a; }
                 }
             );
 
@@ -65,8 +96,7 @@ namespace Framework
                 new KnownType<Vector2>("Vector2")
                 {
                     Getter = parameter => new Vector2(parameter._floats[0], parameter._floats[1]),
-                    Setter = (parameter, vector2) => { parameter._floats[0] = vector2.x; parameter._floats[1] = vector2.y; },
-                    ValueCreator = parameter => new Blackboard.Value<Vector2>(parameter.HoldType.Type)
+                    Setter = (parameter, vector2) => { parameter._floats[0] = vector2.x; parameter._floats[1] = vector2.y; }
                 }
             );
 
@@ -75,8 +105,7 @@ namespace Framework
                 new KnownType<Vector3>("Vector3")
                 {
                     Getter = parameter => new Vector3(parameter._floats[0], parameter._floats[1], parameter._floats[2]),
-                    Setter = (parameter, vector3) => { parameter._floats[0] = vector3.x; parameter._floats[1] = vector3.y; parameter._floats[2] = vector3.z; },
-                    ValueCreator = parameter => new Blackboard.Value<Vector3>(parameter.HoldType.Type)
+                    Setter = (parameter, vector3) => { parameter._floats[0] = vector3.x; parameter._floats[1] = vector3.y; parameter._floats[2] = vector3.z; }
                 }
             );
 
@@ -85,8 +114,7 @@ namespace Framework
                 new KnownType<GameObject>("GameObject")
                 {
                     Getter = parameter => parameter._object as GameObject,
-                    Setter = (parameter, value) => { parameter._object = value; },
-                    ValueCreator = parameter => new Blackboard.Value<GameObject>(parameter.HoldType.Type)
+                    Setter = (parameter, value) => { parameter._object = value; }
                 }
             );
 
@@ -95,8 +123,7 @@ namespace Framework
                 new KnownType<Component>("MonoBehaviour...")
                 {
                     Getter = parameter => parameter._object as Component,
-                    Setter = (parameter, value) => { parameter._object = value; },
-                    ValueCreator = parameter => new Blackboard.Value<Component>(parameter.HoldType.Type)
+                    Setter = (parameter, value) => { parameter._object = value; }
                 }
             );
 
@@ -105,8 +132,7 @@ namespace Framework
                 new KnownType<ScriptableObject>("ScriptableObject...")
                 {
                     Getter = parameter => parameter._object as ScriptableObject,
-                    Setter = (parameter, value) => { parameter._object = value; },
-                    ValueCreator = parameter => new Blackboard.Value<ScriptableObject>(parameter.HoldType.Type)
+                    Setter = (parameter, value) => { parameter._object = value; }
                 }
             );
         }
@@ -142,7 +168,7 @@ namespace Framework
             var knownType = GetKnownType(HoldType.Type);
             if (knownType != null)
             {
-                return knownType.ValueCreator(this);
+                return knownType.CreateValue(this);
             }
             else
             {
@@ -171,39 +197,53 @@ namespace Framework
         }
 
 #if UNITY_EDITOR
-        public static void Layout(GenericParameter parameter)
+        public static void Layout(GenericParameter parameter, bool label)
         {
             var typename = parameter.HoldType.Type.FullName;
 
             KnownType info;
-            if(KnownType.Register.TryGetValue(typename, out info))
+            if(KnownType.Register.TryGetValue(typename, out info) && info.LayoutFunc != null)
             {
-                info.LayoutFunc(parameter);
+                info.LayoutFunc(parameter, label);
+            }
+
+            if (parameter.HoldType.Type.IsSubclassOf(KnownType.ComponentType)
+            && KnownType.Register.TryGetValue(KnownType.ComponentType.FullName, out info)
+            && info.LayoutFunc != null)
+            {
+                info.LayoutFunc(parameter, label);
+            }
+
+            if (parameter.HoldType.Type.IsSubclassOf(KnownType.ScriptableObjectType)
+            && KnownType.Register.TryGetValue(KnownType.ScriptableObjectType.FullName, out info)
+            && info.LayoutFunc != null)
+            {
+                info.LayoutFunc(parameter, label);
             }
         }
 
-        public static void Draw(Rect drawRect, GenericParameter parameter)
+        public static void Draw(Rect drawRect, GenericParameter parameter, bool label)
         {
             var typename = parameter.HoldType.Type.FullName;
 
             KnownType info;
             if (KnownType.Register.TryGetValue(typename, out info) && info.DrawFunc != null)
             {
-                info.DrawFunc(drawRect, parameter);
+                info.DrawFunc(drawRect, parameter, label);
             }
 
             if (parameter.HoldType.Type.IsSubclassOf(KnownType.ComponentType)
             && KnownType.Register.TryGetValue(KnownType.ComponentType.FullName, out info)
             && info.DrawFunc != null)
             {
-                info.DrawFunc(drawRect, parameter);
+                info.DrawFunc(drawRect, parameter, label);
             }
 
             if (parameter.HoldType.Type.IsSubclassOf(KnownType.ScriptableObjectType)
             && KnownType.Register.TryGetValue(KnownType.ScriptableObjectType.FullName, out info) 
             && info.DrawFunc != null)
             {
-                info.DrawFunc(drawRect, parameter);
+                info.DrawFunc(drawRect, parameter, label);
             }
         }
 

@@ -13,6 +13,9 @@ namespace Framework
 
         [SerializeField]
         public GenericParameter Parameter;
+        
+        [SerializeField]
+        public bool Constant;
 
         public void CreateProperty<T>(T instance, string name)
         {

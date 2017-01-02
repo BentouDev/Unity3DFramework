@@ -17,6 +17,36 @@ public static class SpaceEditorStyles
         }
     }
 
+    private static GUIStyle _lockButton;
+    public static GUIStyle LockButton
+    {
+        get
+        {
+            if (_lockButton == null)
+            {
+                _lockButton = (GUIStyle)"IN LockButton";
+                _lockButton.padding = EditorStyles.toggle.padding;
+                _lockButton.margin  = EditorStyles.toggle.margin;
+            }
+
+            return _lockButton;
+        }
+    }
+    
+    private static GUIStyle _lightObjectField;
+    public static GUIStyle LightObjectField
+    {
+        get
+        {
+            if (_lightObjectField == null)
+            {
+                _lightObjectField = (GUIStyle) "ShurikenObjectField";
+            }
+
+            return _lightObjectField;
+        }
+    }
+    
     private static GUIStyle _listItem;
     public static GUIStyle ListItem
     {
