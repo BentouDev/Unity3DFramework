@@ -713,9 +713,10 @@ namespace Framework.AI
             GUILayout.BeginVertical(SpaceEditorStyles.GraphNodeEditorBackground);
             {
                 // Reserve space for graph
-                GUILayoutUtility.GetRect(GUIContent.none, GUIStyle.none, GUILayout.ExpandHeight(true), GUILayout.ExpandWidth(true));
-                
-                Nodes.Draw(this, new Rect(0, 16, position.width, position.height - 21));
+                var targetRect    = GUILayoutUtility.GetRect(GUIContent.none, GUIStyle.none, GUILayout.ExpandHeight(true), GUILayout.ExpandWidth(true));
+                var adjustedRect  = new Rect(0, 16, targetRect.width, position.height - 21);
+
+                Nodes.Draw(this, adjustedRect);
             }
             GUILayout.EndVertical();
         }
