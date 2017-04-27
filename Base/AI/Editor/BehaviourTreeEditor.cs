@@ -133,7 +133,7 @@ namespace Framework.AI
 
         public bool ExecuteInRuntime()
         {
-            return EditorApplication.isPlaying && HasRuntimeController() && RuntimeController.IsReady;
+            return false;//EditorApplication.isPlaying && HasRuntimeController() && RuntimeController.IsReady;
         }
 
         public bool HasRuntimeController()
@@ -154,7 +154,7 @@ namespace Framework.AI
                 if (controller && controller != RuntimeController)
                 {
                     RuntimeController = controller;
-                    OnLoadAsset(RuntimeController.BehaviourTree);
+                    OnLoadAsset(RuntimeController.BehaviourTreeTemplate);
                 }
             }
         }

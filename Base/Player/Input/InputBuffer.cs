@@ -103,6 +103,8 @@ public class InputBuffer<EnumType> : MonoBehaviour where EnumType : struct, ICon
 
         info.Value = button;
         // This one was created before, has a bug when on release it sends pressed once again
+        // But probably also creates another one, discovered in engine - multiple presses and releases lock state of button
+        // Must check if it is not created by press and hold avoidance somehow
         // result.State = (button && changed) || buffered ? ButtonState.Pressed : ButtonState.None;
 
         // This one was created after, to prevent from above bug

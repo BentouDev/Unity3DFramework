@@ -4,26 +4,30 @@ using UnityEngine;
 
 namespace Framework
 {
-    public abstract class BasePawn<T> : Controllable<T>
+    public abstract class BasePawn : MonoBehaviour, ITickable
     {
-        public virtual void OnLevelLoaded()
+        public void Tick()
         {
-
+            OnTick();
         }
 
-        public virtual void OnLevelCleanUp()
+        public void FixedTick()
         {
-
+            OnFixedTick();
         }
 
-        public override bool ProcessInput(T processedInput)
+        public void LateTick()
         {
-            return false;
+            OnLateTick();
         }
 
-        public virtual void OnUpdate()
-        {
+        protected virtual void OnTick()
+        { }
 
-        }
+        protected virtual void OnFixedTick()
+        { }
+
+        protected virtual void OnLateTick()
+        { }
     }
 }

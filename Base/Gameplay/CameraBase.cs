@@ -6,7 +6,7 @@ using Utils;
 namespace Framework
 {
     [System.Serializable]
-    public abstract class CameraBase<T> : Controllable<T>
+    public abstract class CameraBase<T> : MonoBehaviour
     {
         protected ColorCorrectionCurves ColorCorrection;
         protected TiltShift Tilt;

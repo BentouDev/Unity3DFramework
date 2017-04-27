@@ -15,9 +15,7 @@ namespace Framework.AI
         [HideInInspector]
         [SerializeField]
         public BehaviourTreeNode RootNode;
-
-        public List<BehaviourTreeNode> NodeList { get; set; }
-
+        
         public void BuildEmptyBlackboard(Blackboard blackboard)
         {
             GenericParameter.BuildKnownTypeList();
@@ -28,40 +26,29 @@ namespace Framework.AI
                 blackboard.InsertFromParameter(parameter);
             }
         }
-
-        public bool IsPreprocessed()
+        
+        public void Preprocess(List<BehaviourTreeNode> nodes)
         {
-            return NodeList != null && NodeList.Count > 0;
+            ProcessNodeRecurrent(RootNode, nodes);
         }
 
-        public void Preprocess()
+        private void ProcessNodeRecurrent(BehaviourTreeNode node, List<BehaviourTreeNode> nodes)
         {
-            NodeList.Clear();
-            ProcessNodeRecurrent(RootNode);
-        }
-
-        private void ProcessNodeRecurrent(BehaviourTreeNode node)
-        {
-            NodeList.Add(node);
+            nodes.Add(node);
 
             if (node.IsParentNode())
             {
                 var children = node.AsParentNode().GetChildNodes();
                 for (int i = 0; i < children.Count; i++)
                 {
-                    ProcessNodeRecurrent(children[i]);
+                    ProcessNodeRecurrent(children[i], nodes);
                 }
             }
         }
 
         public bool Contains(BehaviourTreeNode node)
         {
-            //if (IsPreprocessed())
-            //    return NodeList.Contains(node);
-            //else
-            {
-                return FindNodeRecursive(RootNode, node);
-            }
+            return FindNodeRecursive(RootNode, node);
         }
 
         private bool FindNodeRecursive(BehaviourTreeNode node, BehaviourTreeNode toFind)
@@ -75,7 +62,7 @@ namespace Framework.AI
             if (node.IsParentNode())
             {
                 var childNodes = node.AsParentNode().GetChildNodes();
-                for(int i = 0; i < childNodes.Count; i++)
+                for (int i = 0; i < childNodes.Count; i++)
                 {
                     if (FindNodeRecursive(childNodes[i], toFind))
                         return true;

@@ -11,8 +11,8 @@ public static class SpaceEditorStyles
     {
         get
         {
-            //if(_skin == null)
-                _skin = AssetDatabase.LoadAssetAtPath<GUISkin>("Assets/Gizmos/SpaceEditorGUI.guiskin");
+            if (_skin == null)
+                _skin = AssetDatabase.LoadAssetAtPath<GUISkin>("Assets/Framework/Gizmos/SpaceEditorGUI.guiskin");
             return _skin;
         }
     }
