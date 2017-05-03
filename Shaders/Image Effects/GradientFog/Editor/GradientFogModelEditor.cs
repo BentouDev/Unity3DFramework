@@ -24,7 +24,7 @@ namespace Framework
             m_TopColor = FindSetting((Settings x) => x.TopColor);
             m_MidColor = FindSetting((Settings x) => x.MidColor);
             m_BottomColor = FindSetting((Settings x) => x.BottomColor);
-            m_Middle = FindSetting((Settings x) => x.Middle);
+            m_Middle = FindSetting((Settings x) => x.Blend);
             m_Min = FindSetting((Settings x) => x.Minimum);
             m_Max = FindSetting((Settings x) => x.Maximum);
         }
@@ -36,13 +36,13 @@ namespace Framework
             EditorGUILayout.PropertyField(m_TopColor, EditorGUIHelper.GetContent("Top Fog Color (deferred only)"));
             EditorGUILayout.PropertyField(m_MidColor, EditorGUIHelper.GetContent("Mid Fog Color (deferred only)"));
             EditorGUILayout.PropertyField(m_BottomColor, EditorGUIHelper.GetContent("Bottom Fog Color (deferred only)"));
-            EditorGUILayout.PropertyField(m_Middle, EditorGUIHelper.GetContent("Middle value (deferred only)"));
+            EditorGUILayout.PropertyField(m_Middle, EditorGUIHelper.GetContent("Blend factor (deferred only)"));
 
             float min = m_Min.floatValue;
             float max = m_Max.floatValue;
 
             EditorGUILayout.MinMaxSlider (
-                EditorGUIHelper.GetContent("Middle section | Values between which middle section is placed."),
+                EditorGUIHelper.GetContent("Gradient size | Values between which middle section is placed."),
                 ref min, ref max, 0.001f, 0.999f
             );
 

@@ -20,7 +20,7 @@ namespace Framework
             public Color BottomColor;
 
             [Range(0.001f, 0.999f)]
-            public float Middle;
+            public float Blend;
 
             [Range(0.001f, 0.999f)]
             public float Minimum;
@@ -38,7 +38,7 @@ namespace Framework
                         TopColor = Color.blue,
                         MidColor = Color.white,
                         BottomColor = Color.gray,
-                        Middle = 0.5f,
+                        Blend = 0.5f,
                         Minimum = 0.35f,
                         Maximum = 0.65f
                     };

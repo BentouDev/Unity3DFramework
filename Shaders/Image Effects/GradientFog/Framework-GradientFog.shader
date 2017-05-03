@@ -8,7 +8,7 @@ Shader "Hidden/Post FX/GradientFog"
 		_ColorTop("Top Color", Color) = (1,1,1,1)
 		_ColorMid("Mid Color", Color) = (1,1,1,1)
 		_ColorBot("Bot Color", Color) = (1,1,1,1)
-		_Middle("Middle", Range(0.001, 0.999)) = 1
+		_Blend("Blend Factor", Range(0.001, 0.999)) = 1
 		_Minimum("Minimum", Range(0.001, 0.999)) = 1
 		_Maximum("Maximum", Range(0.001, 0.999)) = 1
 		_CamDir("Camera Direction", Vector) = (0,0,0,0)
@@ -44,7 +44,7 @@ Shader "Hidden/Post FX/GradientFog"
 	half4 _ColorMid;
 	half4 _ColorBot;
 
-	float _Middle;
+	float _Blend;
 	float _Minimum;
 	float _Maximum;
 
@@ -53,6 +53,7 @@ Shader "Hidden/Post FX/GradientFog"
 	float _End;
 
 	float4 _CamDir;
+	float _CamFov;
 
 	half ComputeFog(float z)
 	{
@@ -81,45 +82,17 @@ Shader "Hidden/Post FX/GradientFog"
 
 		pos = min(pos, 0.9f);
 		
-		// fixed4 color = _ColorTop * pos + _ColorBot * (1 - pos);
+		float center    = _Minimum + 0.5f * length;
+		float halfBlend = _Blend * 0.5f;
 
-		float center  = _Minimum + 0.5f * length;
-		float halfMid = _Middle * 0.5f;
+		float bottomStrength = min(max(pos - _Minimum + halfBlend, 0) / _Blend, 1);
+		float topStrength    = min(max(pos - _Maximum + halfBlend, 0) / _Blend, 1);
 
-		
-
-		float bottomStrength = 1 - (max(pos - _Minimum, 0) / 0.5f * length);
-		float topStrength = min(1, (pos - center) / 0.5f * length);
-
-		// This is good enought, but better blending would be handy
-
-		// fixed4 color = fixed4(min(max(pos - _Maximum + halfMid, 0) / _Middle, 1), 0, 0, 1);
-
-		fixed4 color = lerp(_ColorBot, _ColorMid, min(max(pos - _Minimum + halfMid, 0) / _Middle, 1)) * (1-min(max(pos - _Minimum + halfMid, 0) / _Middle, 1));// step(pos, center);// _Minimum + 0.5f * _Middle);
-		       color += lerp(_ColorMid, _ColorTop, min(max(pos - _Maximum + halfMid, 0) / _Middle, 1)) * (min(max(pos - _Maximum + halfMid, 0) / _Middle, 1)); // step(center, pos);// * step(_Maximum - 0.5f * _Middle, pos);
-
-		//fixed4 c  = lerp(_ColorBot, _ColorMid, i.texcoord.y / _Middle) * step(i.texcoord.y, _Middle);
-		//	     c += lerp(_ColorMid, _ColorTop, (i.texcoord.y - _Middle) / (1 - _Middle)) * step(_Middle, i.texcoord.y);
+		fixed4 color  = lerp(_ColorBot, _ColorMid, bottomStrength) * (1 - bottomStrength);
+		       color += lerp(_ColorMid, _ColorTop, topStrength)    * (topStrength);
 
 		color.a = 1;
-		
-		/*if (pos < _Minimum - length * 0.5f)
-			color = _ColorBot;
 
-		if (pos > _Minimum - length * 0.5f && pos < _Minimum + length * 0.5f)
-			color = lerp(_ColorBot, _ColorMid, (pos - _Minimum - length * 0.5f) / (length));*/
-
-			 //  color += lerp(_ColorTop, _ColorMid, (_Maximum - pos) / _Middle) * step(pos, _Maximum - _Middle);
-
-
-		// This is something, regions are working but colors are broken
-		/*fixed4	color = lerp(_ColorBot, _ColorMid, (pos - _Minimum) / length) * step(pos, _Maximum);
-				color += lerp(_ColorTop, _ColorMid, (pos - _Minimum) / length) * step(_Minimum, pos);*/
-
-					 // + lerp(_Color)
-
-		//fixed4 c = lerp(_ColorBot, _ColorMid, pos / length) * step(pos, _Maximum);
-		//c += lerp(_ColorMid, _ColorTop, (pos - length) / (1 - length)) * step(_Minimum, pos);
 		return (color);
 	}
 
@@ -133,11 +106,7 @@ Shader "Hidden/Post FX/GradientFog"
 		half fog = 1.0 - ComputeFog(dist);
 
 		float coeff = sin(60);
-
-		float pos = ((_CamDir.y + 1) * 0.33f) + (i.uv.y) * -coeff;
-
-		// float3 pos = float3(_CamDir.xyz + float3(i.vertex.xy, 0));
-		// float3 pos = _WorldSpaceCameraPos + float3(UNITY_MATRIX_IT_MV[2].xyz + float3(i.vertex.xy, 0));
+		float pos   = ((_CamDir.y + 1) * 0.33f) + (i.uv.y) * -coeff;
 
 		fixed4 c = ComputeFogColor(pos);
 
@@ -155,11 +124,7 @@ Shader "Hidden/Post FX/GradientFog"
 		half fog = 1.0 - ComputeFog(dist);
 
 		float coeff = sin(60);
-
-		float pos = ((_CamDir.y + 1) * 0.33f) + (i.uv.y) * -coeff;
-
-		// float3 pos = float3(_CamDir.xyz + float3(i.vertex.xy, 0));
-		// float3 pos = _WorldSpaceCameraPos + float3(UNITY_MATRIX_IT_MV[2].xyz + float3(i.vertex.xy, 0));
+		float pos   = ((_CamDir.y + 1) * 0.33f) + (i.uv.y) * -coeff;
 
 		fixed4 c = ComputeFogColor(pos);
 

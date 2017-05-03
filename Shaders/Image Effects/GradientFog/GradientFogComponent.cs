@@ -12,7 +12,7 @@ namespace Framework
             internal static readonly int _TopColor = Shader.PropertyToID("_ColorTop");
             internal static readonly int _MidColor = Shader.PropertyToID("_ColorMid");
             internal static readonly int _BottomColor = Shader.PropertyToID("_ColorBot");
-            internal static readonly int _Middle = Shader.PropertyToID("_Middle");
+            internal static readonly int _BlendFactor = Shader.PropertyToID("_Blend");
             internal static readonly int _Min = Shader.PropertyToID("_Minimum");
             internal static readonly int _Max = Shader.PropertyToID("_Maximum");
             internal static readonly int _CamDir = Shader.PropertyToID("_CamDir");
@@ -64,7 +64,7 @@ namespace Framework
             material.SetColor(Uniforms._MidColor, model.settings.MidColor);
             material.SetColor(Uniforms._BottomColor, model.settings.BottomColor);
 
-            material.SetFloat(Uniforms._Middle, model.settings.Middle);
+            material.SetFloat(Uniforms._BlendFactor, model.settings.Blend);
             material.SetFloat(Uniforms._Min, model.settings.Minimum);
             material.SetFloat(Uniforms._Max, model.settings.Maximum);
             material.SetFloat(Uniforms._Density, RenderSettings.fogDensity);
