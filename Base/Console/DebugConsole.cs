@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using UnityEngine;
 using System.Globalization;
 
@@ -6,7 +7,7 @@ namespace Framework
 {
     public class DebugConsole : MonoBehaviour
     {
-        public bool Show;
+        public ConsoleDisplay Display;
         public bool PasueOnError;
         public bool InterceptLogOutput;
 
@@ -21,6 +22,42 @@ namespace Framework
 
         public string UserInput { get; private set; }
         public string CommandInput { get; private set; }
+
+        public enum ConsoleDisplay
+        {
+            Hidden,
+            HalfSize,
+            FullSize
+        }
+
+        public Rect CurrentWindowRect
+        {
+            get
+            {
+                switch (Display)
+                {
+                    case ConsoleDisplay.HalfSize:
+                        return HalfWindowRect;
+                    case ConsoleDisplay.FullSize:
+                        return DefaultWindowRect;
+                }
+                
+                throw new System.InvalidOperationException("Unable to get console rect when its hidden!");
+            }
+        }
+
+        public Rect HalfWindowRect
+        {
+            get
+            {
+                return new Rect
+                (
+                    Margin, Margin,
+                    Screen.width - (Margin * 2),
+                    Screen.height * 0.5f
+                );
+            }
+        }
 
         public Rect DefaultWindowRect
         {
@@ -41,9 +78,9 @@ namespace Framework
             {
                 return new Rect
                 (
-                    DefaultWindowRect.xMin - Margin + 10,
-                    DefaultWindowRect.yMax - Margin - InputHeight,
-                    DefaultWindowRect.width - 10,
+                    CurrentWindowRect.xMin - Margin + 10,
+                    CurrentWindowRect.yMax - Margin - InputHeight,
+                    CurrentWindowRect.width - 10,
                     InputHeight
                 );
             }
@@ -127,7 +164,7 @@ namespace Framework
 
         public void ToggleConsole()
         {
-            Show = !Show;
+            Display = Display.Next();
         }
 
         public void HistoryUp()
@@ -194,22 +231,35 @@ namespace Framework
             Controller.Warning(message);
         }
 
-        void OnGUI()
+        private bool IsBackQuoteEvent()
         {
-            var current = Event.current;
-            if (current.isKey && current.type == EventType.KeyDown && current.keyCode == KeyCode.BackQuote)
+            return Event.current.isKey
+                && Event.current.keyCode == KeyCode.BackQuote;
+        }
+
+        void Update()
+        {
+            if (Input.GetKeyDown(KeyCode.BackQuote))
             {
-                current.Use();
                 ToggleConsole();
             }
+        }
 
-            if (!Show)
+        void OnGUI()
+        {
+            if (IsBackQuoteEvent())
+            {
+                Event.current.Use();
+                return;
+            }
+
+            if (Display == ConsoleDisplay.Hidden)
                 return;
 
             if (Skin)
                 GUI.skin = Skin;
 
-            GUI.Window(12345, DefaultWindowRect, HandleConsoleWindow, "Console");
+            GUI.Window(12345, CurrentWindowRect, HandleConsoleWindow, "Console");
         }
 
         bool HandleConsoleEvents()
@@ -278,7 +328,7 @@ namespace Framework
         void HandleConsoleInput()
         {
             var commandRect = DefaultInputRect;
-            commandRect.x += Prompt.Length*8;
+            commandRect.x += GUI.skin.label.CalcSize(new GUIContent(Prompt)).x;//Prompt.Length*8;
 
             GUI.Label(DefaultInputRect, Prompt);
             GUI.SetNextControlName(CommandLineControlName);
@@ -288,9 +338,11 @@ namespace Framework
                 : Controller.GetHistory(Controller.GetHistoryCount() + HistoryIndex);
             CommandInput = GUI.TextField(commandRect, CommandInput, GUI.skin.label);
 
+            CommandInput = CommandInput.Replace("`", string.Empty);
+
             if (GUI.GetNameOfFocusedControl() != CommandLineControlName)
             {
-                //    GUI.FocusControl(CommandLineControlName);
+                GUI.FocusControl(CommandLineControlName);
             }
 
             if (HistoryIndex == 0 ||
