@@ -2,28 +2,46 @@
 
 namespace Framework
 {
-    public abstract class GameState<T> : MonoBehaviour, ILevelDependable where T : Game<T>
+    public abstract class GameState : MonoBehaviour, ITickable
     {
-        protected T Game;
-
-        void Start()
+        public void Tick()
         {
-            Game = FindObjectOfType<T>();
+            OnTick();
         }
 
-        public abstract bool IsPlayable();
-
-        public abstract void OnLevelLoaded();
-
-        public abstract void OnStart();
-
-        public abstract void OnRun();
-
-        public abstract void OnEnd();
-
-        public virtual void OnLevelCleanUp()
+        public void FixedTick()
         {
-
+            OnFixedTick();
         }
+
+        public void LateTick()
+        {
+            OnLateTick();
+        }
+
+        protected virtual void OnTick()
+        { }
+
+        protected virtual void OnFixedTick()
+        { }
+
+        protected virtual void OnLateTick()
+        { }
+
+        public void DoStart()
+        {
+            OnStart();
+        }
+
+        public void DoEnd()
+        {
+            OnEnd();
+        }
+
+        protected virtual void OnEnd()
+        { }
+
+        protected virtual void OnStart()
+        { }
     }
 }

@@ -1,192 +1,119 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
 
 namespace Framework
 {
-    public interface IGameplayControlled
-    {
-        void OnPreBeginPlay();
-        void OnPostBeginPlay();
-
-        void OnPausePlay();
-        void OnResumePlay();
-
-        void OnEndPlay();
-
-        void OnGameLose();
-        void OnGameWin();
-        void OnGameWithdraw();
-
-        void OnLevelLoaded();
-        void OnLevelCleanUp();
-    }
-    
     public abstract class Game<T> : Singleton<T> where T : Game<T>
     {
-        public SceneLoader Manager;
+        public bool InitOnStart;
 
-        public abstract bool IsInGame();
+        public SceneLoader Loader;
+
+        public DebugConsole Console;
+
+        public GameState StartState;
+
+        public GameState CurrentState { get; protected set; }
+
+        public List<GameState> AllStates { get; protected set; }
+
+        void Start()
+        {
+            if (!InitOnStart)
+                return;
+
+            Init();
+        }
+
+        public void Init()
+        {
+            if (AllStates != null)
+                AllStates.Clear();
+            else
+                AllStates = new List<GameState>();
+
+            AllStates.AddRange(GetComponentsInChildren<GameState>());
+
+            Loader.OnSceneLoad -= OnSceneLoad;
+            Loader.OnSceneLoad += OnSceneLoad;
+
+            Loader.StartLoadScene(Loader.BaseScene);
+        }
 
         public abstract bool IsPlaying();
 
-        public abstract bool IsJustStarted();
-
-        internal void OnPreBeginPlay()
+        protected virtual void OnSceneLoad()
         {
-            var allObjs = FindObjectsOfType<GameObject>();
-            foreach (GameObject allObj in allObjs)
+            SwitchState(StartState);
+        }
+
+        public void SwitchState(GameState state)
+        {
+            if (CurrentState != null) CurrentState.DoEnd();
+            CurrentState = state;
+            if (CurrentState != null) CurrentState.DoStart();
+        }
+
+        public void SwitchState<T>() where T : GameState
+        {
+            SwitchState(AllStates.FirstOrDefault(s => s is T));
+        }
+
+        public void QuitGame()
+        {
+    #if UNITY_EDITOR
+            UnityEditor.EditorApplication.isPlaying = false;
+    #else
+            Application.Quit();
+    #endif
+        }
+
+        public void RestartGame()
+        {
+            StopAllCoroutines();
+
+            Loader.StartLoadScene(Loader.CurrentScene);
+        }
+
+        public void DestroyPersistent()
+        {
+            foreach (var pers in FindObjectsOfType<Persistent>())
             {
-                var allGameControlled = allObj.GetInterfaces<IGameplayControlled>();
-                if (allGameControlled != null && allGameControlled.Length > 0)
-                {
-                    foreach (IGameplayControlled gameplayControlled in allGameControlled)
-                    {
-                        gameplayControlled.OnPreBeginPlay();
-                    }
-                }
+                pers.DestroyOnExit();
             }
         }
 
-        internal void OnPostBeginPlay()
+        void Update()
         {
-            var allObjs = FindObjectsOfType<GameObject>();
-            foreach (GameObject allObj in allObjs)
+            if (!Loader.IsReady)
+                return;
+
+            if (CurrentState != null)
             {
-                var allGameControlled = allObj.GetInterfaces<IGameplayControlled>();
-                if (allGameControlled != null && allGameControlled.Length > 0)
-                {
-                    foreach (IGameplayControlled gameplayControlled in allGameControlled)
-                    {
-                        gameplayControlled.OnPostBeginPlay();
-                    }
-                }
+                CurrentState.Tick();
             }
         }
 
-        internal void OnPausePlay()
+        void FixedUpdate()
         {
-            var allObjs = FindObjectsOfType<GameObject>();
-            foreach (GameObject allObj in allObjs)
+            if (!Loader.IsReady)
+                return;
+
+            if (CurrentState != null)
             {
-                var allGameControlled = allObj.GetInterfaces<IGameplayControlled>();
-                if (allGameControlled != null && allGameControlled.Length > 0)
-                {
-                    foreach (IGameplayControlled gameplayControlled in allGameControlled)
-                    {
-                        gameplayControlled.OnPausePlay();
-                    }
-                }
+                CurrentState.FixedTick();
             }
         }
 
-        internal void OnResumePlay()
+        void LateUpdate()
         {
-            var allObjs = FindObjectsOfType<GameObject>();
-            foreach (GameObject allObj in allObjs)
-            {
-                var allGameControlled = allObj.GetInterfaces<IGameplayControlled>();
-                if (allGameControlled != null && allGameControlled.Length > 0)
-                {
-                    foreach (IGameplayControlled gameplayControlled in allGameControlled)
-                    {
-                        gameplayControlled.OnResumePlay();
-                    }
-                }
-            }
-        }
+            if (!Loader.IsReady)
+                return;
 
-        internal void OnEndPlay()
-        {
-            var allObjs = FindObjectsOfType<GameObject>();
-            foreach (GameObject allObj in allObjs)
+            if (CurrentState != null)
             {
-                var allGameControlled = allObj.GetInterfaces<IGameplayControlled>();
-                if (allGameControlled != null && allGameControlled.Length > 0)
-                {
-                    foreach (IGameplayControlled gameplayControlled in allGameControlled)
-                    {
-                        gameplayControlled.OnEndPlay();
-                    }
-                }
-            }
-        }
-
-        internal void OnGameLose()
-        {
-            var allObjs = FindObjectsOfType<GameObject>();
-            foreach (GameObject allObj in allObjs)
-            {
-                var allGameControlled = allObj.GetInterfaces<IGameplayControlled>();
-                if (allGameControlled != null && allGameControlled.Length > 0)
-                {
-                    foreach (IGameplayControlled gameplayControlled in allGameControlled)
-                    {
-                        gameplayControlled.OnGameLose();
-                    }
-                }
-            }
-        }
-
-        internal void OnGameWin()
-        {
-            var allObjs = FindObjectsOfType<GameObject>();
-            foreach (GameObject allObj in allObjs)
-            {
-                var allGameControlled = allObj.GetInterfaces<IGameplayControlled>();
-                if (allGameControlled != null && allGameControlled.Length > 0)
-                {
-                    foreach (IGameplayControlled gameplayControlled in allGameControlled)
-                    {
-                        gameplayControlled.OnGameWin();
-                    }
-                }
-            }
-        }
-
-        internal void OnGameWithdraw()
-        {
-            var allObjs = FindObjectsOfType<GameObject>();
-            foreach (GameObject allObj in allObjs)
-            {
-                var allGameControlled = allObj.GetInterfaces<IGameplayControlled>();
-                if (allGameControlled != null && allGameControlled.Length > 0)
-                {
-                    foreach (IGameplayControlled gameplayControlled in allGameControlled)
-                    {
-                        gameplayControlled.OnGameWithdraw();
-                    }
-                }
-            }
-        }
-
-        internal void OnLevelLoaded()
-        {
-            var allObjs = FindObjectsOfType<GameObject>();
-            foreach (GameObject allObj in allObjs)
-            {
-                var allGameControlled = allObj.GetInterfaces<IGameplayControlled>();
-                if (allGameControlled != null && allGameControlled.Length > 0)
-                {
-                    foreach (IGameplayControlled gameplayControlled in allGameControlled)
-                    {
-                        gameplayControlled.OnLevelLoaded();
-                    }
-                }
-            }
-        }
-
-        internal void OnLevelCleanUp()
-        {
-            var allObjs = FindObjectsOfType<GameObject>();
-            foreach (GameObject allObj in allObjs)
-            {
-                var allGameControlled = allObj.GetInterfaces<IGameplayControlled>();
-                if (allGameControlled != null && allGameControlled.Length > 0)
-                {
-                    foreach (IGameplayControlled gameplayControlled in allGameControlled)
-                    {
-                        gameplayControlled.OnLevelCleanUp();
-                    }
-                }
+                CurrentState.LateTick();
             }
         }
     }

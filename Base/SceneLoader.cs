@@ -8,36 +8,22 @@ namespace Framework
     {
         public int BaseScene;
 
-        private static bool WaitForLoad;
-        private static int NextScene;
-
-        public int SceneToLoad;
+        private static bool _waitForLoad;
+        private static int _nextScene;
+        
         public int CurrentScene { get; private set; }
         public bool IsReady { get; private set; }
 
         public delegate void SceneLoad();
 
         public event SceneLoad OnSceneLoad;
-
-        void Start()
-        {
-            StartLoadScene(BaseScene);
-        }
-
-        void Update()
-        {
-            //    if (!Application.isLoadingLevel && WaitForLoad && !Game.IsReady)
-            //    {
-            //        EndLoadScene();
-            //    }
-        }
-
+        
         private void EndLoadScene()
         {
-            CurrentScene = NextScene;
+            CurrentScene = _nextScene;
             IsReady = true;
-            WaitForLoad = false;
-            Debug.Log("Loaded scene " + NextScene + "!");
+            _waitForLoad = false;
+            Debug.Log("Loaded scene " + _nextScene + "!");
 
             if (OnSceneLoad != null)
                 OnSceneLoad();
@@ -48,22 +34,22 @@ namespace Framework
             AsyncOperation operation = SceneManager.LoadSceneAsync(scene);
             yield return operation;
 
-            while (!WaitForLoad || IsReady)
-            {
-                yield return null;
-            }
+            //while (!_waitForLoad || IsReady)
+            //{
+            //    yield return null;
+            //}
 
             EndLoadScene();
         }
 
         public void StartLoadScene(int i)
         {
-            if (WaitForLoad || i == 0)
+            if (_waitForLoad || i == 0)
                 return;
 
-            NextScene = i;
+            _nextScene = i;
             IsReady = false;
-            WaitForLoad = true;
+            _waitForLoad = true;
             Debug.Log("Loading scene " + i + " ...");
 
             StartCoroutine(ExecuteLoading(i));
