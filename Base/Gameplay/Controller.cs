@@ -2,21 +2,64 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public abstract class Controller : MonoBehaviour
+namespace Framework
 {
-    public void Init()
+    public abstract class Controller : MonoBehaviour
     {
-        OnInit();
-    }
+        [Header("Debug")]
+        public bool InitOnStart;
 
-    public void Tick()
-    {
-        OnProcessControll();
-    }
+        [Header("Pawn")]
+        public bool FindByTag;
+        public string PawnTag;
+        public BasePawn Pawn;
 
-    protected virtual void OnInit()
-    { }
-    
-    protected virtual void OnProcessControll()
-    { }
+        void Start()
+        {
+            if (!InitOnStart)
+                return;
+
+            Init();
+        }
+
+        public void Init()
+        {
+            if (FindByTag && Pawn == null)
+            {
+                var go = GameObject.FindGameObjectWithTag(PawnTag);
+                Pawn = go ? go.GetComponentInChildren<BasePawn>() : null;
+            }
+
+            if (Pawn != null) Pawn.Init();
+
+            OnInit();
+        }
+
+        public void Tick()
+        {
+            OnProcessControll();
+        }
+
+        public void FixedTick()
+        {
+            OnFixedTick();
+        }
+
+        public void LateTick()
+        {
+            OnLateTick();
+        }
+
+        protected virtual void OnInit()
+        { }
+
+        protected virtual void OnProcessControll()
+        { }
+
+        protected virtual void OnFixedTick()
+        { }
+
+        protected virtual void OnLateTick()
+        { }
+    }
 }

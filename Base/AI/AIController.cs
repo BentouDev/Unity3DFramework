@@ -6,7 +6,7 @@ namespace Framework.AI
 {
     public class AIController : Controller
     {
-        public BasePawn Pawn;
+        public BasePawn BasePawn;
 
         public BehaviourTree BehaviourTreeTemplate;
 

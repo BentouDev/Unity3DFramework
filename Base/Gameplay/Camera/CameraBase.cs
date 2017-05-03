@@ -1,16 +1,12 @@
 ﻿using System.Collections;
 using UnityEngine;
-using UnityStandardAssets.ImageEffects;
 using Utils;
 
 namespace Framework
 {
-    [System.Serializable]
-    public abstract class CameraBase<T> : MonoBehaviour
+    public abstract class CameraBase : MonoBehaviour
     {
-        protected ColorCorrectionCurves ColorCorrection;
-        protected TiltShift Tilt;
-        protected bool _isDesaturating;
+        /*protected bool _isDesaturating;
         
         public void StartDesaturateAnim(float from, float to, float duration)
         {
@@ -94,6 +90,6 @@ namespace Framework
 
                 _isDesaturating = false;
             }
-        }
+        }*/
     }
 }
