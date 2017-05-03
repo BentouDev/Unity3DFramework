@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using UnityEngine.Audio;
 using UnityEngine.Rendering;
 using UnityEngine.UI;
-using UnityStandardAssets.ImageEffects;
 
 public class SettingsManager : MonoBehaviour
 {
