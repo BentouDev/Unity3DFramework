@@ -95,6 +95,7 @@ public class BezierCurve : MonoBehaviour
 	#region Gizmo
 
 #if UNITY_EDITOR
+
 	void OnDrawGizmos()
 	{
 		if (!DrawGizmo || (!Selection.Contains(this)

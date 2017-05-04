@@ -85,11 +85,13 @@ Shader "Hidden/Post FX/GradientFog"
 		float center    = _Minimum + 0.5f * length;
 		float halfBlend = _Blend * 0.5f;
 
-		float bottomStrength = min(max(pos - _Minimum + halfBlend, 0) / _Blend, 1);
-		float topStrength    = min(max(pos - _Maximum + halfBlend, 0) / _Blend, 1);
+		float bottomStrength  = min(max(pos - _Minimum + halfBlend, 0) / _Blend, 1);
+		float topStrength     = min(max(pos - _Maximum + halfBlend, 0) / _Blend, 1);
+		float bottomStrength2 = min(max(pos - _Minimum + _Blend, 0) / _Blend, 1);
+		float topStrength2    = min(max(pos - _Maximum + _Blend, 0) / _Blend, 1);
 
-		fixed4 color  = lerp(_ColorBot, _ColorMid, bottomStrength) * (1 - bottomStrength);
-		       color += lerp(_ColorMid, _ColorTop, topStrength)    * (topStrength);
+		fixed4 color  = lerp(_ColorBot, _ColorMid, bottomStrength) * (1 - bottomStrength2);
+		       color += lerp(_ColorMid, _ColorTop, topStrength)    * (topStrength2);
 
 		color.a = 1;
 
