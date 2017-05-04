@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Framework
 {
-    public abstract class Game<T> : Singleton<T> where T : Game<T>
+    public abstract class Game<TGame> : Singleton<TGame> where TGame : Game<TGame>
     {
         public bool InitOnStart;
 
@@ -55,9 +55,9 @@ namespace Framework
             if (CurrentState != null) CurrentState.DoStart();
         }
 
-        public void SwitchState<T>() where T : GameState
+        public void SwitchState<TState>() where TState : GameState
         {
-            SwitchState(AllStates.FirstOrDefault(s => s is T));
+            SwitchState(AllStates.FirstOrDefault(s => s is TState));
         }
 
         public void QuitGame()

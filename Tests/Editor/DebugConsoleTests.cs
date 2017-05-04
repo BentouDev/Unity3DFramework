@@ -6,13 +6,13 @@ public class DebugConsoleTests
 {
     private Framework.ConsoleController TestConsole;
 
-    [TestFixtureSetUp]
+    [OneTimeSetUp]
     public void Init()
     {
         TestConsole = new Framework.ConsoleController();
     }
 
-    [TestFixtureTearDown]
+    [OneTimeTearDown]
     public void Dispose()
     {
 
