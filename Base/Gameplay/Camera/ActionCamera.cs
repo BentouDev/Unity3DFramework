@@ -24,7 +24,8 @@ namespace Framework
         public LayerMask Mask;
 
         [Header("Offset")]
-        public Vector3 Offset = new Vector3(0,1,-4);
+        public Vector3 Offset = new Vector3(0, 0, -4);
+        public float Height = 1;
 
         [Header("Speed")]
         public float SpeedX = 2;
@@ -86,11 +87,11 @@ namespace Framework
 
                 rot = Quaternion.Euler(AngleY, AngleX, 0);
             }
-
+            
             var offset = new Vector3(Offset.x, Offset.y, CalcCameraDistance());
             var pos = rot * offset + (
                 Target ? Target.position : Vector3.zero
-            );
+            ) + new Vector3(0, Height, 0);
 
             transform.position = pos;
             transform.rotation = rot; //Quaternion.RotateTowards(transform.rotation, rot, 360 * Time.deltaTime);

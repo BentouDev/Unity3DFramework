@@ -13,6 +13,7 @@ namespace Framework
         [Header("Base Components")]
         public Rigidbody Body;
         public Damageable Damageable;
+        public Animator Anim;
 
         [Header("Ground Checking")]
         public LayerMask RaycastMask;
@@ -52,6 +53,16 @@ namespace Framework
             public float JumpDuration { get { return JumpHeight / JumpSpeed; } }
         }
 
+        [System.Serializable]
+        public struct AnimationInfo
+        {
+            [SerializeField]
+            public string MovementBlend;
+
+            [SerializeField]
+            public string AirBoolean;
+        }
+
         [SerializeField]
         [Header("Movement")]
         public bool StickToGround;
@@ -78,6 +89,9 @@ namespace Framework
 
         public Vector3 DesiredForward { get; set; }
 
+        [Header("Animation")]
+        public AnimationInfo Animation;
+        
         Vector3[] GetRaycastOffsets()
         {
             return new []
@@ -200,11 +214,26 @@ namespace Framework
 
         private void Reset()
         {
-            Movement.Gravity = -9.81f;
-            Movement.MaxSpeed = 9;
-            Movement.Friction = 6;
-            Movement.Acceleration = 6;
-            Movement.MinimalForceThreshold = 0.01f;
+            Movement = new MovementInfo()
+            {
+                Gravity = -9.81f,
+                MaxSpeed = 9,
+                Friction = 6,
+                Acceleration = 6,
+                MinimalForceThreshold = 0.01f
+            };
+
+            Jump = new JumpInfo()
+            {
+                JumpHeight = 2,
+                JumpSpeed = 9
+            };
+
+            Animation = new AnimationInfo()
+            {
+                MovementBlend = "Forward",
+                AirBoolean = "InAir"
+            };
         }
         
         private void OnDrawGizmosSelected()

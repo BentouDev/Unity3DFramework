@@ -45,7 +45,7 @@ namespace Framework
 
             var flatVelocity = new Vector3(CurrentInput.x, 0, CurrentInput.y);
             var direction = Quaternion.LookRotation(Vector3.Normalize(Pawn.DesiredForward)) * flatVelocity;
-
+            
             Pawn.ProcessMovement(direction.normalized);
             Pawn.Tick();
         }

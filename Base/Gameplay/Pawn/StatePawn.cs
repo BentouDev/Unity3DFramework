@@ -79,6 +79,18 @@ namespace Framework
             Velocity = appliedVelocity;
         }
 
+        internal void RefreshAnimator()
+        {
+            if (!Anim)
+                return;
+
+            if (!string.IsNullOrEmpty(Animation.MovementBlend))
+                Anim.SetFloat(Animation.MovementBlend, Velocity.magnitude / Movement.MaxSpeed);
+
+            if (!string.IsNullOrEmpty(Animation.AirBoolean))
+                Anim.SetBool(Animation.AirBoolean, !IsGrounded);
+        }
+
         protected override void OnTick()
         {
             if (!IsAlive())
@@ -88,6 +100,8 @@ namespace Framework
             {
                 CurrentState.Tick();
             }
+
+            RefreshAnimator();
         }
 
         protected override void OnFixedTick()
@@ -106,7 +120,7 @@ namespace Framework
             if (!IsAlive())
                 return;
 
-            FaceMovementDirection(15);
+            FaceMovementDirection(20);
 
             if (CurrentState != null)
             {
