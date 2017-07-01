@@ -84,11 +84,16 @@ namespace Framework
             if (!Anim)
                 return;
 
+            float movementFactor = Velocity.magnitude / Movement.MaxSpeed;
+
             if (!string.IsNullOrEmpty(Animation.MovementBlend))
-                Anim.SetFloat(Animation.MovementBlend, Velocity.magnitude / Movement.MaxSpeed);
+                Anim.SetFloat(Animation.MovementBlend, movementFactor);
 
             if (!string.IsNullOrEmpty(Animation.AirBoolean))
                 Anim.SetBool(Animation.AirBoolean, !IsGrounded);
+
+            if (!string.IsNullOrEmpty(Animation.MoveBoolean))
+                Anim.SetBool(Animation.MoveBoolean, Mathf.Abs(movementFactor) > 0.1f);
         }
 
         protected override void OnTick()

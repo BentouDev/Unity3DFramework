@@ -61,6 +61,9 @@ namespace Framework
 
             [SerializeField]
             public string AirBoolean;
+
+            [SerializeField]
+            public string MoveBoolean;
         }
 
         [SerializeField]
