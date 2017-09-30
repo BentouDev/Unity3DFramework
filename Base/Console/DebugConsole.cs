@@ -158,7 +158,7 @@ namespace Framework
 
             if (InterceptLogOutput)
             {
-                Debug.logger.logHandler = new LogInterceptor(Controller, Debug.logger.logHandler, LogColor);
+                Debug.unityLogger.logHandler = new LogInterceptor(Controller, Debug.unityLogger.logHandler, LogColor);
             }
         }
 

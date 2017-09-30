@@ -12,6 +12,9 @@ namespace Framework.AI
         [SerializeField]
         public List<GenericParameter> Parameters = new List<GenericParameter>();
 
+        [SerializeField]
+        public List<BehaviourTreeNode> Nodes = new List<BehaviourTreeNode>();
+
         [HideInInspector]
         [SerializeField]
         public BehaviourTreeNode RootNode;
@@ -19,30 +22,38 @@ namespace Framework.AI
         public void BuildEmptyBlackboard(Blackboard blackboard)
         {
             GenericParameter.BuildKnownTypeList();
-
-            // Create empty parameters
+            
             foreach (GenericParameter parameter in Parameters)
             {
                 blackboard.InsertFromParameter(parameter);
             }
         }
         
-        public void Preprocess(List<BehaviourTreeNode> nodes)
+        public void GetAllEnabledNodes(List<BehaviourTreeNode> nodes)
         {
             ProcessNodeRecurrent(RootNode, nodes);
+        }
+
+        public List<BehaviourTreeNode> GetAllEnabledNodes()
+        {
+            List<BehaviourTreeNode> nodes = new List<BehaviourTreeNode>();
+
+            GetAllEnabledNodes(nodes);
+
+            return nodes;
         }
 
         private void ProcessNodeRecurrent(BehaviourTreeNode node, List<BehaviourTreeNode> nodes)
         {
             nodes.Add(node);
 
-            if (node.IsParentNode())
+            if (!node.IsParentNode())
+                return;
+
+            var children = node.AsParentNode().GetChildNodes();
+            foreach (BehaviourTreeNode child in children)
             {
-                var children = node.AsParentNode().GetChildNodes();
-                for (int i = 0; i < children.Count; i++)
-                {
-                    ProcessNodeRecurrent(children[i], nodes);
-                }
+                ProcessNodeRecurrent(child, nodes);
             }
         }
 

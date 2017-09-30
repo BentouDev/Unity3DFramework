@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using Framework.AI;
+using Framework.Editor;
 using UnityEditor;
 using UnityEngine;
 
@@ -16,8 +17,6 @@ namespace Framework.AI
 
         private Color TargetColor;
         private Color CurrentColor;
-
-        private Vector2 currentScrollPos;
         
         public override Vector2 GetChildConnectPosition(GraphNode child)
         {
@@ -39,7 +38,7 @@ namespace Framework.AI
             return new Vector2 (
                 drawRect.center.x + offset,
                 drawRect.yMax  + ConnectorSize.y * 0.1f
-            ) + currentScrollPos;
+            ) - Editor.ScrollPos;
         }
 
         public override Vector2 GetParentConnectPosition(GraphNode parent)
@@ -47,7 +46,7 @@ namespace Framework.AI
             return new Vector2 (
                 drawRect.center.x,
                 drawRect.yMin // - ConnectorSize.y
-            ) + currentScrollPos;
+            ) - Editor.ScrollPos;
         }
 
         public override Color GetParentConnectColor(GraphNode childNode)
@@ -79,11 +78,8 @@ namespace Framework.AI
             TargetColor = GetColor();//Color.white;
         }
 
-        public override void OnGUI(int id, Vector2 scrollPos)
+        protected override void OnGUI(int id)
         {
-            currentScrollPos = scrollPos;
-            drawRect.center += scrollPos;
-
             if (TreeNode.IsRootNode())
                 DrawBigTitle("Root");
             
@@ -92,20 +88,13 @@ namespace Framework.AI
             DrawIndexInParent(drawRect);
 
             SetColor();
-
-            drawRect = GUI.Window(id, drawRect, WindowRoutine, GUIContent.none, SpaceEditorStyles.GraphNodeBackground);//, (GUIStyle) "flow node 0");//(GUIStyle)"flow node hex 0");
-            position = drawRect.center - scrollPos;
-
+            
             TreeNode.EditorPosition = Position;
-            Position = new Vector2 ( 
-                Position.x - (Position.x % 5),
-                Position.y - (Position.y % 5)
-            );
-
+            
             GUI.color = Color.white;
         }
 
-        void WindowRoutine(int id)
+        protected override void OnDrawContent(int id)
         {
             DrawIndexInParent(new Rect(0, 0, drawRect.width, drawRect.height));
 
@@ -128,8 +117,6 @@ namespace Framework.AI
             
             HandleSelection();
             HandleDeletion();
-
-            GUI.DragWindow();
         }
 
         void HandleSelection()
@@ -149,7 +136,7 @@ namespace Framework.AI
             && Event.current.type == EventType.KeyDown
             && Event.current.keyCode == KeyCode.Delete)
             {
-                GraphNode.toDelete = this;
+                Editor.DeleteNode(this);
                 Event.current.Use();
             }
         }

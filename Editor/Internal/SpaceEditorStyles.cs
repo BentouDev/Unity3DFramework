@@ -71,6 +71,21 @@ public static class SpaceEditorStyles
         }
     }
 
+    private static GUIStyle _selectorRectangle;
+
+    public static GUIStyle SelectorRectangle
+    {
+        get
+        {
+            if (_selectorRectangle == null)
+            {
+                _selectorRectangle = (GUIStyle) "RectangleToolSelection";
+            }
+
+            return _selectorRectangle;
+        }
+    }
+
     private static GUIStyle _selectedListItem;
     public static GUIStyle SelectedListItem
     {
@@ -341,7 +356,10 @@ public static class SpaceEditorStyles
         {
             if (_behaviourTreeIcon == null)
             {
-                _behaviourTreeIcon = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Gizmos/BehaviourTreeEditorIcon.png");
+                if (EditorGUIUtility.isProSkin)
+                    _behaviourTreeIcon = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Framework/Gizmos/d_BehaviourTreeEditorIcon.png");
+                else
+                    _behaviourTreeIcon = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Framework/Gizmos/BehaviourTreeEditorIcon.png");
             }
             return _behaviourTreeIcon;
         }

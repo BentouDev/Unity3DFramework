@@ -29,7 +29,7 @@ namespace Framework.AI
             if (BehaviourTreeTemplate)
             {
                 BehaviourTreeTemplate.BuildEmptyBlackboard(Blackboard);
-                BehaviourTreeTemplate.Preprocess(NodeList);
+                BehaviourTreeTemplate.GetAllEnabledNodes(NodeList);
 
                 foreach (BehaviourTreeNode node in NodeList)
                 {

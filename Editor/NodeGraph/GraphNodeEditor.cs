@@ -1,15 +1,23 @@
 ﻿#if UNITY_EDITOR
+using System;
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
+using Framework.Editor.MouseModes;
 using UnityEditor;
 
-namespace Framework.EditorUtils
+namespace Framework.Editor
 {
     public class GraphNodeEditor
     {
+        public List<GraphNode> SelectedNodes = new List<GraphNode>();
+        public List<GraphNode> NodesToDelete = new List<GraphNode>();
+
+        protected IMouseMode MouseMode;
+
         private float zoom = 1;
         private Vector2 scrollPos = Vector2.zero;
+        public Rect DrawRect;
 
         public float ZoomSpeed = 0.05f;
 
@@ -18,22 +26,23 @@ namespace Framework.EditorUtils
         private Vector2 CurrentConnectionStart;
 
         public bool IsConnecting { get; private set; }
-        public bool IsDragging { get; private set; }
+        public bool IsPanning { get; private set; }
 
         public List<GraphNode> nodes { get; private set; }
 
         public delegate void GraphEditorEvent();
+        public delegate void GraphEditorNodeEvent(GraphNode node);
         public delegate void GraphEditorMouseEvent(Vector2 mousePosition);
-        public delegate void GraphEditorNodeEvent(GraphNode node, Vector2 mousePosition);
+        public delegate void GraphEditorNodeActionEvent(GraphNode node, Vector2 mousePosition);
         public delegate void GraphEditorNodeConnectionEvent(GraphNode first, GraphNode second);
 
-        public event GraphEditorNodeEvent OnConnectionEmptyDrop;
+        public event GraphEditorNodeActionEvent OnConnectionEmptyDrop;
         public event GraphEditorNodeConnectionEvent OnConnectionNodeDrop;
 
         public event GraphEditorMouseEvent OnDoubleClick;
         public event GraphEditorMouseEvent OnRightClick;
         public event GraphEditorMouseEvent OnLeftClick;
-        public event GraphEditorEvent OnDelete;
+        public event GraphEditorNodeEvent OnDelete;
 
         public Vector2 ScrollPos { get { return scrollPos; } }
 
@@ -59,17 +68,18 @@ namespace Framework.EditorUtils
         {
             nodes.Clear();
         }
-
-        public void RemoveNode(GraphNode node)
+        
+        public void DeleteNode(GraphNode node)
         {
             if (nodes.Contains(node))
-                nodes.Remove(node);
+                NodesToDelete.Add(node);
         }
 
         public void AddNode(GraphNode node, bool onScrolledPosition = false)
         {
             if (onScrolledPosition)
                 node.Position += scrollPos;
+            node.Editor = this;
             nodes.Add(node);
         }
 
@@ -81,7 +91,7 @@ namespace Framework.EditorUtils
 
         public Vector2 GetMinCoordinates()
         {
-            Vector2 min = new Vector2(float.MaxValue, float.MaxValue);
+            Vector2 min = new Vector2(Single.MaxValue, Single.MaxValue);
 
             foreach (GraphNode node in nodes)
             {
@@ -116,6 +126,8 @@ namespace Framework.EditorUtils
             ConnectionStyle style = ConnectionStyle.BezierVertical
         )
         {
+            DrawRect = viewRect;
+
             EditorAreaUtils.BeginZoomArea(ZoomLevel, viewRect);
             {
                 DrawWindows(editor);
@@ -170,9 +182,11 @@ namespace Framework.EditorUtils
                     break;
             }
 
+            /*
+            
             bool goodEvent = Event.current.type == EventType.Repaint || Event.current.type == EventType.MouseMove || Event.current.type == EventType.MouseDrag;
 
-            if (goodEvent && IsConnecting && GraphNode.selected != null)
+            if (goodEvent && IsConnecting && SelectedNode != null)
             {
                 switch (style)
                 {
@@ -191,7 +205,9 @@ namespace Framework.EditorUtils
                     Event.current.Use();
                 
                 GUI.color = Color.white;
-            }
+            } 
+            
+             */
         }
 
         public void StartConnection(GraphNode node)
@@ -203,60 +219,71 @@ namespace Framework.EditorUtils
         {
             IsConnecting = true;
             CurrentConnectionStart = position;
-            GraphNode.selected = node;
+            // SelectedNode = node;
         }
 
         public void DropConnection(GraphNode node = null, Vector2 position = default(Vector2))
         {
-            if (!IsConnecting)
+            /*if (!IsConnecting)
                 return;
             
             if (node == null)
             {
                 if (OnConnectionEmptyDrop != null)
-                    OnConnectionEmptyDrop(GraphNode.selected, position);
+                    OnConnectionEmptyDrop(SelectedNode, position);
             }
             else
             {
                 if (OnConnectionNodeDrop != null)
-                    OnConnectionNodeDrop(GraphNode.selected, node);
+                    OnConnectionNodeDrop(SelectedNode, node);
             }
 
             IsConnecting = false;
-            GraphNode.selected = null;
+            SelectedNode = null;*/
         }
 
         void DrawWindows(EditorWindow editor)
         {
-            editor.BeginWindows();
+            //editor.BeginWindows();
             {
                 for (int i = 0; i < nodes.Count; i++)
                 {
-                    nodes[i].OnGUI(i, scrollPos * -1);
+                    nodes[i].DrawGUI(i);
                 }
             }
-            editor.EndWindows();
+            //editor.EndWindows();
+
+            if (MouseMode != null)
+            {
+                MouseMode.Update(Event.current.mousePosition + ScrollPos);
+            }
         }
 
         public void HandleDelete()
         {
             Event.current.Use();
 
-            if (OnDelete != null)
-                OnDelete();
-
-            foreach (GraphNode baseNode in nodes)
+            for (int i = 0; i < NodesToDelete.Count; i++)
             {
-                baseNode.RemoveConnection(GraphNode.toDelete);
+                var nodeToDelete = NodesToDelete[i];
+
+                if (OnDelete != null)
+                    OnDelete(nodeToDelete);
+
+                foreach (GraphNode baseNode in nodes)
+                {
+                    baseNode.RemoveConnection(nodeToDelete);
+                }
+
+                nodes.Remove(nodeToDelete);
+
+                nodeToDelete.OnDelete();
             }
-
-            nodes.Remove(GraphNode.toDelete);
-
-            GraphNode.toDelete.OnDelete();
-            GraphNode.toDelete = null;
+            
+            NodesToDelete.Clear();
         }
 
-        public void HandleEvents()
+        public void HandleEvents(EditorWindow editor)
         {
             switch (Event.current.type)
             {
@@ -267,6 +294,12 @@ namespace Framework.EditorUtils
                 case EventType.mouseUp:
                     if (Event.current.button == 0)
                     {
+                        if (MouseMode != null)
+                        {
+                            MouseMode.End(Event.current.mousePosition - ScrollPos);
+                            MouseMode = null;
+                        }
+
                         if (IsConnecting)
                         {
                             DropConnection(null, Event.current.mousePosition);
@@ -282,13 +315,13 @@ namespace Framework.EditorUtils
                     else if (Event.current.button == 1)
                     {
                         if (OnRightClick != null)
-                            OnRightClick(Event.current.mousePosition);
+                            OnRightClick(Event.current.mousePosition - ScrollPos);
 
                         Event.current.Use();
                     }
-                    else if (Event.current.button == 2 && IsDragging)
+                    else if (Event.current.button == 2 && IsPanning)
                     {
-                        IsDragging = false;
+                        IsPanning = false;
                         Event.current.Use();
                     }
                     /*else
@@ -300,7 +333,11 @@ namespace Framework.EditorUtils
                     }*/
                     break;
                 case EventType.MouseDrag:
-                    if (IsDragging)
+                    if (MouseMode != null)
+                    {
+                        Event.current.Use();
+                    }
+                    else if (IsPanning)
                     {
                         scrollPos -= Event.current.delta;
                         Event.current.Use();
@@ -309,7 +346,20 @@ namespace Framework.EditorUtils
                 case EventType.mouseDown:
                     if (Event.current.button == 2)
                     {
-                        IsDragging = true;
+                        IsPanning = true;
+                        Event.current.Use();
+                    }
+                    else if (Event.current.clickCount == 2)
+                    {
+                        if (OnDoubleClick != null)
+                            OnDoubleClick(Event.current.mousePosition);
+
+                        Event.current.Use();
+                    }
+                    else if (Event.current.button == 0)
+                    {
+                        MouseMode = new SelectMode();
+                        MouseMode.Start(Event.current.mousePosition + ScrollPos);
                         Event.current.Use();
                     }
                     /*else if (Event.current.clickCount == 1)
@@ -319,23 +369,16 @@ namespace Framework.EditorUtils
                         GraphNode.selected = null;
                         Event.current.Use();
                     }*/
-                    else if (Event.current.clickCount == 2)
-                    {
-                        if (OnDoubleClick != null)
-                            OnDoubleClick(Event.current.mousePosition);
-
-                        Event.current.Use();
-                    }
                     break;
             }
 
-            if (GraphNode.toDelete != null)
+            if (NodesToDelete.Any())
             {
                 HandleDelete();
             }
         }
 
-        UnityEditor.GenericMenu.MenuFunction CreateRemoveConnectionCallback(GraphNode source, GraphNode.ConnectionInfo toRemove)
+        GenericMenu.MenuFunction CreateRemoveConnectionCallback(GraphNode source, GraphNode.ConnectionInfo toRemove)
         {
             return () => source.RemoveConnection(toRemove);
         }
@@ -356,7 +399,7 @@ namespace Framework.EditorUtils
             menu.ShowAsContext();
         }
 
-        [System.Obsolete("Deprecated, use StartConnection(BaseNode node)")]
+        /*[Obsolete("Deprecated, use StartConnection(BaseNode node)")]
         void HandleConnection(GraphNode actionNode, int result)
         {
             if (result == 0)
@@ -369,22 +412,22 @@ namespace Framework.EditorUtils
                     {
                         connectIndex = result;
                         IsConnecting = true;
-                        GraphNode.selected = actionNode;
+                        SelectedNode = actionNode;
                     }
                     else if ((int)Mathf.Sign(connectIndex) != (int)Mathf.Sign(result))
                     {
-                        if (connectIndex > 0 && GraphNode.CanMakeConnection(GraphNode.selected, connectIndex, actionNode, result))
+                        if (connectIndex > 0 && GraphNode.CanMakeConnection(SelectedNode, connectIndex, actionNode, result))
                         {
-                            GraphNode.MakeConnection(GraphNode.selected, connectIndex, actionNode, result);
+                            GraphNode.MakeConnection(SelectedNode, connectIndex, actionNode, result);
                         }
-                        else if (connectIndex < 0 && GraphNode.CanMakeConnection(actionNode, result, GraphNode.selected, connectIndex))
+                        else if (connectIndex < 0 && GraphNode.CanMakeConnection(actionNode, result, SelectedNode, connectIndex))
                         {
-                            GraphNode.MakeConnection(actionNode, result, GraphNode.selected, connectIndex);
+                            GraphNode.MakeConnection(actionNode, result, SelectedNode, connectIndex);
                         }
 
                         connectIndex = 0;
                         IsConnecting = false;
-                        GraphNode.selected = null;
+                        SelectedNode = null;
                     }
                     break;
                 case 1:
@@ -393,7 +436,7 @@ namespace Framework.EditorUtils
                 default:
                     break;
             }
-        }
+        }*/
 
         public static void DrawNodeConnectionLine(Vector2 from, Vector2 to, Color color)
         {
@@ -402,11 +445,11 @@ namespace Framework.EditorUtils
 
             for (int i = 0; i < 3; i++)
             {
-                Handles.DrawAAPolyLine((i + 1) * 5, from, to);
+                Handles.DrawAAPolyLine((i + 1) * 5, @from, to);
             }
 
             Handles.color = color;
-            Handles.DrawAAPolyLine(from, to);
+            Handles.DrawAAPolyLine(@from, to);
             Handles.EndGUI();
         }
 
@@ -415,7 +458,7 @@ namespace Framework.EditorUtils
             Handles.BeginGUI();
             Color shadowCol = new Color(0.2f, 0.2f, 0.2f, 0.06f) * Color.black;
 
-            Vector3 startPos = new Vector3(from.x, from.y, 0.0f);
+            Vector3 startPos = new Vector3(@from.x, @from.y, 0.0f);
             Vector3 endPos = new Vector3(to.x, to.y, 0.0f);
 
             Vector3 startTan = startPos + Vector3.right * 50;
@@ -435,7 +478,7 @@ namespace Framework.EditorUtils
             Handles.BeginGUI();
             Color shadowCol = new Color(0.2f, 0.2f, 0.2f, 0.06f) * Color.black;
 
-            Vector3 startPos = new Vector3(from.x, from.y, 0.0f);
+            Vector3 startPos = new Vector3(@from.x, @from.y, 0.0f);
             Vector3 endPos = new Vector3(to.x, to.y, 0.0f);
 
             Vector3 startTan = startPos + Vector3.up * 50;

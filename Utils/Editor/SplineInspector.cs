@@ -7,7 +7,7 @@ using UnityEngine;
 namespace Framework
 {
     [CustomEditor(typeof(Spline))]
-    public class SplineInspector : Editor
+    public class SplineInspector : UnityEditor.Editor
     {
         public static readonly float PropertyFieldHeight = 18;
 

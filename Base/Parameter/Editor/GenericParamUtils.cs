@@ -40,7 +40,7 @@ namespace Framework
             var typename = typeof(T).FullName;
             
             KnownType info;
-            if(KnownType.Register.TryGetValue(typename, out info))
+            if (KnownType.Register.TryGetValue(typename, out info))
             {
                 info.DrawFunc = draw;
                 info.LayoutFunc = layout;

@@ -2,7 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Framework.EditorUtils;
+using Framework.Editor;
 using Framework;
 using UnityEditor;
 using UnityEditorInternal;
@@ -32,7 +32,7 @@ namespace Framework.AI
         
         #region Window
 
-        [MenuItem("Gameplay/Behaviour Tree")]
+        [MenuItem("Gameplay/old Behaviour Tree")]
         public static void ShowEditor()
         {
             instance = EditorWindow.GetWindow<BehaviourTreeEditor>();
@@ -112,9 +112,9 @@ namespace Framework.AI
             CreateRootNode(mousePosition);
         }
 
-        void OnGraphNodeDeleted()
+        void OnGraphNodeDeleted(GraphNode node)
         {
-            HandleDelete();
+            HandleDelete(node);
         }
 
         void OnGraphNewConnection(GraphNode node, Vector2 mousePosition)
@@ -213,12 +213,12 @@ namespace Framework.AI
 
         #region NodeDeletion
 
-        private void HandleDelete()
+        private void HandleDelete(GraphNode node)
         {
-            var node = GraphNode.toDelete as BehaviourTreeGraphNode;
-            if (node != null)
+            var btNode = node as BehaviourTreeGraphNode;
+            if (btNode != null)
             {
-                DeleteFromAsset(node.TreeNode);
+                DeleteFromAsset(btNode.TreeNode);
             }
         }
 
@@ -627,7 +627,7 @@ namespace Framework.AI
                     }
                     GUILayout.EndHorizontal();
 
-                    Nodes.HandleEvents();
+                    Nodes.HandleEvents(this);
 
                     DrawFooter();
                 }
