@@ -61,10 +61,10 @@ namespace Framework
         }
 
         [SerializeField]
-        public List<ActorInfo> Actors;
+        public List<ActorInfo> Actors = new List<ActorInfo>();
 
         [SerializeField]
-        public List<FunctionInfo> Functions;
+        public List<FunctionInfo> Functions = new List<FunctionInfo>();
 
         public bool ReloadDialog()
         {

@@ -2,13 +2,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace Framework
 {
     public class DialogGameState : GameState
     {
         private DialogInstance CurrentDialog;
-
+        
         protected void EndDialog()
         {
             foreach (var actor in CurrentDialog.Actors.Where(a => a.Type == DialogInstance.ActorType.Dynamic))
