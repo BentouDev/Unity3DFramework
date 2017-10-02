@@ -26,15 +26,35 @@ namespace Framework
             Init();
         }
 
+        private void RegisterConsoleCommands()
+        {
+            Console.RegisterCommand("exit", "closes console", (_) => 
+            {
+                Console.Close(); return true;
+            });
+
+            Console.RegisterCommand("quits", "quits game", (_) =>
+            {
+                QuitGame(); return true;
+            });
+
+            Console.RegisterCommand("restart", "restarts game", (_) =>
+            {
+                RestartGame(); return true;
+            });
+        }
+
         public void Init()
         {
+            RegisterConsoleCommands();
+            
             if (AllStates != null)
                 AllStates.Clear();
             else
                 AllStates = new List<GameState>();
 
             AllStates.AddRange(GetComponentsInChildren<GameState>());
-
+            
             Loader.OnSceneLoad -= OnSceneLoad;
             Loader.OnSceneLoad += OnSceneLoad;
 

@@ -167,6 +167,11 @@ namespace Framework
             Display = Display.Next();
         }
 
+        public void Close()
+        {
+            Display = ConsoleDisplay.Hidden;
+        }
+
         public void HistoryUp()
         {
             HistoryIndex--;
