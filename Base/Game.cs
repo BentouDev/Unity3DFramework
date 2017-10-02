@@ -33,7 +33,7 @@ namespace Framework
                 Console.Close(); return true;
             });
 
-            Console.RegisterCommand("quits", "quits game", (_) =>
+            Console.RegisterCommand("quit", "quits game", (_) =>
             {
                 QuitGame(); return true;
             });
