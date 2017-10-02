@@ -14,6 +14,7 @@ namespace Framework
         [SerializeField]
         private List<TKey> SerializedKeys = new List<TKey>();
 
+        [SerializeField]
         private List<TValue> SerializedValues = new List<TValue>();
 
         public void OnBeforeSerialize()

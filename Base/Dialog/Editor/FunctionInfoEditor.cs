@@ -14,17 +14,18 @@ namespace Framework
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
+            var func = property.FindPropertyRelative("Function");
             string name = property.FindPropertyRelative("Name").stringValue;
-            Foldout = EditorGUI.Foldout(position, Foldout, new GUIContent(name));
-            if (Foldout)
+            //func.isExpanded = EditorGUI.Foldout(position, func.isExpanded, new GUIContent(name));
+            //if (func.isExpanded)
             {
-                EditorGUI.PropertyField(position, property.FindPropertyRelative("Function"), new GUIContent(name));
+                EditorGUI.PropertyField(position, func, new GUIContent(name));
             }
         }
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
-            if (!Foldout)
+            if (!property.isExpanded)
                 return base.GetPropertyHeight(property, label);
 
             float height = 72;

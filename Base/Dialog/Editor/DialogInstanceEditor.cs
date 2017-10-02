@@ -34,7 +34,10 @@ namespace Framework
                     EditorGUILayout.LabelField("Functions", EditorStyles.boldLabel);
                     for (int i = 0; i < functions.arraySize; i++)
                     {
-                        EditorGUILayout.PropertyField(functions.GetArrayElementAtIndex(i));
+                        var prop = functions.GetArrayElementAtIndex(i);
+                        prop.isExpanded = EditorGUILayout.Foldout(prop.isExpanded, new GUIContent(prop.FindPropertyRelative("Name").stringValue));
+                        if (prop.isExpanded)
+                            EditorGUILayout.PropertyField(prop);
                     }
                 }
             }
