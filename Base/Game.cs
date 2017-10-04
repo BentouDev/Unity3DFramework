@@ -15,6 +15,7 @@ namespace Framework
         public GameState StartState;
 
         public GameState CurrentState { get; protected set; }
+        public GameState PreviousState { get; protected set; }
 
         public List<GameState> AllStates { get; protected set; }
 
@@ -59,6 +60,8 @@ namespace Framework
             Loader.OnSceneLoad += OnSceneLoad;
 
             Loader.StartLoadScene(Loader.BaseScene);
+
+            gameObject.BroadcastToAll("OnLevelLoaded");
         }
 
         public abstract bool IsPlaying();
@@ -70,6 +73,9 @@ namespace Framework
 
         public void SwitchState(GameState state)
         {
+            if (state != CurrentState)
+                PreviousState = CurrentState;
+
             if (CurrentState != null) CurrentState.DoEnd();
             CurrentState = state;
             if (CurrentState != null) CurrentState.DoStart();
@@ -82,7 +88,9 @@ namespace Framework
 
         public void QuitGame()
         {
-    #if UNITY_EDITOR
+            gameObject.BroadcastToAll("OnLevelCleanUp");
+
+#if UNITY_EDITOR
             UnityEditor.EditorApplication.isPlaying = false;
     #else
             Application.Quit();
@@ -92,6 +100,8 @@ namespace Framework
         public void RestartGame()
         {
             StopAllCoroutines();
+
+            gameObject.BroadcastToAll("OnLevelCleanUp");
 
             Loader.StartLoadScene(Loader.CurrentScene);
         }
