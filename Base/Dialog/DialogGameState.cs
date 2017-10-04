@@ -26,6 +26,16 @@ namespace Framework
             CurrentState = null;
         }
 
+        protected override void OnStart()
+        {
+            if (AllHandlers == null)
+                AllHandlers = new List<IDialogStateHandler>();
+            else
+                AllHandlers.Clear();
+            
+            AllHandlers.AddRange(FindObjectsOfType<IDialogStateHandler>());
+        }
+
         public void StartDialog(DialogInstance instance)
         {
             if (CurrentDialog)

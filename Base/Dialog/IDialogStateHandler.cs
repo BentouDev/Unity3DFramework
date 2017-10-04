@@ -5,53 +5,56 @@ using UnityEngine;
 
 namespace Framework
 {
-    public interface IDialogStateHandler : ITickable
+    public abstract class IDialogStateHandler : MonoBehaviour, ITickable
     {
-        void Init(DialogGameState state);
-        bool Supports(DialogState state);
-        void Begin(DialogState state);
-        void End();
+        public abstract void Init(DialogGameState state);
+        public abstract bool Supports(DialogState state);
+        public abstract void Begin(DialogState state);
+        public abstract void End();
+        public abstract void Tick();
+        public abstract void FixedTick();
+        public abstract void LateTick();
     }
 
-    public abstract class DialogStateHandler<TState> : MonoBehaviour, IDialogStateHandler where TState : DialogState
+    public abstract class DialogStateHandler<TState> : IDialogStateHandler where TState : DialogState
     {
         protected TState CurrentState;
         protected DialogInstance Dialog;
 
-        public void Init(DialogGameState state)
+        public override void Init(DialogGameState state)
         {
             Dialog = state.CurrentDialog;
 
             OnInit();
         }
 
-        public bool Supports(DialogState state)
+        public override bool Supports(DialogState state)
         {
             return state is TState;
         }
 
-        public void Begin(DialogState state)
+        public override void Begin(DialogState state)
         {
             CurrentState = (TState) state;
             OnBegin();
         }
 
-        public void Tick()
+        public override void Tick()
         {
             OnTick();
         }
 
-        public void FixedTick()
+        public override void FixedTick()
         {
             OnFixedTick();
         }
 
-        public void LateTick()
+        public override void LateTick()
         {
             OnLateTick();
         }
 
-        public void End()
+        public override void End()
         {
             OnEnd();
             CurrentState = null;
