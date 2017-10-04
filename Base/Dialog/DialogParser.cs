@@ -54,6 +54,17 @@ namespace Framework
         {
             bool success = true;
 
+            var firstElement = DialogObject.States.Dictionary.Values.FirstOrDefault(s => s.name.Equals(FirstElement));
+            if (firstElement != null)
+            {
+                DialogObject.FirstState = firstElement;
+            }
+            else
+            {
+                Error("Start uses undeclared state!", 0);
+                success = false;
+            }
+
             foreach (var token in Invokes)
             {
                 var topic = token.State as DialogTopic;

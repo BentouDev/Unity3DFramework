@@ -66,6 +66,11 @@ namespace Framework
         [SerializeField]
         public List<FunctionInfo> Functions = new List<FunctionInfo>();
 
+        public string GetActorName(DialogActorSlot sayActor)
+        {
+            return sayActor.name;
+        }
+
         public bool ReloadDialog()
         {
             if (Dialog == null)

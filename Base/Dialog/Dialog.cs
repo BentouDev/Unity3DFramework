@@ -12,9 +12,17 @@ namespace Framework
     public class Dialog : ScriptableObject
     {
         [System.Serializable] public class SerializedStates : SerializedDictionary<string, DialogState> { }
-        
+
+        [SerializeField]
+        public DialogState FirstState;
+
+        [SerializeField]
         public SerializedStates States = new SerializedStates();
+
+        [SerializeField]
         public List<DialogFunctionSlot> Functions = new List<DialogFunctionSlot>();
+
+        [SerializeField]
         public List<DialogActorSlot> Actors = new List<DialogActorSlot>();
 
         [SerializeField]
