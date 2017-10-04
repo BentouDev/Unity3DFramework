@@ -126,7 +126,7 @@ public class MenuController : GUIBase
         SwitchToMenu(null, false);
     }
 
-    public override void OnLevelCleanUp()
+    public void OnLevelCleanUp()
     {
         Hide();
 
@@ -138,7 +138,7 @@ public class MenuController : GUIBase
         allMenus.Clear();
     }
 
-    public override void OnLevelLoaded()
+    public void OnLevelLoaded()
     {
         var menus = GetComponentsInChildren<MenuBase>();
         foreach (MenuBase menu in menus)

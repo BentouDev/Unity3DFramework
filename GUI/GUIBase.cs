@@ -2,7 +2,7 @@
 using System.Collections;
 
 [RequireComponent(typeof(CanvasGroup))]
-public abstract class GUIBase : MonoBehaviour, ILevelDependable
+public abstract class GUIBase : MonoBehaviour
 {
     private CanvasGroup _canvasGroup;
 
@@ -29,13 +29,9 @@ public abstract class GUIBase : MonoBehaviour, ILevelDependable
         CanvasGroup.alpha = 1;
         CanvasGroup.interactable = true;
     }
-
-    public abstract void OnLevelLoaded();
-
+    
     public virtual void OnAwake()
     {
         
     }
-
-    public abstract void OnLevelCleanUp();
 }
