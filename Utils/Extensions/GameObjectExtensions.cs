@@ -3,12 +3,28 @@ using UnityEngine;
 using System.Collections;
 using System.Linq;
 
-static public class GameObjectExtensions {
+public static class GameObjectExtensions
+{   
+    /// <summary>
+    /// Broadcasts message to all game objets
+    /// </summary>
+    public static void BroadcastToAll(this GameObject gameObject, string fun, System.Object msg = null)
+    {
+        GameObject[] gos = (GameObject[])GameObject.FindObjectsOfType(typeof(GameObject));
+        foreach (GameObject go in gos)
+        {
+            if (go && go.transform.parent == null)
+            {
+                go.gameObject.BroadcastMessage(fun, msg, SendMessageOptions.DontRequireReceiver);
+            }
+        }
+    }
+
     /// <summary>
     /// Gets or add a component. Usage example:
     /// BoxCollider boxCollider = transform.GetOrAddComponent<BoxCollider>();
     /// </summary>
-    static public T GetOrAddComponent<T>(this GameObject gameObject) where T : Component
+    public static T GetOrAddComponent<T>(this GameObject gameObject) where T : Component
     {
         T result = gameObject.GetComponent<T>();
         if (result == null)
