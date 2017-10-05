@@ -56,19 +56,23 @@ namespace Framework
 
             AllStates.AddRange(GetComponentsInChildren<GameState>());
             
-            Loader.OnSceneLoad -= OnSceneLoad;
-            Loader.OnSceneLoad += OnSceneLoad;
+            Loader.OnSceneLoad -= SceneLoaded;
+            Loader.OnSceneLoad += SceneLoaded;
 
             Loader.StartLoadScene(Loader.BaseScene);
-
-            gameObject.BroadcastToAll("OnLevelLoaded");
         }
 
         public abstract bool IsPlaying();
 
         protected virtual void OnSceneLoad()
+        { }
+
+        private void SceneLoaded()
         {
             SwitchState(StartState);
+            OnSceneLoad();
+            
+            gameObject.BroadcastToAll("OnLevelLoaded");
         }
 
         public void SwitchState(GameState state)
