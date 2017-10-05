@@ -15,7 +15,7 @@ namespace Framework
 
         protected readonly Dictionary<string, LineParseDelegate> KeywordDictionary;
 
-        protected abstract UnityEngine.Object ParseTarget { get; }
+        protected abstract ScriptableObject ParseTarget { get; }
 
         protected int CurrentLine { get; private set; }
 
@@ -95,6 +95,15 @@ namespace Framework
         protected void AddToAsset(UnityEngine.Object asset)
         {
             AssetDatabase.AddObjectToAsset(asset, ParseTarget);
+        }
+
+        protected T Create<T>(string filename, HideFlags flags = HideFlags.None) where T : ScriptableObject
+        {
+            var instance = ScriptableObject.CreateInstance<T>();
+            instance.hideFlags = flags;
+            instance.name = filename;
+            AddToAsset(instance);
+            return instance;
         }
 
         protected void Error(string message)

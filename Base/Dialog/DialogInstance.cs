@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Events;
+using System;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -66,9 +67,45 @@ namespace Framework
         [SerializeField]
         public List<FunctionInfo> Functions = new List<FunctionInfo>();
 
+        private Dictionary<string, FunctionInfo> FuncDic = new Dictionary<string, FunctionInfo>();
+        private Dictionary<string, ActorInfo>    ActorDic = new Dictionary<string, ActorInfo>();
+
+        public void Init()
+        {
+            CleanUp();
+
+            foreach (ActorInfo actor in Actors)
+            {
+                ActorDic[actor.Name] = actor;
+            }
+
+            foreach (FunctionInfo function in Functions)
+            {
+                FuncDic[function.Name] = function;
+            }
+        }
+
+        public void CleanUp()
+        {
+            foreach (var actor in Actors.Where(a => a.Type == ActorType.Dynamic))
+            {
+                actor.Actor = null;
+            }
+
+            ActorDic.Clear();
+            FuncDic.Clear();
+        }
+
+        internal void Invoke(DialogFunctionSlot function)
+        {
+            var func = FuncDic[function.name];
+            func?.Function.Invoke();
+        }
+
         public string GetActorName(DialogActorSlot sayActor)
         {
-            return sayActor.name;
+            var actor = ActorDic[sayActor.name];
+            return actor != null && actor.Actor != null ? actor.Actor.DisplayedName : sayActor.name;
         }
 
         public bool ReloadDialog()

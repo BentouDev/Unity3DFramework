@@ -9,7 +9,7 @@ namespace Framework
     {
         public abstract void Init(DialogGameState state);
         public abstract bool Supports(DialogState state);
-        public abstract void Begin(DialogState state);
+        public abstract void Begin();
         public abstract void End();
         public abstract void Tick();
         public abstract void FixedTick();
@@ -18,12 +18,13 @@ namespace Framework
 
     public abstract class DialogStateHandler<TState> : IDialogStateHandler where TState : DialogState
     {
-        protected TState CurrentState;
-        protected DialogInstance Dialog;
+        public TState          CurrentState { get; private set; }
+        public DialogInstance  Dialog       { get; private set; }
+        public DialogGameState Manager      { get; private set; }
 
         public override void Init(DialogGameState state)
         {
-            Dialog = state.CurrentDialog;
+            Manager = state;
 
             OnInit();
         }
@@ -33,9 +34,10 @@ namespace Framework
             return state is TState;
         }
 
-        public override void Begin(DialogState state)
+        public override void Begin()
         {
-            CurrentState = (TState) state;
+            Dialog       = Manager.CurrentDialog;
+            CurrentState = (TState) Manager.CurrentState;
             OnBegin();
         }
 

@@ -6,6 +6,6 @@ namespace Framework
 {
     public class DialogActor : MonoBehaviour
     {
-
+        public string DisplayedName;
     }
 }

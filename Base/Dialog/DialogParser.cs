@@ -16,7 +16,7 @@ namespace Framework
                 Name = name;
                 Line = line;
                 State = topic;
-                InsertPosition = topic.Items.Count;
+                InsertPosition = Mathf.Max(0, topic.Items.Count - 1);
             }
 
             internal UnresolvedToken(string name, int line, DialogMenu menu, string text)
@@ -25,7 +25,7 @@ namespace Framework
                 Line = line;
                 State = menu;
                 Text = text;
-                InsertPosition = menu.Items.Count;
+                InsertPosition = Mathf.Max(0, menu.Items.Count - 1);
             }
 
             public string Name;
@@ -45,10 +45,7 @@ namespace Framework
 
         private Dialog DialogObject;
 
-        protected override UnityEngine.Object ParseTarget
-        {
-            get { return DialogObject; }
-        }
+        protected override ScriptableObject ParseTarget => DialogObject;
 
         protected override bool Validate()
         {
@@ -83,10 +80,8 @@ namespace Framework
                     }
                     else
                     {
-                        topic.Items.Insert(token.InsertPosition, new DialogTopic.InvokeItem()
-                        {
-                            Function = func
-                        });
+                        var inv = topic.Items[token.InsertPosition] as InvokeItem;
+                        inv.Function = func;
                     }
                 }
             }
@@ -112,18 +107,14 @@ namespace Framework
                     {
                         if (topic)
                         {
-                            topic.Items.Insert(token.InsertPosition, new DialogTopic.GotoItem()
-                            {
-                                State = state
-                            });
+                            var gt = topic.Items[token.InsertPosition] as GotoItem;
+                            gt.State = state;
                         }
                         else if (menu)
                         {
-                            menu.Items.Insert(token.InsertPosition, new DialogMenu.MenuItem()
-                            {
-                                State = state,
-                                Text = token.Text
-                            });
+                            var item = menu.Items[token.InsertPosition];
+                            item.State = state;
+                            item.Text = token.Text;
                         }
                     }
                 }
@@ -258,11 +249,15 @@ namespace Framework
                 return false;
             }
 
-            LastTopic.Items.Add(new DialogTopic.SayItem()
-            {
-                Actor = actor,
-                Text  = text
-            });
+            var say = Create<SayItem>
+            (
+                "Say" + LastTopic.Items.Count,
+                HideFlags.HideInInspector | HideFlags.HideInHierarchy
+            );
+
+            say.Actor = actor;
+            say.Text = text;
+            LastTopic.Items.Add(say);
             
             return true;
         }
@@ -279,6 +274,13 @@ namespace Framework
                 return false;
             }
 
+            var inv = Create<InvokeItem>
+            (
+                "Func" + LastTopic.Items.Count,
+                HideFlags.HideInInspector | HideFlags.HideInHierarchy
+            );
+
+            LastTopic.Items.Add(inv);
             Invokes.Add(new UnresolvedToken(arguments, CurrentLine, LastTopic));
             
             return true;
@@ -320,10 +322,22 @@ namespace Framework
             }
 
             if (LastTopic != null)
+            {
+                var gt = Create<GotoItem>
+                (
+                    "Goto" + LastTopic.Items.Count,
+                    HideFlags.HideInInspector | HideFlags.HideInHierarchy
+                );
+
+                LastTopic.Items.Add(gt);
                 Gotos.Add(new UnresolvedToken(state, CurrentLine, LastTopic));
-            
+            }
+
             if (LastMenu != null)
+            {
+                LastMenu.Items.Add(new DialogMenu.MenuItem());
                 Gotos.Add(new UnresolvedToken(state, CurrentLine, LastMenu, text));
+            }
 
             return true;
         }
@@ -342,10 +356,8 @@ namespace Framework
                 return false;
             }
 
-            LastMenu = ScriptableObject.CreateInstance<DialogMenu>();
-            LastMenu.name = arguments;
+            LastMenu = Create<DialogMenu>(arguments);
             DialogObject.States.Dictionary[arguments] = LastMenu;
-            AddToAsset(LastMenu);
 
             return true;
         }
@@ -361,7 +373,7 @@ namespace Framework
 
             if (LastTopic != null)
             {
-                LastTopic.Items.Add(new DialogTopic.ExitItem());
+                LastTopic.Items.Add(Create<ExitItem>("Exit" + LastTopic.Items.Count, HideFlags.HideInHierarchy | HideFlags.HideInInspector));
             }
 
             if (LastMenu != null)

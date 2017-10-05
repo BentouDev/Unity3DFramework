@@ -22,5 +22,8 @@ namespace Framework
 
         protected virtual void OnEnd()
         { }
+
+        public virtual void DestroyChildren()
+        { }
     }
 }
