@@ -73,7 +73,7 @@ namespace Framework
         [SerializeField]
         public List<FunctionInfo> Functions = new List<FunctionInfo>();
 
-        private Dictionary<string, FunctionInfo> FuncDic = new Dictionary<string, FunctionInfo>();
+        private Dictionary<string, FunctionInfo> FuncDic  = new Dictionary<string, FunctionInfo>();
         private Dictionary<string, ActorInfo>    ActorDic = new Dictionary<string, ActorInfo>();
 
         public void Init()

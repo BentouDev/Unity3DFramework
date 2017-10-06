@@ -25,6 +25,7 @@ namespace Framework
             CurrentHandler = null;
             CurrentState   = null;
 
+            CurrentDialog.OnDialogEnd.Invoke();
             CurrentDialog.CleanUp();
             CurrentDialog = null;
         }
@@ -69,6 +70,7 @@ namespace Framework
         {
             CurrentDialog = instance;
             CurrentDialog.Init();
+            CurrentDialog.OnDialogStart.Invoke();
 
             foreach (var actor in CurrentDialog.Actors.Where(a => a.Type == DialogInstance.ActorType.Dynamic))
             {
