@@ -187,6 +187,11 @@ namespace Framework
             OnTick();
         }
 
+        public void Stop()
+        {
+            OnStop();
+        }
+
         public void FixedTick()
         {
             CheckGrounded();
@@ -201,6 +206,9 @@ namespace Framework
         }
 
         protected virtual void OnInit()
+        { }
+
+        protected virtual void OnStop()
         { }
 
         protected virtual void OnProcessMovement(Vector3 direction)

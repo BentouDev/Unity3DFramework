@@ -33,7 +33,11 @@ namespace Framework
 
         public void SwitchState(PawnState state)
         {
-            LastState = CurrentState;
+            if (state == null)
+                return;
+
+            if (state != CurrentState)
+                LastState = CurrentState;
 
             if (LastState) LastState.DoEnd();
             CurrentState = state;
@@ -64,7 +68,7 @@ namespace Framework
             {
                 CurrentSpeed -= Movement.Friction * Time.fixedDeltaTime;
             }
-
+            
             CurrentSpeed = Mathf.Clamp(CurrentSpeed, 0, GetMaxSpeed());
 
             var flatVelocity    = new Vector3(CurrentDirection.x, 0, CurrentDirection.z);
@@ -94,6 +98,18 @@ namespace Framework
 
             if (!string.IsNullOrEmpty(Animation.MoveBoolean))
                 Anim.SetBool(Animation.MoveBoolean, Mathf.Abs(movementFactor) > 0.1f);
+        }
+
+        protected override void OnStop()
+        {
+            Velocity = Vector3.zero;
+            CurrentSpeed = 0;
+            Body.velocity = Vector3.zero;
+
+            SwitchState<PawnIdle>();
+
+            if (CurrentState)
+                CurrentState.Tick();
         }
 
         protected override void OnTick()

@@ -9,6 +9,9 @@ namespace Framework
         [Header("Debug")]
         public bool InitOnStart;
 
+        [Header("Gameplay")]
+        public bool StopOnStateChange = true;
+
         [Header("Pawn")]
         public bool FindByTag;
         public string PawnTag;
@@ -35,6 +38,11 @@ namespace Framework
             OnInit();
         }
 
+        public void Stop()
+        {
+            OnStop();
+        }
+
         public void Tick()
         {
             OnProcessControll();
@@ -51,6 +59,9 @@ namespace Framework
         }
 
         protected virtual void OnInit()
+        { }
+
+        protected virtual void OnStop()
         { }
 
         protected virtual void OnProcessControll()

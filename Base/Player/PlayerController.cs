@@ -50,6 +50,11 @@ namespace Framework
             Pawn.Tick();
         }
 
+        protected override void OnStop()
+        {
+            Pawn.Stop();
+        }
+
         protected override void OnFixedTick()
         {
             Pawn.FixedTick();
