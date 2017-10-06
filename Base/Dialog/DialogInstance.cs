@@ -62,6 +62,12 @@ namespace Framework
         }
 
         [SerializeField]
+        public UnityEvent OnDialogEnd;
+
+        [SerializeField]
+        public UnityEvent OnDialogStart;
+
+        [SerializeField]
         public List<ActorInfo> Actors = new List<ActorInfo>();
 
         [SerializeField]
@@ -106,6 +112,11 @@ namespace Framework
         {
             var actor = ActorDic[sayActor.name];
             return actor != null && actor.Actor != null ? actor.Actor.DisplayedName : sayActor.name;
+        }
+
+        public void StartThisDialog()
+        {
+            MainGame.Instance.StartDialog(this);
         }
 
         public bool ReloadDialog()

@@ -6,7 +6,7 @@ using UnityEditor;
 namespace Framework
 {
     [CustomEditor(typeof(DialogInstance))]
-    public class DialogInstanceEditpr : UnityEditor.Editor
+    public class DialogInstanceEditor : UnityEditor.Editor
     {
         DialogInstance Dialog { get { return target as DialogInstance; } }
         
@@ -15,6 +15,8 @@ namespace Framework
             serializedObject.Update();
             {
                 HandleField(ref Dialog.Dialog, "Dialog Script");
+                EditorGUILayout.PropertyField(serializedObject.FindProperty("OnDialogStart"));
+                EditorGUILayout.PropertyField(serializedObject.FindProperty("OnDialogEnd"));
 
                 var actors = serializedObject.FindProperty("Actors");
                 if (actors.arraySize != 0)
