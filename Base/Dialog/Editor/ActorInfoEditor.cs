@@ -26,9 +26,13 @@ namespace Framework
             {
                 EditorGUI.PropertyField(contentPosition, property.FindPropertyRelative("Tag"), GUIContent.none);
             }
-            else
+            else if (type.enumValueIndex == (int)DialogInstance.ActorType.Static)
             {
                 EditorGUI.PropertyField(contentPosition, property.FindPropertyRelative("Actor"), GUIContent.none);
+            }
+            else
+            {
+                EditorGUI.LabelField(contentPosition, property.serializedObject.targetObject.name);
             }
         }
     }

@@ -13,6 +13,12 @@ namespace Framework
 
         [HideInInspector]
         public List<PawnState> AllStates = new List<PawnState>();
+
+        public Vector3 CircleDirection;
+        public Vector3 Damping;
+        public Vector3 Acceleration;
+        public Vector3 Friction;
+        public Vector3 VelocityChange;
         
         protected override void OnInit()
         {
@@ -57,30 +63,59 @@ namespace Framework
             }
         }
 
-        internal void SimulateMovement(Vector3 direction)
+        internal Vector3 LimitFlatDiagonalVector(Vector3 vector, float maxLength)
         {
-            if (direction.magnitude > Movement.MinimalForceThreshold)
+            float pythagoras = ((vector.x * vector.x) + (vector.z * vector.z));
+            if (pythagoras > (maxLength * maxLength))
             {
-                CurrentDirection = direction;
-                CurrentSpeed += Movement.Acceleration * Time.fixedDeltaTime;
+                float magnitude = Mathf.Sqrt(pythagoras);
+                float multiplier = maxLength / magnitude;
+                vector.x *= multiplier;
+                vector.y *= multiplier;
+            }
+
+            return vector;
+        }
+        
+        internal void CalcMovement()
+        {
+            CircleDirection = LimitFlatDiagonalVector(new Vector3(CurrentDirection.x, 0, CurrentDirection.z), 1);
+            Acceleration    = CircleDirection * Movement.Acceleration;
+            Friction        = -Velocity.normalized * Movement.Friction;
+
+            var flatCurDir = new Vector2(Velocity.x, Velocity.z).normalized;
+            var flatNewDir = new Vector2(Acceleration.x, Acceleration.z).normalized;
+            var dot        = Vector2.Dot(flatCurDir, flatNewDir);
+            var dampingStr = Mathf.Cos(1 - ((dot + 1) * 0.5f));
+            
+            if (CircleDirection.magnitude > Movement.MinimalForceThreshold)
+            {
+                Damping         = dampingStr * Acceleration * Time.fixedDeltaTime;
+                VelocityChange  = Acceleration * Time.fixedDeltaTime;
+                VelocityChange += Damping;
             }
             else
             {
-                CurrentSpeed -= Movement.Friction * Time.fixedDeltaTime;
+                VelocityChange = Friction * Time.fixedDeltaTime;
+                VelocityChange = Vector3.ClampMagnitude(VelocityChange, Velocity.magnitude);
             }
-            
-            CurrentSpeed = Mathf.Clamp(CurrentSpeed, 0, GetMaxSpeed());
-
-            var flatVelocity    = new Vector3(CurrentDirection.x, 0, CurrentDirection.z);
-            var appliedVelocity = flatVelocity * CurrentSpeed;
 
             if (IsGrounded && StickToGround)
             {
                 Quaternion slope = Quaternion.FromToRotation(Vector3.up, LastGroundHit.normal);
-                appliedVelocity  = slope * appliedVelocity;
+                VelocityChange   = slope * VelocityChange;
             }
+            
+            Velocity += VelocityChange;
+            Velocity  = Vector3.ClampMagnitude(Velocity, Movement.MaxSpeed);
 
-            Velocity = appliedVelocity;
+            if (Velocity.magnitude < Movement.MinimalForceThreshold)
+                Velocity = Vector3.zero;
+        }
+
+        internal void SimulateMovement(Vector3 direction)
+        {
+            CurrentDirection = direction;
         }
 
         internal void RefreshAnimator()
@@ -134,13 +169,15 @@ namespace Framework
             {
                 CurrentState.FixedTick();
             }
+
+            CalcMovement();
         }
 
         protected override void OnLateTick()
         {
             if (!IsAlive())
                 return;
-
+            
             FaceMovementDirection(20);
 
             if (CurrentState != null)

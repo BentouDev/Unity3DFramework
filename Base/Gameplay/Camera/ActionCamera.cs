@@ -105,7 +105,7 @@ namespace Framework
             RaycastHit hit;
             Vector3    offset = new Vector3(0,Offset.y,0);
 
-            if (!Physics.Raycast(Target.position + offset, -transform.forward, out hit, Mathf.Abs(Offset.z)))
+            if (!Physics.Raycast(Target.position + offset, -transform.forward, out hit, Mathf.Abs(Offset.z), Mask))
                 return Offset.z;
 
             if (DrawDebug)

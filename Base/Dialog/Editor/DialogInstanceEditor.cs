@@ -8,15 +8,18 @@ namespace Framework
     [CustomEditor(typeof(DialogInstance))]
     public class DialogInstanceEditor : UnityEditor.Editor
     {
-        DialogInstance Dialog { get { return target as DialogInstance; } }
-        
+        DialogInstance Dialog => target as DialogInstance;
+
         public override void OnInspectorGUI()
         {
+            InspectorUtils.DrawDefaultScriptField(serializedObject);
+
             serializedObject.Update();
             {
                 HandleField(ref Dialog.Dialog, "Dialog Script");
-                EditorGUILayout.PropertyField(serializedObject.FindProperty("OnDialogStart"));
-                EditorGUILayout.PropertyField(serializedObject.FindProperty("OnDialogEnd"));
+
+                InspectorUtils.DrawFoldableProperty(serializedObject.FindProperty("OnDialogStart"));
+                InspectorUtils.DrawFoldableProperty(serializedObject.FindProperty("OnDialogEnd"));
 
                 var actors = serializedObject.FindProperty("Actors");
                 if (actors.arraySize != 0)
@@ -37,9 +40,7 @@ namespace Framework
                     for (int i = 0; i < functions.arraySize; i++)
                     {
                         var prop = functions.GetArrayElementAtIndex(i);
-                        prop.isExpanded = EditorGUILayout.Foldout(prop.isExpanded, new GUIContent(prop.FindPropertyRelative("Name").stringValue));
-                        if (prop.isExpanded)
-                            EditorGUILayout.PropertyField(prop);
+                        InspectorUtils.DrawFoldableProperty(prop, prop.FindPropertyRelative("Name").stringValue);
                     }
                 }
             }

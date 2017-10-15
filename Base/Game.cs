@@ -12,6 +12,8 @@ namespace Framework
 
         public DebugConsole Console;
 
+        public ControllSystem Controllers;
+
         public GameState StartState;
 
         public GameState CurrentState { get; protected set; }
@@ -127,6 +129,8 @@ namespace Framework
             {
                 CurrentState.Tick();
             }
+
+            Controllers.Tick();
         }
 
         void FixedUpdate()
@@ -138,6 +142,8 @@ namespace Framework
             {
                 CurrentState.FixedTick();
             }
+
+            Controllers.FixedTick();
         }
 
         void LateUpdate()
@@ -149,6 +155,8 @@ namespace Framework
             {
                 CurrentState.LateTick();
             }
+            
+            Controllers.LateTick();
         }
     }
 }

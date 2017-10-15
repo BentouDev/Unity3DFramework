@@ -17,12 +17,24 @@ namespace Framework
         public string PawnTag;
         public BasePawn Pawn;
 
+        protected bool Enabled { get; private set; }
+
         void Start()
         {
             if (!InitOnStart)
                 return;
 
             Init();
+        }
+
+        public void EnableInput()
+        {
+            Enabled = true;
+        }
+
+        public void DisableInput()
+        {
+            Enabled = false;
         }
 
         public void Init()
@@ -34,6 +46,10 @@ namespace Framework
             }
 
             if (Pawn != null) Pawn.Init();
+
+            var system = FindObjectOfType<ControllSystem>();
+            if (system)
+                system.Register(this);
 
             OnInit();
         }
@@ -72,5 +88,12 @@ namespace Framework
 
         protected virtual void OnLateTick()
         { }
+
+        protected void OnDestroy()
+        {
+            var system = FindObjectOfType<ControllSystem>();
+            if (system)
+                system.Unregister(this);
+        }
     }
 }

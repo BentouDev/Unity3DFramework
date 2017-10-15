@@ -22,6 +22,15 @@ namespace Framework
         public float RaycastLength = 1;
         protected RaycastHit LastGroundHit;
 
+        public enum FaceMode
+        {
+            Velocity,
+            Physics,
+            Direction
+        }
+
+        public FaceMode Face;
+
         [System.Serializable]
         public struct MovementInfo
         {
@@ -36,6 +45,9 @@ namespace Framework
 
             [SerializeField]
             public float MinimalForceThreshold;
+            
+            [SerializeField]
+            public float MinimalVelocityThreshold;
 
             [SerializeField]
             public float Gravity;
@@ -50,7 +62,7 @@ namespace Framework
             [SerializeField]
             public float JumpHeight;
 
-            public float JumpDuration { get { return JumpHeight / JumpSpeed; } }
+            public float JumpDuration => JumpHeight / JumpSpeed;
         }
 
         [System.Serializable]
@@ -83,10 +95,18 @@ namespace Framework
         public Vector3 Velocity;
 
         [HideInInspector]
+        public Vector3 LastVelocity;
+
+        [HideInInspector]
+        public Vector3 LastPosition;
+
+        [HideInInspector]
         public float CurrentSpeed;
 
         [HideInInspector]
         public Vector3 CurrentDirection;
+
+        public Vector3 DeltaPosition => Body.position - LastPosition;
 
         public bool IsGrounded { get; protected set; }
 
@@ -119,6 +139,9 @@ namespace Framework
             this.TryInit(ref Damageable);
             this.TryInit(ref Body);
 
+            LastPosition     = transform.position;
+            CurrentDirection = transform.forward;
+
             OnInit();
         }
 
@@ -139,7 +162,7 @@ namespace Framework
             IsGrounded = Physics.Raycast(orign, Vector3.down, out LastGroundHit, RaycastLength, RaycastMask);
             if (IsGrounded)
             {
-                Debug.DrawLine(LastGroundHit.point, LastGroundHit.point + LastGroundHit.normal, Color.cyan);
+                // Debug.DrawLine(LastGroundHit.point, LastGroundHit.point + LastGroundHit.normal, Color.cyan);
             }
             else
             {
@@ -162,6 +185,8 @@ namespace Framework
             Body.velocity = Velocity + ForceSum;
 
             LastForceSum = ForceSum;
+            LastVelocity = Velocity;
+            LastPosition = Body.position;
 
             ForceSum = Vector3.Lerp(ForceSum, Vector3.zero, Time.fixedDeltaTime);
             if (Mathf.Abs(ForceSum.magnitude) < Movement.MinimalForceThreshold)
@@ -169,14 +194,36 @@ namespace Framework
                 ForceSum = Vector3.zero;
             }
         }
-
+        
         public void FaceMovementDirection(float speed)
         {
-            if (Velocity.magnitude > 0)
+            Vector3 target = Vector3.zero;
+
+            switch (Face)
             {
-                transform.forward = Vector3.Lerp (
+                case FaceMode.Direction:
+                    target = CurrentDirection;
+                    break;
+                case FaceMode.Velocity:
+                    target = Velocity;
+                    break;
+                case FaceMode.Physics:
+                    target = Body.velocity;
+                    break;
+            }
+            
+            if (target.magnitude > 0)
+            {
+                //var velDir       = new Vector2(velocity.x, velocity.z).normalized;
+                //var dot          = Vector2.Dot(new Vector2(transform.forward.x, transform.forward.z), velDir);
+                //var coeff        = 1 - ((dot + 1) * 0.5f);
+
+                var flatVelocity = new Vector3(target.x, 0, target.z).normalized;
+
+                transform.forward = Vector3.Lerp 
+                (
                     transform.forward,
-                    new Vector3(Velocity.x, 0, Velocity.z).normalized,
+                    flatVelocity,
                     Time.fixedDeltaTime * speed
                 );
             }
@@ -195,9 +242,9 @@ namespace Framework
         public void FixedTick()
         {
             CheckGrounded();
-            ApplyMovement();
-
             OnFixedTick();
+
+            ApplyMovement();
         }
 
         public void LateTick()
@@ -229,8 +276,9 @@ namespace Framework
             {
                 Gravity = -9.81f,
                 MaxSpeed = 9,
-                Friction = 6,
-                Acceleration = 6,
+                //Friction = 6,
+                //Acceleration = 6,
+                MinimalVelocityThreshold = 0.1f,
                 MinimalForceThreshold = 0.01f
             };
 
@@ -269,9 +317,11 @@ namespace Framework
             Print("Direction : " + CurrentDirection);
             Print("Velocity : " + Velocity);
             Print("ForceSum : " + ForceSum);
+            Print("Forward : " + transform.forward);
+            Print("Desired Forward : " + DesiredForward);
         }
 
-        protected void Print(string str)
+        public void Print(string str)
         {
             GUI.Label(new Rect(10,10+LastY,400,30), str);
             LastY += 20;

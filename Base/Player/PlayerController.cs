@@ -34,17 +34,21 @@ namespace Framework
             if (!Pawn)
                 return;
 
-            CurrentInput.x = Input.GetAxis(MoveX);
-            CurrentInput.y = Input.GetAxis(MoveY);
-
-            if (CurrentTarget)
+            Vector3 direction = Vector3.zero;
+            if (Enabled)
             {
-                var rawDistance     = transform.position - CurrentTarget.position;
-                Pawn.DesiredForward = -Vector3.Normalize(rawDistance);
-            }
+                CurrentInput.x = Input.GetAxis(MoveX);
+                CurrentInput.y = Input.GetAxis(MoveY);
 
-            var flatVelocity = new Vector3(CurrentInput.x, 0, CurrentInput.y);
-            var direction = Quaternion.LookRotation(Vector3.Normalize(Pawn.DesiredForward)) * flatVelocity;
+                if (CurrentTarget)
+                {
+                    var rawDistance = transform.position - CurrentTarget.position;
+                    Pawn.DesiredForward = -Vector3.Normalize(rawDistance);
+                }
+
+                var flatVelocity = new Vector3(CurrentInput.x, 0, CurrentInput.y);
+                    direction = Quaternion.LookRotation(Vector3.Normalize(Pawn.DesiredForward)) * flatVelocity;
+            }
             
             Pawn.ProcessMovement(direction.normalized);
             Pawn.Tick();
@@ -65,13 +69,16 @@ namespace Framework
             //if (IsAttacking)
             //    return;
 
-            if (PawnCamera.transform.forward.magnitude > 0)
+            if (Enabled)
             {
-                Pawn.DesiredForward = Vector3.Slerp(Pawn.DesiredForward, new Vector3 (
-                    PawnCamera.transform.forward.x,
-                    0,
-                    PawnCamera.transform.forward.z
-                ), Time.deltaTime * 10);
+                if (PawnCamera.transform.forward.magnitude > 0)
+                {
+                    Pawn.DesiredForward = Vector3.Slerp(Pawn.DesiredForward, new Vector3(
+                        PawnCamera.transform.forward.x,
+                        0,
+                        PawnCamera.transform.forward.z
+                    ), Time.deltaTime * 10);
+                }
             }
 
             Pawn.LateTick();

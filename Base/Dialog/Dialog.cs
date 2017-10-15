@@ -16,6 +16,7 @@ namespace Framework
         public DialogState FirstState;
         
         public SerializedStates States = new SerializedStates();
+        
         public List<DialogFunctionSlot> Functions = new List<DialogFunctionSlot>();
         public List<DialogActorSlot> Actors = new List<DialogActorSlot>();
 

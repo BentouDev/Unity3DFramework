@@ -29,7 +29,8 @@ namespace Framework
         public enum ActorType
         {
             Static,
-            Dynamic
+            Dynamic,
+            This
         }
 
         [System.Serializable]
@@ -79,6 +80,13 @@ namespace Framework
         public void Init()
         {
             CleanUp();
+
+            foreach (var actor in Actors.Where(a => a.Type == ActorType.This))
+            {
+                actor.Actor = GetComponentInChildren<DialogActor>() ?? GetComponentInParent<DialogActor>();
+                if (!actor.Actor)
+                    Debug.LogError("Unable to set dialog actor to this!", this);
+            }
 
             foreach (ActorInfo actor in Actors)
             {
