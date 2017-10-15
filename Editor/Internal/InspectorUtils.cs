@@ -59,4 +59,16 @@ public static class InspectorUtils
         obj.ApplyModifiedProperties();
         return EditorGUI.EndChangeCheck();
     }
+
+    public static void DrawFoldableProperty(SerializedProperty prop, string displayName = "")
+    {
+        if (string.IsNullOrEmpty(displayName))
+            displayName = prop.displayName;
+
+        prop.isExpanded = EditorGUILayout.Foldout(prop.isExpanded, new GUIContent(displayName));
+        if (prop.isExpanded)
+        {
+            EditorGUILayout.PropertyField(prop);
+        }
+    }
 }
