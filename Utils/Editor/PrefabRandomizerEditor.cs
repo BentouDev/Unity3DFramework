@@ -1,10 +1,12 @@
-﻿using UnityEditor;
+﻿using System.Linq;
+using UnityEditor;
 using UnityEngine;
 using UnityEditorInternal;
 
 namespace Framework
 {
     [CustomEditor(typeof(PrefabRandomizer))]
+    [CanEditMultipleObjects]
     public class PrefabRandomizerEditor : UnityEditor.Editor
     {
         private bool Folded;
@@ -72,8 +74,18 @@ namespace Framework
             {
                 if (GUILayout.Button("Randomize"))
                 {
-                    Undo.RegisterCompleteObjectUndo(Target, "Randomize Prefab");
-                    Target.Randomize(true);
+                    if (targets.Length == 0 || targets.Length == 1)
+                    {
+                        Undo.RegisterCompleteObjectUndo(Target, "Randomize Prefab");
+                        Target.Randomize(true);
+                    }
+                    else
+                    {
+                        foreach (PrefabRandomizer obj in targets.Select(a => a as PrefabRandomizer))
+                        {
+                            obj?.Randomize(true);
+                        }
+                    }
                 }
 
                 Target.Locked = GUILayout.Toggle(Target.Locked, Target.Locked ? "Unlock Prefab" : "Lock Prefab");
