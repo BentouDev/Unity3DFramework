@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Framework
 {
-    public class PlayerController : Controller
+    public class SimplePlayerController : Controller
     {
         [Header("Camera")]
         public string CameraTag;
