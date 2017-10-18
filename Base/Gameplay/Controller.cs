@@ -8,6 +8,7 @@ namespace Framework
     {
         [Header("Debug")]
         public bool InitOnStart;
+        public bool DrawDebug;
 
         [Header("Gameplay")]
         public bool StopOnStateChange = true;
@@ -95,5 +96,26 @@ namespace Framework
             if (system)
                 system.Unregister(this);
         }
+
+        void OnGUI()
+        {
+            if (!DrawDebug)
+                return;
+
+            LastY = 0;
+
+            OnDrawDebug();
+        }
+
+        protected virtual void OnDrawDebug()
+        { }
+
+        public void Print(string str)
+        {
+            GUI.Label(new Rect(Screen.width - 200, Screen.height - 40 - LastY, 400, 30), str);
+            LastY -= 20;
+        }
+
+        protected float LastY;
     }
 }
