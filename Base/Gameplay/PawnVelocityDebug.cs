@@ -25,13 +25,7 @@ namespace Framework
         {
             if (!DrawVectors)
                 return;
-
-            var flatCurDir = new Vector2(Pawn.Velocity.x, Pawn.Velocity.z).normalized;
-            var flatNewDir = new Vector2(Pawn.Acceleration.x, Pawn.Acceleration.z).normalized;
-            var dot = Vector2.Dot(flatCurDir, flatNewDir);
-
-            var newDot = 1 - ((dot + 1) * 0.5f);
-
+            
             Debug.DrawRay(Pawn.transform.position, Pawn.Velocity, Velocity);
             Debug.DrawRay(Pawn.transform.position, Pawn.Acceleration, Acceleration);
             Debug.DrawRay(Pawn.transform.position, Pawn.Friction, Friction);
@@ -51,8 +45,7 @@ namespace Framework
 
             var rad = 1;//Mathf.PI / 180;
             var cosDot = Mathf.Cos(rad * newDot);
-
-
+            
             Pawn.Print("cosD : " + cosDot);
             Pawn.Print("nDOT : " + newDot);
             Pawn.Print("DOT : " + dot);
@@ -62,6 +55,7 @@ namespace Framework
             Pawn.Print("Friction : " + Pawn.Friction);
             Pawn.Print("VelocityChange : " + Pawn.VelocityChange);
             Pawn.Print("Friction : " + Pawn.Friction);
+            Pawn.Print("CurrentSpeed : " + Pawn.CurrentSpeed);
             Pawn.Print("Velocity % : " + (100 * Pawn.Velocity.magnitude / Pawn.Movement.MaxSpeed) + "%");
         }
     }
