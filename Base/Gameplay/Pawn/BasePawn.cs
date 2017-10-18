@@ -16,6 +16,7 @@ namespace Framework
         public Animator Anim;
 
         [Header("Ground Checking")]
+        public bool DrawHit;
         public LayerMask RaycastMask;
         public Vector3 RaycastOrigin;
         public float RaycastRadius = 1;
@@ -29,7 +30,12 @@ namespace Framework
             Direction
         }
 
+        [Header("Forward Facing")]
         public FaceMode Face;
+        public float FaceTreshold = 0.01f;
+        public float FaceTime = 1;
+
+        protected float LastFaceTime;
 
         [System.Serializable]
         public struct MovementInfo
@@ -64,7 +70,7 @@ namespace Framework
 
             public float JumpDuration => JumpHeight / JumpSpeed;
         }
-
+        
         [System.Serializable]
         public struct AnimationInfo
         {
@@ -110,6 +116,8 @@ namespace Framework
 
         public bool IsGrounded { get; protected set; }
 
+        public float MaxSpeed { get; set; }
+
         public Vector3 DesiredForward { get; set; }
 
         [Header("Animation")]
@@ -141,6 +149,8 @@ namespace Framework
 
             LastPosition     = transform.position;
             CurrentDirection = transform.forward;
+            LastFaceTime     = Time.time;
+            MaxSpeed         = Movement.MaxSpeed;
 
             OnInit();
         }
@@ -160,9 +170,9 @@ namespace Framework
             var orign = transform.TransformPoint(RaycastOrigin);
 
             IsGrounded = Physics.Raycast(orign, Vector3.down, out LastGroundHit, RaycastLength, RaycastMask);
-            if (IsGrounded)
+            if (IsGrounded && DrawHit)
             {
-                // Debug.DrawLine(LastGroundHit.point, LastGroundHit.point + LastGroundHit.normal, Color.cyan);
+                Debug.DrawLine(LastGroundHit.point, LastGroundHit.point + LastGroundHit.normal, Color.cyan, 5.0f);
             }
             else
             {
@@ -212,7 +222,8 @@ namespace Framework
                     break;
             }
             
-            if (target.magnitude > 0)
+            if (target.magnitude > FaceTreshold 
+            && Vector3.Distance(transform.forward, target) > FaceTreshold)
             {
                 //var velDir       = new Vector2(velocity.x, velocity.z).normalized;
                 //var dot          = Vector2.Dot(new Vector2(transform.forward.x, transform.forward.z), velDir);
@@ -224,7 +235,8 @@ namespace Framework
                 (
                     transform.forward,
                     flatVelocity,
-                    Time.fixedDeltaTime * speed
+                    0.5f
+                    //Mathf.Clamp01((Time.time - LastFaceTime) / FaceTime)
                 );
             }
         }
@@ -259,13 +271,17 @@ namespace Framework
         { }
 
         protected virtual void OnProcessMovement(Vector3 direction)
-        { }
+        {
+            CurrentDirection = direction;
+        }
 
         protected virtual void OnTick()
         { }
 
         protected virtual void OnFixedTick()
-        { }
+        {
+            Velocity = CurrentDirection * Movement.MaxSpeed;
+        }
 
         protected virtual void OnLateTick()
         { }
@@ -316,6 +332,7 @@ namespace Framework
             Print("Grounded : " + IsGrounded);
             Print("Direction : " + CurrentDirection);
             Print("Velocity : " + Velocity);
+            // Print("Body : " + Body.GetPointVelocity(transform.position));
             Print("ForceSum : " + ForceSum);
             Print("Forward : " + transform.forward);
             Print("Desired Forward : " + DesiredForward);

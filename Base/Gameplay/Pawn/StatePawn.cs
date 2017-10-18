@@ -14,12 +14,21 @@ namespace Framework
         [HideInInspector]
         public List<PawnState> AllStates = new List<PawnState>();
 
+        [HideInInspector]
         public Vector3 CircleDirection;
+
+        [HideInInspector]
         public Vector3 Damping;
+
+        [HideInInspector]
         public Vector3 Acceleration;
+
+        [HideInInspector]
         public Vector3 Friction;
+
+        [HideInInspector]
         public Vector3 VelocityChange;
-        
+
         protected override void OnInit()
         {
             if (AllStates != null)
@@ -79,8 +88,10 @@ namespace Framework
         
         internal void CalcMovement()
         {
-            CircleDirection = LimitFlatDiagonalVector(new Vector3(CurrentDirection.x, 0, CurrentDirection.z), 1);
-            Acceleration    = CircleDirection * Movement.Acceleration;
+            if (CurrentDirection.magnitude > Movement.MinimalVelocityThreshold)
+                CircleDirection = LimitFlatDiagonalVector(new Vector3(CurrentDirection.x, 0, CurrentDirection.z), 1);
+
+            /*Acceleration    = CircleDirection * Movement.Acceleration;
             Friction        = -Velocity.normalized * Movement.Friction;
 
             var flatCurDir = new Vector2(Velocity.x, Velocity.z).normalized;
@@ -98,7 +109,25 @@ namespace Framework
             {
                 VelocityChange = Friction * Time.fixedDeltaTime;
                 VelocityChange = Vector3.ClampMagnitude(VelocityChange, Velocity.magnitude);
+            }*/
+
+            if (CurrentDirection.magnitude > Movement.MinimalForceThreshold)
+            {
+                CurrentSpeed += Movement.Acceleration * Time.fixedDeltaTime;
+                // VelocityChange = CircleDirection * Movement.Acceleration * Time.fixedDeltaTime;
             }
+            else
+            {
+                CurrentSpeed -= Movement.Friction * Time.fixedDeltaTime;
+                // VelocityChange = -Velocity.normalized * Movement.Friction * Time.fixedDeltaTime;
+            }
+
+            CurrentSpeed = Mathf.Clamp(CurrentSpeed, 0, MaxSpeed);
+
+            if (CurrentSpeed < Mathf.Epsilon)
+                CurrentSpeed = 0;
+
+            VelocityChange = CircleDirection * CurrentSpeed;
 
             if (IsGrounded && StickToGround)
             {
@@ -106,8 +135,8 @@ namespace Framework
                 VelocityChange   = slope * VelocityChange;
             }
             
-            Velocity += VelocityChange;
-            Velocity  = Vector3.ClampMagnitude(Velocity, Movement.MaxSpeed);
+            Velocity = VelocityChange;
+            Velocity = Vector3.ClampMagnitude(Velocity, MaxSpeed);
 
             if (Velocity.magnitude < Movement.MinimalForceThreshold)
                 Velocity = Vector3.zero;
@@ -115,15 +144,18 @@ namespace Framework
 
         internal void SimulateMovement(Vector3 direction)
         {
+            if (Vector3.Distance(CurrentDirection, direction) > FaceTreshold)
+                LastFaceTime = Time.time;
+            
             CurrentDirection = direction;
         }
 
         internal void RefreshAnimator()
         {
-            if (!Anim)
+            if (!Anim || !Anim.isActiveAndEnabled)
                 return;
 
-            float movementFactor = Velocity.magnitude / Movement.MaxSpeed;
+            float movementFactor = Velocity.magnitude / MaxSpeed;
 
             if (!string.IsNullOrEmpty(Animation.MovementBlend))
                 Anim.SetFloat(Animation.MovementBlend, movementFactor);
@@ -149,12 +181,12 @@ namespace Framework
 
         protected override void OnTick()
         {
-            if (!IsAlive())
-                return;
-
-            if (CurrentState != null)
+            if (IsAlive())
             {
-                CurrentState.Tick();
+                if (CurrentState != null)
+                {
+                    CurrentState.Tick();
+                }
             }
 
             RefreshAnimator();
@@ -162,12 +194,12 @@ namespace Framework
 
         protected override void OnFixedTick()
         {
-            if (!IsAlive())
-                return;
-
-            if (CurrentState != null)
+            if (IsAlive())
             {
-                CurrentState.FixedTick();
+                if (CurrentState != null)
+                {
+                    CurrentState.FixedTick();
+                }
             }
 
             CalcMovement();
