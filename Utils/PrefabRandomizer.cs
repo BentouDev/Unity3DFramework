@@ -11,7 +11,7 @@ namespace Framework
     public class PrefabRandomizer : MonoBehaviour
     {
 #if UNITY_EDITOR
-        public List<GameObject> Prefabs;
+        public List<GameObject> Prefabs = new List<GameObject>();
 
         [SerializeField]
         [HideInInspector]
