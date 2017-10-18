@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Framework
 {
@@ -24,9 +25,10 @@ namespace Framework
         public LayerMask Mask;
 
         [Header("Offset")]
-        public Vector3 Offset = new Vector3(0, 0, -4);
-        public float Height = 1;
-
+        [FormerlySerializedAs("Offset")]
+        public Vector3 RotatedOffset = new Vector3(0, 0, -4);
+        public Vector3 FlatOffset = Vector3.zero;
+        
         [Header("Speed")]
         public float SpeedX = 2;
         public float SpeedY = 2;
@@ -35,8 +37,11 @@ namespace Framework
         public float MaxAngleY =  45;
         public float MinAngleY = -45;
 
-        private float AngleX;
-        private float AngleY;
+        [HideInInspector]
+        public float AngleX;
+
+        [HideInInspector]
+        public float AngleY;
 
         void Start()
         {
@@ -53,6 +58,9 @@ namespace Framework
 
             var go = GameObject.FindGameObjectWithTag(TargetTag);
             Target = go ? go.transform : null;
+
+            AngleX = 0;
+            AngleY = 0;
         }
 
         void LateUpdate()
@@ -88,10 +96,10 @@ namespace Framework
                 rot = Quaternion.Euler(AngleY, AngleX, 0);
             }
             
-            var offset = new Vector3(Offset.x, Offset.y, CalcCameraDistance());
+            var offset = new Vector3(RotatedOffset.x, RotatedOffset.y, CalcCameraDistance());
             var pos = rot * offset + (
                 Target ? Target.position : Vector3.zero
-            ) + new Vector3(0, Height, 0);
+            ) + FlatOffset;
 
             transform.position = pos;
             transform.rotation = rot; //Quaternion.RotateTowards(transform.rotation, rot, 360 * Time.deltaTime);
@@ -100,13 +108,13 @@ namespace Framework
         public float CalcCameraDistance()
         {
             if (!Target)
-                return Offset.z;
+                return RotatedOffset.z;
 
             RaycastHit hit;
-            Vector3    offset = new Vector3(0,Offset.y,0);
+            Vector3    offset = new Vector3(0, RotatedOffset.y, 0);
 
-            if (!Physics.Raycast(Target.position + offset, -transform.forward, out hit, Mathf.Abs(Offset.z), Mask))
-                return Offset.z;
+            if (!Physics.Raycast(Target.position + offset, -transform.forward, out hit, Mathf.Abs(RotatedOffset.z), Mask))
+                return RotatedOffset.z;
 
             if (DrawDebug)
                 Debug.DrawRay(Target.position + offset, -transform.forward * hit.distance, Color.red, 5.0f);
