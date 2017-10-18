@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public static class MonoBehaviourExtenions
 {
@@ -9,6 +10,19 @@ public static class MonoBehaviourExtenions
             comp = mono.GetComponentInChildren<T>();
     }
 
+    public static void InitList<T>(this Component mono, ref List<T> list)
+    {
+        if (list == null)
+            list = new List<T>();
+        else
+            list.Clear();
+    }
+
+    public static T FindInWorld<T>(this Component mono, string tag) where T : Component
+    {
+        return GameObject.FindGameObjectWithTag(tag)?.GetComponent<T>();
+    }
+    
     /// <summary>
     /// Gets or add a component. Usage example:
     /// BoxCollider boxCollider = transform.GetOrAddComponent<BoxCollider>();
