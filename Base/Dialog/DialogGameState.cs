@@ -77,10 +77,10 @@ namespace Framework
                 var go = GameObject.FindGameObjectWithTag(actor.Tag);
                 if (go != null)
                 {
-                    actor.Actor = go.GetComponent<DialogActor>();
+                    actor.Actor = go.GetComponentInChildren<DialogActor>() ?? go.GetComponentInParent<DialogActor>();
                 }
 
-                if (actor.Actor)
+                if (!actor.Actor)
                     Debug.LogWarning(string.Format("Missing actor '{0}' for dialog '{1}'!", actor.Name, CurrentDialog.Dialog.name), CurrentDialog);
             }
 
