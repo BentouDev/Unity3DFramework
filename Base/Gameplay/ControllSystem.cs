@@ -81,10 +81,5 @@ namespace Framework
                 controller.LateTick();
             }
         }
-
-        void OnGUI()
-        {
-            GUI.Label(new Rect(Screen.width * 0.5f, Screen.height * 0.5f, 200, 30), "DisableLvl : " + DisableCounter);
-        }
     }
 }
