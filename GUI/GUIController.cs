@@ -92,6 +92,12 @@ public class GUIController : MonoBehaviour
         }
     }
 
+    public bool IsCinematicShown()
+    {
+        var state = Cinematic.FadePlayer.Animator.GetCurrentAnimatorStateInfo(0);
+        return state.IsName(Cinematic.FadePlayer.StopState);
+    }
+
     public void ShowCinematicsWithAnim()
     {
         Cinematic.FadePlayer.Play();
@@ -105,11 +111,13 @@ public class GUIController : MonoBehaviour
     public void ShowCinematics()
     {
         Cinematic.FadePlayer.Stop();
+        Cinematic.FadePlayer.Animator.Update(0);
     }
 
     public void HideCinematics()
     {
         Cinematic.UnfadePlayer.Stop();
+        Cinematic.UnfadePlayer.Animator.Update(0);
     }
 
     public void PlayUnfade()
