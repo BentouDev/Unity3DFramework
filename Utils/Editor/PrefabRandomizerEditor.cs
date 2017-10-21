@@ -9,47 +9,36 @@ namespace Framework
     [CanEditMultipleObjects]
     public class PrefabRandomizerEditor : UnityEditor.Editor
     {
-        private bool Folded;
-
-        private ReorderableList List;
-
         private PrefabRandomizer Target => target as PrefabRandomizer;
         
         private const string ToggleLockMenuName = "Prefabs/Lock randomized prefabs";
+        private const string RandomizeAllMenuName = "Prefabs/Randomize prefabs";
+        private const string RandomizeReqursivelyenuName = "GameObject/Prefabs/Randomize Reqursively";
         
         private void OnEnable()
         {
             PrefabRandomizer.IsGloballyLocked = EditorPrefs.GetBool(ToggleLockMenuName, false);
             ToggleGlobalLock(PrefabRandomizer.IsGloballyLocked);
+        }
 
-            List = new ReorderableList(Target.Prefabs, typeof(GameObject))
+        [MenuItem(RandomizeAllMenuName)]
+        public static void MenuRandomizeAll()
+        {
+            foreach (var prefab in FindObjectsOfType<PrefabRandomizer>())
             {
-                drawElementCallback = (rect, index, active, focused) =>
-                {
-                    rect.y      += 2;
-                    rect.height  = 16;
-                    var result = EditorGUI.ObjectField(rect, Target.Prefabs[index], typeof(GameObject), false) as GameObject;
-                    if (Target.Prefabs[index] != result)
-                    {
-                        Undo.RecordObject(Target, "Changed Prefab");
-                        Target.Prefabs[index] = result;
-                    }
-                },
-                onAddCallback = list =>
-                {
-                    Undo.RecordObject(Target, "Added Prefab");
-                    Target.Prefabs.Add(null);
-                },
-                onRemoveCallback = list =>
-                {
-                    Undo.RecordObject(Target, "Removed Prefab");
-                    Target.Prefabs.RemoveAt(list.index);
-                },
-                drawHeaderCallback = rect =>
-                { }
-            };
+                prefab.Randomize();
+            }
         }
         
+        [MenuItem(RandomizeReqursivelyenuName, false, 0)]
+        public static void RandomizeRecursively()
+        {
+            foreach (PrefabRandomizer randomizer in Selection.gameObjects[0].GetComponentsInChildren<PrefabRandomizer>())
+            {
+                randomizer.Randomize();
+            }
+        }
+
         [MenuItem(ToggleLockMenuName)]
         public static void MenuToggleGlobalLock()
         {
@@ -68,8 +57,17 @@ namespace Framework
         {
             InspectorUtils.DrawDefaultScriptField(serializedObject);
 
-            EditorGUILayout.Space();
-
+            EditorGUI.BeginChangeCheck();
+            
+            var list = EditorGUILayout.ObjectField(Target.Prefabs, typeof(PrefabRandomizerList), true, GUILayout.ExpandWidth(true)) as PrefabRandomizerList;
+            if (EditorGUI.EndChangeCheck())
+            {
+                foreach (PrefabRandomizer rand in targets.Select(r => r as PrefabRandomizer))
+                {
+                    if (rand) rand.Prefabs = list;
+                }
+            }
+            
             GUILayout.BeginHorizontal();
             {
                 if (GUILayout.Button("Randomize"))
@@ -92,12 +90,7 @@ namespace Framework
             }
             GUILayout.EndHorizontal();
 
-            Folded = EditorGUILayout.Foldout(Folded, "Prefabs");
-            if (Folded)
-            {
-                List.DoLayoutList();
-                EditorGUILayout.Space();
-            }
+            EditorGUILayout.Space();
         }
     }
 }

@@ -11,7 +11,7 @@ namespace Framework
     public class PrefabRandomizer : MonoBehaviour
     {
 #if UNITY_EDITOR
-        public List<GameObject> Prefabs = new List<GameObject>();
+        public PrefabRandomizerList Prefabs;
 
         [SerializeField]
         [HideInInspector]
@@ -19,14 +19,9 @@ namespace Framework
 
         public static bool IsGloballyLocked;
 
-        private int PickRandom()
-        {
-            return Random.Range(0, Prefabs.Count);
-        }
-
         public void Randomize(bool force = false)
         {
-            if (!Prefabs.Any())
+            if (!Prefabs || !Prefabs.Any)
                 return;
 
             if (IsGloballyLocked)
@@ -37,7 +32,7 @@ namespace Framework
 
             RemoveChildren();
 
-            Instantiate(Prefabs[PickRandom()], transform);
+            Instantiate(Prefabs.Random, transform);
         }
 
         public void RemoveChildren()
@@ -46,7 +41,8 @@ namespace Framework
             
             foreach (Transform child in children)
             {
-                DestroyImmediate(child.gameObject);
+                if (child)
+                    DestroyImmediate(child.gameObject);
             }
         }
         
