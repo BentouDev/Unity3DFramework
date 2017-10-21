@@ -2,10 +2,16 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
 namespace Framework
 {
     public abstract class Controller : MonoBehaviour
     {
+        private readonly List<string> DebugTxt = new List<string>();
+
         [Header("Debug")]
         public bool InitOnStart;
         public bool DrawDebug;
@@ -101,21 +107,27 @@ namespace Framework
         {
             if (!DrawDebug)
                 return;
-
-            LastY = 0;
-
+            
             OnDrawDebug();
-        }
 
+            var  debugPos  = (Camera.main ?? Camera.current).WorldToScreenPoint(Pawn.transform.position);
+            Rect debugRect = new Rect(debugPos.x - 100, Screen.height - debugPos.y - DebugTxt.Count * 20, 500, 30);
+            
+            foreach (var txt in DebugTxt)
+            {
+                GUI.Label(debugRect, txt);
+                debugRect.Set(debugRect.x, debugRect.y + 20, debugRect.width, debugRect.height);
+            }
+
+            DebugTxt.Clear();
+        }
+        
         protected virtual void OnDrawDebug()
         { }
 
-        public void Print(string str)
+        protected void Print(string str)
         {
-            GUI.Label(new Rect(Screen.width - 200, Screen.height - 40 - LastY, 400, 30), str);
-            LastY -= 20;
+            DebugTxt.Add(str);
         }
-
-        protected float LastY;
     }
 }
