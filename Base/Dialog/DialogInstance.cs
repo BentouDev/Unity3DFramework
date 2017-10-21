@@ -21,7 +21,15 @@ namespace Framework
 
             foreach (var info in Functions)
             {
-                info.FunctionCount = info.Function.GetPersistentEventCount();
+                if (info != null)
+                {
+                    if (info.Function != null)
+                        info.FunctionCount = info.Function.GetPersistentEventCount();
+                    else
+                        info.FunctionCount = 0;
+                }
+                else 
+                    Debug.LogError("Found nulled info!", this);
             }
         }
         
