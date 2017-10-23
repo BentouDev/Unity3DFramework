@@ -111,14 +111,18 @@ namespace Framework
             OnDrawDebug();
 
             var  debugPos  = (Camera.main ?? Camera.current).WorldToScreenPoint(Pawn.transform.position);
-            Rect debugRect = new Rect(debugPos.x - 100, Screen.height - debugPos.y - DebugTxt.Count * 20, 500, 30);
-            
-            foreach (var txt in DebugTxt)
-            {
-                GUI.Label(debugRect, txt);
-                debugRect.Set(debugRect.x, debugRect.y + 20, debugRect.width, debugRect.height);
-            }
 
+            if (debugPos.z > 0)
+            {
+                Rect debugRect = new Rect(debugPos.x - 100, Screen.height - debugPos.y - DebugTxt.Count * 20, 500, 30);
+
+                foreach (var txt in DebugTxt)
+                {
+                    GUI.Label(debugRect, txt);
+                    debugRect.Set(debugRect.x, debugRect.y + 20, debugRect.width, debugRect.height);
+                }
+            }
+            
             DebugTxt.Clear();
         }
         
