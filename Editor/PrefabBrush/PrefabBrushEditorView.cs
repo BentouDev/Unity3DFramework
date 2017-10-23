@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 
@@ -24,6 +25,7 @@ namespace Framework.Editor
         }
 
         private bool IsPainting;
+        private LayerMask MaskLayer;
 
         public void DrawHandle()
         {
@@ -44,6 +46,16 @@ namespace Framework.Editor
 
             Prefab = EditorGUILayout.ObjectField("Prefab", Prefab, typeof(GameObject), false) as GameObject;
             Parent = EditorGUILayout.ObjectField("Parent", Parent, typeof(Transform), true) as Transform;
+
+            List<string> layers = new List<string>();
+            for (int i = 0; i < 31; i++)
+            {
+                var name = LayerMask.LayerToName(i);
+                if (!string.IsNullOrEmpty(name))
+                    layers.Add(name);
+            }
+
+            MaskLayer = EditorGUILayout.MaskField("Mask", MaskLayer.value, layers.ToArray());
             
             if (Event.current == null)
                 return;
@@ -59,7 +71,7 @@ namespace Framework.Editor
             Ray ray = HandleUtility.GUIPointToWorldRay(Event.current.mousePosition); // Camera.current.ScreenPointToRay(Event.current.mousePosition); // 
 
             RaycastHit newHit;
-            if (Physics.Raycast(ray, out newHit))
+            if (Physics.Raycast(ray, out newHit, 1000, MaskLayer))
             {
                 var view = Camera.current.WorldToViewportPoint(newHit.point);
                 if (view.x < 1 && view.x > 0 && view.y < 1 && view.y > 0 && view.z > 0)

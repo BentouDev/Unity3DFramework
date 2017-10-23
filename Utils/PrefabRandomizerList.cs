@@ -8,8 +8,10 @@ namespace Framework
 #if UNITY_EDITOR
     [CreateAssetMenu(menuName = "Data/Prefab Randomizer List", fileName = "New Prefab Randomizer List")]
 #endif
+    [System.Serializable]
     public class PrefabRandomizerList : ScriptableObject
     {
+        [SerializeField]
         public List<GameObject> Prefabs = new List<GameObject>();
 
         public int Count => Prefabs.Count;
