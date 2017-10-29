@@ -109,16 +109,14 @@ public static class EditorAreaUtils
         viewRect.height -= 21;
         
         AreaRect.Set(viewRect.x, viewRect.y, viewRect.width, viewRect.height);
-
-        // Rect area = new Rect(viewRect.x, viewRect.y, viewRect.width, viewRect.height);
         
         var pivot = AreaRect.min;
 
         AreaRect.x -= pivot.x;
         AreaRect.y -= pivot.y;
 
+        // This expands clip region to match zoomed out space
         ClippedAreaRect.Set(AreaRect.x / zoomLevel, AreaRect.y / zoomLevel, AreaRect.width / zoomLevel, AreaRect.height / zoomLevel);
-        // Rect clippedArea = new Rect(AreaRect.x / zoomLevel, AreaRect.y / zoomLevel, AreaRect.width/ zoomLevel, AreaRect.height / zoomLevel);
 
         ClippedAreaRect.x += pivot.x;
         ClippedAreaRect.y += pivot.y;
@@ -133,8 +131,10 @@ public static class EditorAreaUtils
         Scale.Set(zoomLevel, zoomLevel, 1.0f);
 
         Matrix4x4 translation = Matrix4x4.TRS(ClippedAreaRect.min, Quaternion.identity, Vector3.one);
-        Matrix4x4 scale = Matrix4x4.Scale(Scale); // new Vector3(zoomLevel, zoomLevel, 1.0f)
+        Matrix4x4 scale = Matrix4x4.Scale(Scale);
         GUI.matrix = translation * scale * translation.inverse * GUI.matrix;
+        
+        GUI.Box(new Rect(10,10,100,100),"Dupa Jasiu");
     }
 
     public static void EndZoomArea()

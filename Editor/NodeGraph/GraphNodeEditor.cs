@@ -127,7 +127,7 @@ namespace Framework.Editor
         )
         {
             DrawRect = viewRect;
-
+            
             EditorAreaUtils.BeginZoomArea(ZoomLevel, viewRect);
             {
                 DrawWindows(editor);

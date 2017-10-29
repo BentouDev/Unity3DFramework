@@ -3,6 +3,7 @@ using System;
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEditor;
 
 namespace Framework.Editor
 {
@@ -77,12 +78,14 @@ namespace Framework.Editor
             ||  Editor.DrawRect.Contains(drawRect.max)
             ||  Editor.DrawRect.Contains(drawRect.min))
             {
-                drawRect.center -= Editor.ScrollPos;
+                var zoomPan = (Editor.DrawRect.size * 0.5f) / Editor.ZoomLevel;
+                var offset = zoomPan - Editor.ScrollPos;
+                drawRect.center += offset;
                 
                 GUI.Box(drawRect, Name, WindowStyle);
-
-                // drawRect = GUI.Window(id, drawRect, DrawContent, WindowTitle, WindowStyle);
-                position = drawRect.center + Editor.ScrollPos;
+                GUI.Label(drawRect, "pos: " + position + 
+                                    "\noffset: " + offset, 
+                                    EditorStyles.largeLabel);
                 
                 SnapToGrid();
                 OnGUI(id);

@@ -150,7 +150,8 @@ namespace Framework.AI.Editor
             {
                 GUILayout.Label(model.AssetPath);
                 GUILayout.FlexibleSpace();
-                // GUILayout.Label("so:" + Nodes.ScrollPos);
+                GUILayout.Label("so:" + Nodes.ScrollPos);
+                GUILayout.Label("zo:" + Nodes.ZoomLevel);
                 Nodes.ZoomLevel = GUILayout.HorizontalSlider(Nodes.ZoomLevel, 0.25f, 1, GUILayout.Width(64));
             }
             EditorGUILayout.EndHorizontal();
