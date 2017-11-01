@@ -25,7 +25,7 @@ namespace Framework.Editor
         protected Rect drawRect;
 
         public List<ConnectionInfo> connectedTo = new List<ConnectionInfo>();
-
+        
         [System.Serializable]
         public struct ConnectionInfo
         {
@@ -39,8 +39,33 @@ namespace Framework.Editor
             public int IndexFrom;
         }
 
+        public string UniqueName { get; internal set; }
+        
+        public int Id { get; internal set; }
+
         public virtual string Name { get; set; }
 
+        public bool Selected { get; private set; }
+
+        public Rect DrawRect => drawRect;
+
+        public Rect BoundsRect { get; private set; }
+
+        public Rect PhysicalRect
+        {
+            get
+            {
+                Rect rect = new Rect(DrawRect);
+                rect.position += Editor.PannedOffset;
+
+                // Since we operate in drawing coordinates we have to scale down manually
+                rect.position *= Editor.ZoomLevel;
+                rect.size     *= Editor.ZoomLevel;
+
+                return rect;
+            }
+        }
+        
         public Vector2 Size
         {
             get { return size; }
@@ -60,7 +85,7 @@ namespace Framework.Editor
                 RecalculateDrawRect();
             }
         }
-
+        
         protected virtual void RecalculateDrawRect()
         {
             drawRect.Set
@@ -70,22 +95,37 @@ namespace Framework.Editor
                 size.x,
                 size.y
             );
+
+            BoundsRect = drawRect;
+        }
+        
+        public void SetSelected(bool selected)
+        {
+            Selected = selected;
+            //if (Selected)
+            //    GUI.FocusControl(UniqueName);
         }
 
         public void DrawGUI(int id)
         {
             if (Event.current.type == EventType.Layout
-            ||  Editor.DrawRect.Contains(drawRect.max)
-            ||  Editor.DrawRect.Contains(drawRect.min))
+            ||  Editor.BoundsRect.Contains(BoundsRect.max)
+            ||  Editor.BoundsRect.Contains(BoundsRect.min))
             {
-                var zoomPan = (Editor.DrawRect.size * 0.5f) / Editor.ZoomLevel;
-                var offset = zoomPan - Editor.ScrollPos;
-                drawRect.center += offset;
+                //var zoomPan = (Editor.DrawRect.size * 0.5f) / Editor.ZoomLevel;
+                //var offset = zoomPan - Editor.ScrollPos;
+                //drawRect.center += offset;
+
+                drawRect.center += Editor.PannedOffset;
+
+                // GUI.SetNextControlName(UniqueName);
+                if (Selected)
+                    GUI.color = Color.cyan;
+                GUI.Box(drawRect, GUIContent.none, WindowStyle);
                 
-                GUI.Box(drawRect, Name, WindowStyle);
-                GUI.Label(drawRect, "pos: " + position + 
-                                    "\noffset: " + offset, 
-                                    EditorStyles.largeLabel);
+                GUI.color = Color.white;
+
+                GUI.Label(drawRect, UniqueName + " : " + Selected, EditorStyles.largeLabel);
                 
                 SnapToGrid();
                 OnGUI(id);

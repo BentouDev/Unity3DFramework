@@ -105,11 +105,16 @@ public static class EditorAreaUtils
 
         BeginNoClip();
 
-        viewRect.y += 21;
-        viewRect.height -= 21;
+
+        //viewRect.y += 21;
+        //viewRect.height -= 21;
         
         AreaRect.Set(viewRect.x, viewRect.y, viewRect.width, viewRect.height);
-        
+
+        GUI.color = Color.red;
+        GUI.Box(AreaRect, GUIContent.none);
+        GUI.color = Color.white;
+
         var pivot = AreaRect.min;
 
         AreaRect.x -= pivot.x;
@@ -120,9 +125,9 @@ public static class EditorAreaUtils
 
         ClippedAreaRect.x += pivot.x;
         ClippedAreaRect.y += pivot.y;
-
+        
         GroupRect.Set(0, 0, ClippedAreaRect.width, ClippedAreaRect.height);
-
+        
         GUI.BeginClip(ClippedAreaRect);
         GUI.BeginGroup(GroupRect);
 

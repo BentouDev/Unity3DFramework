@@ -13,7 +13,11 @@ namespace Framework.Editor
         public List<GraphNode> SelectedNodes = new List<GraphNode>();
         public List<GraphNode> NodesToDelete = new List<GraphNode>();
 
-        protected IMouseMode MouseMode;
+        private HashSet<GraphNode> ToSelect = new HashSet<GraphNode>();
+        private HashSet<GraphNode> ToDeselect = new HashSet<GraphNode>();
+
+        protected IMouseMode CurrentMouseMode;
+        protected IMouseMode NextMouseMode;
 
         private float zoom = 1;
         private Vector2 scrollPos = Vector2.zero;
@@ -28,7 +32,7 @@ namespace Framework.Editor
         public bool IsConnecting { get; private set; }
         public bool IsPanning { get; private set; }
 
-        public List<GraphNode> nodes { get; private set; }
+        public List<GraphNode> AllNodes { get; private set; }
 
         public delegate void GraphEditorEvent();
         public delegate void GraphEditorNodeEvent(GraphNode node);
@@ -44,13 +48,34 @@ namespace Framework.Editor
         public event GraphEditorMouseEvent OnLeftClick;
         public event GraphEditorNodeEvent OnDelete;
 
-        public Vector2 ScrollPos { get { return scrollPos; } }
+        public Vector2 ScrollPos
+        {
+            get { return scrollPos; }
+            set { scrollPos = value; }
+        }
+        
+        public Rect PhsysicalRect => new Rect(0, 0, DrawRect.width / ZoomLevel, DrawRect.height / ZoomLevel);
+        public Rect BoundsRect => new Rect(-PannedOffset.x, -PannedOffset.y, DrawRect.width / ZoomLevel, DrawRect.height / ZoomLevel);
+        
+        public Rect ScaledRect
+        {
+            get
+            {
+                Rect panned = new Rect(DrawRect);
+                panned.size /= ZoomLevel;
+                return panned;
+            }
+        }
+
+        public Vector2 PannedOffset => (DrawRect.size * 0.5f) / ZoomLevel - ScrollPos;
 
         public float ZoomLevel
         {
             get { return zoom; }
             set { zoom = Mathf.Clamp(value, 0.25f, 1); }
         }
+
+        public bool WantsRepaint { get; private set; }
 
         public enum ConnectionStyle
         {
@@ -61,17 +86,17 @@ namespace Framework.Editor
 
         public GraphNodeEditor()
         {
-            nodes = new List<GraphNode>();
+            AllNodes = new List<GraphNode>();
         }
 
         public void ClearNodes()
         {
-            nodes.Clear();
+            AllNodes.Clear();
         }
         
         public void DeleteNode(GraphNode node)
         {
-            if (nodes.Contains(node))
+            if (AllNodes.Contains(node))
                 NodesToDelete.Add(node);
         }
 
@@ -80,7 +105,9 @@ namespace Framework.Editor
             if (onScrolledPosition)
                 node.Position += scrollPos;
             node.Editor = this;
-            nodes.Add(node);
+            node.Id = AllNodes.Count;
+            node.UniqueName = node.Id + "::" + node.Name;
+            AllNodes.Add(node);
         }
 
         public Rect GetCoordinateBound()
@@ -93,7 +120,7 @@ namespace Framework.Editor
         {
             Vector2 min = new Vector2(Single.MaxValue, Single.MaxValue);
 
-            foreach (GraphNode node in nodes)
+            foreach (GraphNode node in AllNodes)
             {
                 var minPos = node.GetMinCoordinates();
                 if (minPos.x < min.x)
@@ -109,7 +136,7 @@ namespace Framework.Editor
         {
             Vector2 max = Vector2.zero;
 
-            foreach (GraphNode node in nodes)
+            foreach (GraphNode node in AllNodes)
             {
                 var maxPos = node.GetMaxCoordinates();
                 if (maxPos.x > max.x)
@@ -141,7 +168,7 @@ namespace Framework.Editor
             switch (style)
             {
                 case ConnectionStyle.Line:
-                    foreach (GraphNode parent in nodes)
+                    foreach (GraphNode parent in AllNodes)
                     {
                         foreach (GraphNode.ConnectionInfo child in parent.connectedTo)
                         {
@@ -155,7 +182,7 @@ namespace Framework.Editor
                     break;
 
                 case ConnectionStyle.BezierHorizontal:
-                    foreach (GraphNode parent in nodes)
+                    foreach (GraphNode parent in AllNodes)
                     {
                         foreach (GraphNode.ConnectionInfo child in parent.connectedTo)
                         {
@@ -168,7 +195,7 @@ namespace Framework.Editor
                     }    
                     break;
                 case ConnectionStyle.BezierVertical:
-                    foreach (GraphNode parent in nodes)
+                    foreach (GraphNode parent in AllNodes)
                     {
                         foreach (GraphNode.ConnectionInfo child in parent.connectedTo)
                         {
@@ -242,20 +269,54 @@ namespace Framework.Editor
             SelectedNode = null;*/
         }
 
+        private void DrawPos(Vector2 pos)
+        {
+            var zoomCoeff = 1 / ZoomLevel;
+            GUI.Box(new Rect(pos.x - 1, 0, 2 * zoomCoeff, DrawRect.height * zoomCoeff), GUIContent.none);
+            GUI.Box(new Rect(0, pos.y - 1, DrawRect.width * zoomCoeff, 2 * zoomCoeff), GUIContent.none);
+        }
+
         void DrawWindows(EditorWindow editor)
         {
             //editor.BeginWindows();
             {
-                for (int i = 0; i < nodes.Count; i++)
+                for (int i = 0; i < AllNodes.Count; i++)
                 {
-                    nodes[i].DrawGUI(i);
+                    AllNodes[i].DrawGUI(i);
                 }
             }
             //editor.EndWindows();
 
-            if (MouseMode != null)
+            if (NextMouseMode != null)
             {
-                MouseMode.Update(Event.current.mousePosition + ScrollPos);
+                CurrentMouseMode?.End(Event.current.mousePosition);
+                CurrentMouseMode = NextMouseMode;
+                NextMouseMode = null;
+                CurrentMouseMode?.Start(Event.current.mousePosition);
+            }
+            
+            if (CurrentMouseMode != null)
+            {
+                CurrentMouseMode.Update(Event.current.mousePosition);
+            }
+    
+            Rect test = new Rect(DrawRect);
+            test.center += PannedOffset;
+            GUI.color = Color.red;
+            GUI.Box(test, GUIContent.none);
+            GUI.color = Color.blue;
+            Rect koza = new Rect(PhsysicalRect);
+            GUI.Box(koza, GUIContent.none);
+            GUI.color = Color.white;
+        
+            //if (Event.current.type == EventType.MouseMove 
+            //|| (Event.current.type == EventType.Ignore && Event.current.rawType == EventType.MouseMove))
+            {
+                //if (DrawRect.Contains(Event.current.mousePosition))
+                    
+                DrawPos(Event.current.mousePosition);
+                
+                WantsRepaint = true;
             }
         }
 
@@ -270,107 +331,265 @@ namespace Framework.Editor
                 if (OnDelete != null)
                     OnDelete(nodeToDelete);
 
-                foreach (GraphNode baseNode in nodes)
+                foreach (GraphNode baseNode in AllNodes)
                 {
                     baseNode.RemoveConnection(nodeToDelete);
                 }
 
-                nodes.Remove(nodeToDelete);
+                AllNodes.Remove(nodeToDelete);
 
                 nodeToDelete.OnDelete();
             }
             
             NodesToDelete.Clear();
         }
-
-        public void HandleEvents(EditorWindow editor)
+        
+        public void SelectOnly(params GraphNode[] nodes)
         {
-            switch (Event.current.type)
+            SelectOnly(nodes as IEnumerable<GraphNode>);
+        }
+
+        private bool SelectionOverride;
+
+        public void SelectOnly(IEnumerable<GraphNode> nodes)
+        {
+            SelectionOverride = true;
+
+            ToDeselect.Clear();
+            ToSelect.Clear();
+
+            foreach (GraphNode node in SelectedNodes)
             {
-                case EventType.ScrollWheel:
-                    ZoomLevel -= Event.current.delta.y * ZoomSpeed;
-                    Event.current.Use();
-                    break;
+                node.SetSelected(false);
+            }
+
+            SelectedNodes.Clear();
+            SelectedNodes.AddRange(nodes);
+
+            foreach (var node in SelectedNodes)
+            {
+                node.SetSelected(true);
+            }
+
+            //var graphNodes = nodes as IList<GraphNode> ?? nodes.ToList();
+            //foreach (var node in SelectedNodes.Except(graphNodes))
+            //{
+            //    ToDeselect.Add(node);
+            //}
+
+            //foreach (GraphNode node in graphNodes)
+            //{
+            //    ToSelect.Add(node);
+            //}
+        }
+
+        public void SelectNodes(params GraphNode[] nodes)
+        {
+            SelectNodes(nodes as IEnumerable<GraphNode>);
+        }
+
+        public void SelectNodes(IEnumerable<GraphNode> nodes)
+        {
+            foreach (GraphNode node in nodes)
+            {
+                ToSelect.Add(node);
+            }
+        }
+
+        public void DeselectNodes(params GraphNode[] nodes)
+        {
+            DeselectNodes(nodes as IEnumerable<GraphNode>);
+        }
+
+        public void DeselectNodes(IEnumerable<GraphNode> nodes)
+        {
+            foreach (GraphNode node in nodes)
+            {
+                ToDeselect.Add(node);
+            }
+        }
+
+        private void ProcessSelection()
+        {
+            if (SelectionOverride)
+            {
+                ToSelect.Clear();
+                ToDeselect.Clear();
+                SelectionOverride = false;
+                return;
+            }
+
+            foreach (GraphNode node in ToDeselect)
+            {
+                node.SetSelected(false);
+                SelectedNodes.Remove(node);
+            }
+
+            foreach (GraphNode node in ToSelect)
+            {
+                node.SetSelected(true);
+                SelectedNodes.Add(node);
+            }
+
+            ToDeselect.Clear();
+            ToSelect.Clear();
+        }
+
+        private bool HandleMouseMode()
+        {
+            var type = Event.current.type;
+            if (type == EventType.Ignore && CurrentMouseMode != null)
+                type = Event.current.rawType;
+
+            var newNodes = new List<GraphNode>();
+            switch (type)
+            {
                 case EventType.mouseUp:
-                    if (Event.current.button == 0)
+                    if (Event.current.button == 0 && CurrentMouseMode != null)
                     {
-                        if (MouseMode != null)
-                        {
-                            MouseMode.End(Event.current.mousePosition - ScrollPos);
-                            MouseMode = null;
-                        }
-
-                        if (IsConnecting)
-                        {
-                            DropConnection(null, Event.current.mousePosition);
-                        }
-                        else
-                        {
-                            if (OnLeftClick != null)
-                                OnLeftClick(Event.current.mousePosition);
-                        }
-
+                        CurrentMouseMode.End(Event.current.mousePosition);
+                        CurrentMouseMode = null;
                         Event.current.Use();
-                    }
-                    else if (Event.current.button == 1)
-                    {
-                        if (OnRightClick != null)
-                            OnRightClick(Event.current.mousePosition - ScrollPos);
-
-                        Event.current.Use();
-                    }
-                    else if (Event.current.button == 2 && IsPanning)
-                    {
-                        IsPanning = false;
-                        Event.current.Use();
-                    }
-                    /*else
-                    {
-                        connectIndex = 0;
-                        IsConnecting = false;
-                        GraphNode.selected = null;
-                        Event.current.Use();
-                    }*/
-                    break;
-                case EventType.MouseDrag:
-                    if (MouseMode != null)
-                    {
-                        Event.current.Use();
-                    }
-                    else if (IsPanning)
-                    {
-                        scrollPos -= Event.current.delta;
-                        Event.current.Use();
+                        return true;
                     }
                     break;
                 case EventType.mouseDown:
-                    if (Event.current.button == 2)
+                    if (Event.current.button == 0)
                     {
-                        IsPanning = true;
-                        Event.current.Use();
-                    }
-                    else if (Event.current.clickCount == 2)
-                    {
-                        if (OnDoubleClick != null)
-                            OnDoubleClick(Event.current.mousePosition);
+                        newNodes.AddRange(AllNodes
+                            .Where(node => node.PhysicalRect.Contains(Event.current.mousePosition - new Vector2(0,16)))
+                            .OrderByDescending(node => node.Id));
 
-                        Event.current.Use();
+                        if (!newNodes.Any())
+                        {
+                            DeselectNodes(SelectedNodes);
+                            GUI.FocusControl(string.Empty);
+                        }
+                        else
+                        {
+                            if (!SelectedNodes.Contains(newNodes.First()))
+                            {
+                                DeselectNodes(SelectedNodes);
+                                SelectNodes(newNodes.First());
+                            }
+                            
+                            NextMouseMode = new DragMode(this);
+
+                            Event.current.Use();
+                            return true;
+                        }
+
+                        if (CurrentMouseMode == null)
+                        {
+                            NextMouseMode = new SelectMode(this);
+
+                            Event.current.Use();
+                            return true;   
+                        }
                     }
-                    else if (Event.current.button == 0)
-                    {
-                        MouseMode = new SelectMode();
-                        MouseMode.Start(Event.current.mousePosition + ScrollPos);
-                        Event.current.Use();
-                    }
-                    /*else if (Event.current.clickCount == 1)
-                    {
-                        connectIndex = 0;
-                        IsConnecting = false;
-                        GraphNode.selected = null;
-                        Event.current.Use();
-                    }*/
                     break;
             }
+
+            return false;
+        }
+
+        public void HandleEvents(EditorWindow editor)
+        {
+            if (Event.current.type == EventType.Repaint)
+                WantsRepaint = false;
+
+            if (!HandleMouseMode())
+            {
+                switch (Event.current.type)
+                {
+                    case EventType.ScrollWheel:
+                        ZoomLevel -= Event.current.delta.y * ZoomSpeed;
+                        Event.current.Use();
+                        break;
+                    case EventType.mouseUp:
+                        if (Event.current.button == 0)
+                        {
+                            //if (MouseMode != null)
+                            //{
+                            //    MouseMode.End(Event.current.mousePosition);
+                            //    MouseMode = null;
+                            //}
+
+                            if (IsConnecting)
+                            {
+                                DropConnection(null, Event.current.mousePosition);
+                            }
+                            else
+                            {
+                                if (OnLeftClick != null)
+                                    OnLeftClick(Event.current.mousePosition);
+                            }
+
+                            Event.current.Use();
+                        }
+                        else if (Event.current.button == 1)
+                        {
+                            if (OnRightClick != null)
+                                OnRightClick(Vector2.zero);
+
+                            Event.current.Use();
+                        }
+                        else if (Event.current.button == 2 && IsPanning)
+                        {
+                            IsPanning = false;
+                            Event.current.Use();
+                        }
+                        /*else
+                        {
+                            connectIndex = 0;
+                            IsConnecting = false;
+                            GraphNode.selected = null;
+                            Event.current.Use();
+                        }*/
+                        break;
+                    case EventType.MouseDrag:
+                        //if (MouseMode != null)
+                        //{
+                        //    Event.current.Use();
+                        //}
+                        //else 
+                        if (IsPanning)
+                        {
+                            scrollPos -= Event.current.delta / ZoomLevel;
+                            Event.current.Use();
+                        }
+                        break;
+                    case EventType.mouseDown:
+                        if (Event.current.button == 2)
+                        {
+                            IsPanning = true;
+                            Event.current.Use();
+                        }
+                        else if (Event.current.clickCount == 2)
+                        {
+                            if (OnDoubleClick != null)
+                                OnDoubleClick(Event.current.mousePosition);
+
+                            Event.current.Use();
+                        }
+                        //else if (Event.current.button == 0)
+                        //{
+                        //    MouseMode = new SelectMode(this);
+                        //    MouseMode.Start(Event.current.mousePosition);
+                        //    Event.current.Use();
+                        //}
+                        /*else if (Event.current.clickCount == 1)
+                        {
+                            connectIndex = 0;
+                            IsConnecting = false;
+                            GraphNode.selected = null;
+                            Event.current.Use();
+                        }*/
+                        break;
+                }
+            }
+
+            ProcessSelection();
 
             if (NodesToDelete.Any())
             {
