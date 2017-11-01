@@ -102,23 +102,15 @@ namespace Framework.Editor
         public void SetSelected(bool selected)
         {
             Selected = selected;
-            //if (Selected)
-            //    GUI.FocusControl(UniqueName);
         }
 
         public void DrawGUI(int id)
         {
             if (Event.current.type == EventType.Layout
-            ||  Editor.BoundsRect.Contains(BoundsRect.max)
-            ||  Editor.BoundsRect.Contains(BoundsRect.min))
+            || Editor.BoundsRect.Overlaps(BoundsRect))
             {
-                //var zoomPan = (Editor.DrawRect.size * 0.5f) / Editor.ZoomLevel;
-                //var offset = zoomPan - Editor.ScrollPos;
-                //drawRect.center += offset;
-
                 drawRect.center += Editor.PannedOffset;
-
-                // GUI.SetNextControlName(UniqueName);
+                
                 if (Selected)
                     GUI.color = Color.cyan;
                 GUI.Box(drawRect, GUIContent.none, WindowStyle);

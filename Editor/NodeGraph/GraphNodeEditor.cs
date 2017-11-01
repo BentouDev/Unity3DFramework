@@ -48,13 +48,15 @@ namespace Framework.Editor
         public event GraphEditorMouseEvent OnLeftClick;
         public event GraphEditorNodeEvent OnDelete;
 
+        private bool CtrlPressed;
+
         public Vector2 ScrollPos
         {
             get { return scrollPos; }
             set { scrollPos = value; }
         }
         
-        public Rect PhsysicalRect => new Rect(0, 0, DrawRect.width / ZoomLevel, DrawRect.height / ZoomLevel);
+        public Rect PhysicalRect => new Rect(0, 0, DrawRect.width / ZoomLevel, DrawRect.height / ZoomLevel);
         public Rect BoundsRect => new Rect(-PannedOffset.x, -PannedOffset.y, DrawRect.width / ZoomLevel, DrawRect.height / ZoomLevel);
         
         public Rect ScaledRect
@@ -91,6 +93,7 @@ namespace Framework.Editor
 
         public void ClearNodes()
         {
+            CtrlPressed = false;
             AllNodes.Clear();
         }
         
@@ -305,7 +308,7 @@ namespace Framework.Editor
             GUI.color = Color.red;
             GUI.Box(test, GUIContent.none);
             GUI.color = Color.blue;
-            Rect koza = new Rect(PhsysicalRect);
+            Rect koza = new Rect(PhysicalRect);
             GUI.Box(koza, GUIContent.none);
             GUI.color = Color.white;
         
@@ -370,17 +373,6 @@ namespace Framework.Editor
             {
                 node.SetSelected(true);
             }
-
-            //var graphNodes = nodes as IList<GraphNode> ?? nodes.ToList();
-            //foreach (var node in SelectedNodes.Except(graphNodes))
-            //{
-            //    ToDeselect.Add(node);
-            //}
-
-            //foreach (GraphNode node in graphNodes)
-            //{
-            //    ToSelect.Add(node);
-            //}
         }
 
         public void SelectNodes(params GraphNode[] nodes)
@@ -454,7 +446,7 @@ namespace Framework.Editor
                     }
                     break;
                 case EventType.mouseDown:
-                    if (Event.current.button == 0)
+                    if (Event.current.button == 0 && PhysicalRect.Contains(Event.current.mousePosition))
                     {
                         newNodes.AddRange(AllNodes
                             .Where(node => node.PhysicalRect.Contains(Event.current.mousePosition - new Vector2(0,16)))
@@ -469,7 +461,9 @@ namespace Framework.Editor
                         {
                             if (!SelectedNodes.Contains(newNodes.First()))
                             {
-                                DeselectNodes(SelectedNodes);
+                                if (!CtrlPressed)
+                                    DeselectNodes(SelectedNodes);
+
                                 SelectNodes(newNodes.First());
                             }
                             
@@ -498,97 +492,84 @@ namespace Framework.Editor
             if (Event.current.type == EventType.Repaint)
                 WantsRepaint = false;
 
+            if (Event.current.type == EventType.KeyDown && Event.current.keyCode == KeyCode.LeftControl)
+                CtrlPressed = true;
+            if (Event.current.type == EventType.KeyUp && Event.current.keyCode == KeyCode.LeftControl)
+                CtrlPressed = false;
+            
             if (!HandleMouseMode())
             {
-                switch (Event.current.type)
                 {
-                    case EventType.ScrollWheel:
-                        ZoomLevel -= Event.current.delta.y * ZoomSpeed;
-                        Event.current.Use();
-                        break;
-                    case EventType.mouseUp:
-                        if (Event.current.button == 0)
-                        {
-                            //if (MouseMode != null)
-                            //{
-                            //    MouseMode.End(Event.current.mousePosition);
-                            //    MouseMode = null;
-                            //}
-
-                            if (IsConnecting)
+                    switch (Event.current.type)
+                    {
+                        case EventType.ScrollWheel:
+                            ZoomLevel -= Event.current.delta.y * ZoomSpeed;
+                            Event.current.Use();
+                            break;
+                        case EventType.mouseUp:
+                            if (Event.current.button == 0)
                             {
-                                DropConnection(null, Event.current.mousePosition);
+                                if (IsConnecting)
+                                {
+                                    DropConnection(null, Event.current.mousePosition);
+                                }
+                                else
+                                {
+                                    OnLeftClick?.Invoke(Event.current.mousePosition);
+                                }
+
+                                Event.current.Use();
                             }
-                            else
+                            else if (Event.current.button == 1)
                             {
-                                if (OnLeftClick != null)
-                                    OnLeftClick(Event.current.mousePosition);
+                                OnRightClick?.Invoke(Vector2.zero);
+
+                                Event.current.Use();
                             }
+                            else if (Event.current.button == 2 && IsPanning)
+                            {
+                                IsPanning = false;
+                                Event.current.Use();
+                            }
+                            /*else
+                            {
+                                connectIndex = 0;
+                                IsConnecting = false;
+                                GraphNode.selected = null;
+                                Event.current.Use();
+                            }*/
+                            break;
+                        case EventType.MouseDrag:
+                            if (IsPanning)
+                            {
+                                scrollPos -= Event.current.delta / ZoomLevel;
+                                Event.current.Use();
+                            }
+                            break;
+                        case EventType.mouseDown:
+                            if (Event.current.button == 2)
+                            {
+                                IsPanning = true;
+                                Event.current.Use();
+                            }
+                            else if (Event.current.clickCount == 2)
+                            {
+                                OnDoubleClick?.Invoke(Event.current.mousePosition);
 
-                            Event.current.Use();
-                        }
-                        else if (Event.current.button == 1)
-                        {
-                            if (OnRightClick != null)
-                                OnRightClick(Vector2.zero);
-
-                            Event.current.Use();
-                        }
-                        else if (Event.current.button == 2 && IsPanning)
-                        {
-                            IsPanning = false;
-                            Event.current.Use();
-                        }
-                        /*else
-                        {
-                            connectIndex = 0;
-                            IsConnecting = false;
-                            GraphNode.selected = null;
-                            Event.current.Use();
-                        }*/
-                        break;
-                    case EventType.MouseDrag:
-                        //if (MouseMode != null)
-                        //{
-                        //    Event.current.Use();
-                        //}
-                        //else 
-                        if (IsPanning)
-                        {
-                            scrollPos -= Event.current.delta / ZoomLevel;
-                            Event.current.Use();
-                        }
-                        break;
-                    case EventType.mouseDown:
-                        if (Event.current.button == 2)
-                        {
-                            IsPanning = true;
-                            Event.current.Use();
-                        }
-                        else if (Event.current.clickCount == 2)
-                        {
-                            if (OnDoubleClick != null)
-                                OnDoubleClick(Event.current.mousePosition);
-
-                            Event.current.Use();
-                        }
-                        //else if (Event.current.button == 0)
-                        //{
-                        //    MouseMode = new SelectMode(this);
-                        //    MouseMode.Start(Event.current.mousePosition);
-                        //    Event.current.Use();
-                        //}
-                        /*else if (Event.current.clickCount == 1)
-                        {
-                            connectIndex = 0;
-                            IsConnecting = false;
-                            GraphNode.selected = null;
-                            Event.current.Use();
-                        }*/
-                        break;
-                }
+                                Event.current.Use();
+                            }
+                            /*else if (Event.current.clickCount == 1)
+                            {
+                                connectIndex = 0;
+                                IsConnecting = false;
+                                GraphNode.selected = null;
+                                Event.current.Use();
+                            }*/
+                            break;
+                    }
+                }    
             }
-
+            
             ProcessSelection();
 
             if (NodesToDelete.Any())

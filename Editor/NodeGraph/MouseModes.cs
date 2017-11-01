@@ -45,7 +45,7 @@ namespace Framework.Editor.MouseModes
             || (Event.current.type == EventType.Ignore && Event.current.rawType != EventType.MouseDrag))
                 return;
 
-            if (!Editor.PhsysicalRect.Contains(pos))
+            if (!Editor.PhysicalRect.Contains(pos))
                 return;
 
             GUI.color = Color.yellow;
@@ -91,7 +91,7 @@ namespace Framework.Editor.MouseModes
                                      Event.current.rawType == EventType.MouseDrag));
 
             // Only when cursor is in editor
-            if (!Editor.PhsysicalRect.Contains(pos))
+            if (!Editor.PhysicalRect.Contains(pos))
                 processSelection = false;
             
             if (processSelection)
@@ -100,13 +100,10 @@ namespace Framework.Editor.MouseModes
                 DrawRect.max = new Vector2(Mathf.Max(StartPosition.x, pos.x), Mathf.Max(StartPosition.y, pos.y));
 
                 // Physical is scalled as physical of node, so we can overlap them properly
-                PhysicalRect.min = DrawRect.min * Editor.ZoomLevel;
-                PhysicalRect.max = DrawRect.max * Editor.ZoomLevel;
+                PhysicalRect.position = DrawRect.position * Editor.ZoomLevel;
+                PhysicalRect.size     = DrawRect.size * Editor.ZoomLevel;
                 
-                var nodes = Editor.AllNodes.Where(node
-                    => PhysicalRect.Contains(node.PhysicalRect.min)
-                    || PhysicalRect.Contains(node.PhysicalRect.max)
-                );
+                var nodes = Editor.AllNodes.Where(node => PhysicalRect.Overlaps(node.PhysicalRect));
                 
                 var graphNodes = nodes as IList<GraphNode> ?? nodes.ToList();
                 Editor.SelectOnly(graphNodes);
