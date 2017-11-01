@@ -9,6 +9,10 @@ namespace Framework.AI
 #endif
     public class BehaviourTree : ScriptableObject
     {
+#if UNITY_EDITOR
+        [SerializeField] public Vector2 EditorPos = Vector2.zero;
+#endif
+
         [SerializeField]
         public List<GenericParameter> Parameters = new List<GenericParameter>();
 

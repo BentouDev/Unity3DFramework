@@ -44,6 +44,7 @@ namespace Framework.AI.Editor
         internal void RecreateNodes(ref BehaviourTreeEditorPresenter.Model model)
         {
             Nodes.ClearNodes();
+            Nodes.ScrollPos = model.TreeAsset.EditorPos;
 
             foreach (var node in model.TreeAsset.Nodes)
             {
@@ -64,10 +65,15 @@ namespace Framework.AI.Editor
         {
             Presenter.OnReloadAssetFromSelection();
         }
-        
+
         #endregion
 
         #region GUI
+
+        public Vector2 GetScrollPos()
+        {
+            return Nodes.ScrollPos;
+        }
 
         internal void DrawWorkspace(ref BehaviourTreeEditorPresenter.Model model)
         {
@@ -95,6 +101,9 @@ namespace Framework.AI.Editor
                 DrawFooter(ref model);
             }
             EditorGUILayout.EndVertical();
+
+            if (Nodes.WantsRepaint)
+                Repaint();
         }
 
         private void DrawNodeGraph()
@@ -103,7 +112,7 @@ namespace Framework.AI.Editor
             {
                 // Reserve space for graph
                 var targetRect = GUILayoutUtility.GetRect(GUIContent.none, GUIStyle.none, GUILayout.ExpandHeight(true), GUILayout.ExpandWidth(true));
-                var adjustedRect = new Rect(0, 16, targetRect.width, position.height - 21);
+                var adjustedRect = new Rect(0, 16 + 21, targetRect.width, position.height - 21 - 16);
 
                 Nodes.Draw(this, adjustedRect);
             }
@@ -150,8 +159,8 @@ namespace Framework.AI.Editor
             {
                 GUILayout.Label(model.AssetPath);
                 GUILayout.FlexibleSpace();
-                GUILayout.Label("so:" + Nodes.ScrollPos);
-                GUILayout.Label("zo:" + Nodes.ZoomLevel);
+                GUILayout.Label($"{Nodes.ScrollPos} :: {Event.current.mousePosition} :: ");
+                GUILayout.Label($"{Nodes.ZoomLevel * 100:##.##}%");
                 Nodes.ZoomLevel = GUILayout.HorizontalSlider(Nodes.ZoomLevel, 0.25f, 1, GUILayout.Width(64));
             }
             EditorGUILayout.EndHorizontal();

@@ -60,8 +60,16 @@ namespace Framework.AI.Editor
             }
         }
 
+        internal void OnLostAsset()
+        {
+            TreeAsset.EditorPos = View.GetScrollPos();
+        }
+
         internal void OnLoadAsset(BehaviourTree treeAsset)
         {
+            if (TreeAsset)
+                OnLostAsset();
+
             if (treeAsset == null)
             {
                 TreeAsset = null;
