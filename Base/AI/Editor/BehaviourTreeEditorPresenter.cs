@@ -41,7 +41,9 @@ namespace Framework.AI.Editor
 
         internal override void OnSelectionChange()
         {
-            ReloadAssetFromSelection();
+            var node = Selection.activeObject as BehaviourTreeNode;
+            if (Selection.activeObject != TreeAsset && (node == null || !TreeAsset.Nodes.Contains(node)))
+                ReloadAssetFromSelection();
         }
 
         internal override void OnDraw()
@@ -178,7 +180,7 @@ namespace Framework.AI.Editor
                 }
             });
         }
-
+ 
         UnityEditor.GenericMenu.MenuFunction CreateNewNodeCallback(System.Action<Type> callback, Type type)
         {
             return () =>
@@ -207,6 +209,11 @@ namespace Framework.AI.Editor
             });
 
             menu.ShowAsContext();
+        }
+
+        public void OnEmptyDotClicked(BehaviourTreeEditorNode source, Vector2 position)
+        {
+            View.TryBeginConnection(source, position);
         }
     }
 }

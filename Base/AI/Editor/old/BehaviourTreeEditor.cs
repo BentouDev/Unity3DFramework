@@ -45,10 +45,10 @@ namespace Framework.AI
 
         private void SetupEvents()
         {
-            Nodes.OnLeftClick                     += OnEmptyGraphLeftClick;
-            Nodes.OnRightClick                    += OnEmptyGraphRightClick;
-            Nodes.OnDelete                        += OnGraphNodeDeleted;
-            Nodes.OnConnectionEmptyDrop           += OnGraphNewConnection;
+            // Nodes.OnLeftClick.AddPost(data => OnEmptyGraphLeftClick(data.MousePos));
+            Nodes.OnRightClick.AddPost(data => OnEmptyGraphRightClick(data.MousePos));
+            Nodes.OnDeleteNode.AddPost(data => OnGraphNodeDeleted(data.Node));
+            // Nodes.OnConnectionEmptyDrop           += OnGraphNewConnection;
             BehaviourTreeGraphNode.OnNewChildNode += OnGraphNodeEmptyTarget; 
         }
 

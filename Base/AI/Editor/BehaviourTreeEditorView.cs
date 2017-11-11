@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Framework.Editor;
 using UnityEditor;
+using UnityEditor.Graphs;
 using UnityEngine;
 
 namespace Framework.AI.Editor
@@ -24,7 +25,11 @@ namespace Framework.AI.Editor
         protected BehaviourTreeEditorView()
         {
             Presenter = new BehaviourTreeEditorPresenter(this);
-            Nodes.OnRightClick += Presenter.OnRightClick;
+            Nodes.OnRightClick.Reassign(data =>
+            {
+                Presenter.OnRightClick(data.MousePos);
+                return true;
+            });
         }
 
         void OnEnable()
@@ -38,7 +43,7 @@ namespace Framework.AI.Editor
         
         internal void OnNodeAdded(BehaviourTree asset, BehaviourTreeNode node)
         {
-            Nodes.AddNode(new BehaviourTreeEditorNode(asset, node));
+            Nodes.AddNode(new BehaviourTreeEditorNode(asset, node, Presenter));
         }
 
         internal void RecreateNodes(ref BehaviourTreeEditorPresenter.Model model)
@@ -48,7 +53,7 @@ namespace Framework.AI.Editor
 
             foreach (var node in model.TreeAsset.Nodes)
             {
-                Nodes.AddNode(new BehaviourTreeEditorNode(model.TreeAsset, node));
+                Nodes.AddNode(new BehaviourTreeEditorNode(model.TreeAsset, node, Presenter));
             }
         }
 
@@ -159,8 +164,9 @@ namespace Framework.AI.Editor
             {
                 GUILayout.Label(model.AssetPath);
                 GUILayout.FlexibleSpace();
-                GUILayout.Label($"{Nodes.ScrollPos} :: {Event.current.mousePosition} :: ");
-                GUILayout.Label($"{Nodes.ZoomLevel * 100:##.##}%");
+                GUILayout.Label($"<<{(Nodes.CurrentMouseMode != null ? Nodes.CurrentMouseMode.GetType().Name : "null")}>>");
+                //GUILayout.Label($"{Nodes.ScrollPos} :: {Event.current.mousePosition} :: ");
+                //GUILayout.Label($"{Nodes.ZoomLevel * 100:##.##}%");
                 Nodes.ZoomLevel = GUILayout.HorizontalSlider(Nodes.ZoomLevel, 0.25f, 1, GUILayout.Width(64));
             }
             EditorGUILayout.EndHorizontal();
@@ -176,5 +182,10 @@ namespace Framework.AI.Editor
         }
 
         #endregion
+
+        public void TryBeginConnection(BehaviourTreeEditorNode source, Vector2 position)
+        {
+            Nodes.StartConnection(source, position);
+        }
     }
 }

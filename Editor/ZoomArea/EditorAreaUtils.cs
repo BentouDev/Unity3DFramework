@@ -82,7 +82,7 @@ public static class EditorAreaUtils
             return;
         }
 
-        List<Rect> rectStackGroup = rectStackGroups[rectStackGroups.Count - 1];
+        rectStackGroup = rectStackGroups[rectStackGroups.Count - 1];
         for (int clipCnt = 0; clipCnt < rectStackGroup.Count; clipCnt++)
         {
             GUI.BeginClip(rectStackGroup[clipCnt]);
@@ -98,13 +98,12 @@ public static class EditorAreaUtils
 
     public static void BeginZoomArea(float zoomLevel, Rect viewRect)
     {
-        GUI.Label(new Rect(20, 20, 200, 30), "TL " + ClippedAreaRect.TopLeft());
-        GUI.Label(new Rect(viewRect.xMax - 220, 20, 200, 30), "TR " + ClippedAreaRect.max);
-        GUI.Label(new Rect(20, viewRect.yMax - 50, 200, 30), "BL " + ClippedAreaRect.min);
-        GUI.Label(new Rect(viewRect.xMax - 220, viewRect.yMax - 50, 200, 30), "BR " + new Vector2(ClippedAreaRect.xMax, ClippedAreaRect.yMin));
+//        GUI.Label(new Rect(20, 20, 200, 30), "TL " + ClippedAreaRect.TopLeft());
+//        GUI.Label(new Rect(viewRect.xMax - 220, 20, 200, 30), "TR " + ClippedAreaRect.max);
+//        GUI.Label(new Rect(20, viewRect.yMax - 50, 200, 30), "BL " + ClippedAreaRect.min);
+//        GUI.Label(new Rect(viewRect.xMax - 220, viewRect.yMax - 50, 200, 30), "BR " + new Vector2(ClippedAreaRect.xMax, ClippedAreaRect.yMin));
 
         BeginNoClip();
-
 
         //viewRect.y += 21;
         //viewRect.height -= 21;
@@ -138,8 +137,6 @@ public static class EditorAreaUtils
         Matrix4x4 translation = Matrix4x4.TRS(ClippedAreaRect.min, Quaternion.identity, Vector3.one);
         Matrix4x4 scale = Matrix4x4.Scale(Scale);
         GUI.matrix = translation * scale * translation.inverse * GUI.matrix;
-        
-        GUI.Box(new Rect(10,10,100,100),"Dupa Jasiu");
     }
 
     public static void EndZoomArea()

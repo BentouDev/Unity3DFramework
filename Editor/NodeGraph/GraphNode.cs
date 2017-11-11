@@ -101,8 +101,12 @@ namespace Framework.Editor
         
         public void SetSelected(bool selected)
         {
+            OnSelected(selected);
             Selected = selected;
         }
+
+        protected virtual void OnSelected(bool value)
+        { }
 
         public void DrawGUI(int id)
         {
@@ -111,16 +115,9 @@ namespace Framework.Editor
             {
                 drawRect.center += Editor.PannedOffset;
                 
-                if (Selected)
-                    GUI.color = Color.cyan;
-                GUI.Box(drawRect, GUIContent.none, WindowStyle);
-                
-                GUI.color = Color.white;
-
-                GUI.Label(drawRect, UniqueName + " : " + Selected, EditorStyles.largeLabel);
-                
-                SnapToGrid();
                 OnGUI(id);
+                DrawContent(id);
+                SnapToGrid();
             }
         }
         
@@ -135,18 +132,24 @@ namespace Framework.Editor
             RecalculateDrawRect();
         }
 
-        protected abstract void OnGUI(int id);
+        protected virtual void OnGUI(int id)
+        {
+            if (Selected)
+                GUI.color = Color.cyan;
+            GUI.Box(drawRect, GUIContent.none, WindowStyle);
+                
+            GUI.color = Color.white;
+
+            GUI.Label(drawRect, UniqueName, EditorStyles.largeLabel);
+        }
 
         protected virtual void DrawContent(int id)
         {
             OnDrawContent(id);
-
-            if (Event.current.isMouse && Event.current.button == 0)
-                GUI.DragWindow();
         }
 
         protected abstract void OnDrawContent(int id);
-
+        
         public virtual Vector2 GetMaxCoordinates()
         {
             return drawRect.max + ConnectorSize;
@@ -273,6 +276,14 @@ namespace Framework.Editor
         {
 
         }
+
+        public void HandleRightClick()
+        {
+            OnRightClick();
+        }
+
+        protected virtual void OnRightClick()
+        { }
     }
 }
 #endif

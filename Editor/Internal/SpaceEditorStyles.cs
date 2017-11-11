@@ -322,8 +322,19 @@ public static class SpaceEditorStyles
         get
         {
             if (_graphNodeBackground == null)
-                _graphNodeBackground = Skin.customStyles.First(s => s.name == "GraphNode");
+                _graphNodeBackground = Skin.customStyles.First(s => s.name == "GraphNodeNormal");
             return _graphNodeBackground;
+        }
+    }
+    
+    private static GUIStyle _graphNodeBackgroundSelected;
+    public static GUIStyle GraphNodeBackgroundSelected
+    {
+        get
+        {
+            if (_graphNodeBackgroundSelected == null)
+                _graphNodeBackgroundSelected = Skin.customStyles.First(s => s.name == "GraphNodeSelected");
+            return _graphNodeBackgroundSelected;
         }
     }
 
