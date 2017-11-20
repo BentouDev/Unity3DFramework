@@ -1,17 +1,22 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace Framework
 {
     public class PawnFall : PawnState
     {
+        public UnityEvent OnLand;
+        
         protected override void OnProcessMovement(Vector3 direction)
         {
             Pawn.SimulateMovement(Pawn.CurrentDirection);
 
             if (!Pawn.IsGrounded)
                 return;
+            
+            OnLand.Invoke();
 
             if (direction.magnitude > 0)
             {

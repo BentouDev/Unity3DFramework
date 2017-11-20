@@ -14,6 +14,7 @@ namespace Framework
         public Rigidbody Body;
         public Damageable Damageable;
         public Animator Anim;
+        public GroundChecker Grounder;
 
         [Header("Ground Checking")]
         public bool DrawHit;
@@ -114,7 +115,8 @@ namespace Framework
 
         public Vector3 DeltaPosition => Body.position - LastPosition;
 
-        public bool IsGrounded { get; protected set; }
+        public bool IsGrounded => Grounder ? Grounder.IsGrouneded : _isGrounded;
+        private bool _isGrounded;
 
         public float MaxSpeed { get; set; }
 
@@ -146,6 +148,7 @@ namespace Framework
         {
             this.TryInit(ref Damageable);
             this.TryInit(ref Body);
+            this.TryInit(ref Grounder);
 
             LastPosition     = transform.position;
             CurrentDirection = transform.forward;
@@ -167,10 +170,16 @@ namespace Framework
 
         public void CheckGrounded()
         {
+            if (Grounder != null)
+            {
+                Grounder.CheckGround();
+                return;
+            }
+            
             var orign = transform.TransformPoint(RaycastOrigin);
 
-            IsGrounded = Physics.Raycast(orign, Vector3.down, out LastGroundHit, RaycastLength, RaycastMask);
-            if (IsGrounded && DrawHit)
+            _isGrounded = Physics.Raycast(orign, Vector3.down, out LastGroundHit, RaycastLength, RaycastMask);
+            if (_isGrounded && DrawHit)
             {
                 Debug.DrawLine(LastGroundHit.point, LastGroundHit.point + LastGroundHit.normal, Color.cyan, 5.0f);
             }
@@ -178,8 +187,8 @@ namespace Framework
             {
                 foreach (Vector3 offset in GetRaycastOffsets())
                 {
-                    IsGrounded |= Physics.Raycast(orign + offset, Vector3.down, out LastGroundHit, RaycastLength, RaycastMask);
-                    if (IsGrounded)
+                    _isGrounded |= Physics.Raycast(orign + offset, Vector3.down, out LastGroundHit, RaycastLength, RaycastMask);
+                    if (_isGrounded)
                         break;
                 }
             }

@@ -10,6 +10,8 @@ namespace Framework
 
         private int DisableCounter;
 
+        public bool IsEnabled => DisableCounter == 0;
+
         public void Init()
         {
             if (AllControllers == null)
