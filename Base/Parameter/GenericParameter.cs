@@ -2,7 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using Framework.AI;
+
+#if UNITY_EDITOR
 using UnityEditor;
+#endif
+
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -176,7 +180,7 @@ namespace Framework
                 return null;
             }
 #else
-            return GetKnownType(HoldType.Type).Creator(this);
+            return GetKnownType(HoldType.Type).CreateValue(this);
 #endif
         }
 
@@ -271,6 +275,7 @@ namespace Framework
 
             return null;
         }
+#endif
 
         public static KnownType GetKnownType(System.Type type)
         {
@@ -304,6 +309,5 @@ namespace Framework
 
             return null;
         }
-#endif
     }
 }

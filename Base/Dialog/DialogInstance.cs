@@ -132,7 +132,8 @@ namespace Framework
 
         public void StartThisDialog()
         {
-            MainGame.Instance.StartDialog(this);
+            // How would one do this?
+            // MainGame.Instance.StartDialog(this);
         }
 
         public bool ReloadDialog()
