@@ -221,7 +221,7 @@ namespace Framework
             switch (Face)
             {
                 case FaceMode.Direction:
-                    target = CurrentDirection;
+                    target = DesiredForward;
                     break;
                 case FaceMode.Velocity:
                     target = Velocity;

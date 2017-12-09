@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Framework
 {
@@ -57,11 +58,18 @@ namespace Framework
                 AllStates = new List<GameState>();
 
             AllStates.AddRange(GetComponentsInChildren<GameState>());
-            
-            Loader.OnSceneLoad -= SceneLoaded;
-            Loader.OnSceneLoad += SceneLoaded;
 
-            Loader.StartLoadScene(Loader.BaseScene);
+            if (Loader)
+            {
+                Loader.OnSceneLoad -= SceneLoaded;
+                Loader.OnSceneLoad += SceneLoaded;
+
+                Loader.StartLoadScene(Loader.BaseScene);                
+            }
+            else
+            {
+                SceneLoaded();
+            }
         }
 
         public abstract bool IsPlaying();
@@ -109,7 +117,10 @@ namespace Framework
 
             gameObject.BroadcastToAll("OnLevelCleanUp");
 
-            Loader.StartLoadScene(Loader.CurrentScene);
+            if (Loader)
+                Loader.StartLoadScene(Loader.CurrentScene);
+            else
+                SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
         }
 
         public void DestroyPersistent()
@@ -122,7 +133,7 @@ namespace Framework
 
         void Update()
         {
-            if (!Loader.IsReady)
+            if (Loader && !Loader.IsReady)
                 return;
 
             if (CurrentState != null)
@@ -135,7 +146,7 @@ namespace Framework
 
         void FixedUpdate()
         {
-            if (!Loader.IsReady)
+            if (Loader && !Loader.IsReady)
                 return;
 
             if (CurrentState != null)
@@ -148,7 +159,7 @@ namespace Framework
 
         void LateUpdate()
         {
-            if (!Loader.IsReady)
+            if (Loader && !Loader.IsReady)
                 return;
 
             if (CurrentState != null)
