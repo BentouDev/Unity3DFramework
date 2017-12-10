@@ -2,7 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+using UnityEngine.Events;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -21,6 +21,10 @@ public class Damageable : MonoBehaviour
     public int  CurrentHealth { get; private set; }
 
     public bool IsAlive { get { return CurrentHealth > 0; } }
+
+    public GameObject OnDead;
+    public AnimationPlayer DeathAnim;
+    public float DedDuration;
     
     void Start()
     {
@@ -43,7 +47,7 @@ public class Damageable : MonoBehaviour
 
     public void Hurt(int amount)
     {
-        if (Invincible)
+        if (Invincible || !IsAlive)
             return;
 
         if (Time.time - LastHurt < Delay)
@@ -52,6 +56,22 @@ public class Damageable : MonoBehaviour
         LastHurt = Time.time;
         CurrentHealth -= amount;
         CurrentHealth  = Mathf.Clamp(CurrentHealth, 0, MaxHealth);
+        
+        if (!IsAlive)
+            Dead();
+    }
+
+    public void Dead()
+    {
+        StartCoroutine(CoDead());
+    }
+
+    IEnumerator CoDead()
+    {
+        DeathAnim.Play();
+        var go = Instantiate(OnDead, transform.position, Quaternion.identity);
+        yield return new WaitForSeconds(DedDuration);
+        DestroyObject(go);
     }
 
 #if UNITY_EDITOR
