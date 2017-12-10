@@ -8,6 +8,10 @@ public class Lifetime : MonoBehaviour
     public bool DestroyOnEnd;
     public float Duration;
 
+    public float Elapsed => Time.time - StartTime;
+
+    private float StartTime;
+
     public UnityEvent OnEnd;
 
     void Start()
@@ -20,13 +24,18 @@ public class Lifetime : MonoBehaviour
 
     public void Begin()
     {
+        StartTime = Time.time;
         StartCoroutine(CoLifetime());
     }
 
-    IEnumerator CoLifetime()
+    public void Die()
     {
-        yield return new WaitForSeconds(Duration);
+        StopAllCoroutines();
+        StartCoroutine(CoDie());
+    }
 
+    IEnumerator CoDie()
+    {
         OnEnd.Invoke();
 
         if (DestroyOnEnd)
@@ -34,5 +43,12 @@ public class Lifetime : MonoBehaviour
             yield return new WaitForFixedUpdate();
             DestroyObject(gameObject);
         }
+    }
+
+    IEnumerator CoLifetime()
+    {
+        yield return new WaitForSeconds(Duration);
+
+        StartCoroutine(CoDie());
     }
 }

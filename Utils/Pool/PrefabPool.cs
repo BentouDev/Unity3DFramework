@@ -41,7 +41,7 @@ public class PrefabPool : MonoBehaviour
                 Name = Prefab.name;
             }
 
-            if (pools.ContainsKey(name))
+            if (pools.ContainsKey(Name))
             {
                 Debug.LogError("Pool " + Name + " already exists!");
             }
