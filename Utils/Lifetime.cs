@@ -41,7 +41,15 @@ public class Lifetime : MonoBehaviour
         if (DestroyOnEnd)
         {
             yield return new WaitForFixedUpdate();
-            DestroyObject(gameObject);
+            var pooled = GetComponent<PooledObject>();
+            if (pooled)
+            {
+                pooled.ReturnToPool();
+            }
+            else
+            {
+                DestroyObject(gameObject);                
+            }
         }
     }
 
