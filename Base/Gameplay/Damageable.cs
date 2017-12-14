@@ -22,10 +22,8 @@ public class Damageable : MonoBehaviour
 
     public bool IsAlive { get { return CurrentHealth > 0; } }
 
-    public GameObject OnDead;
     public AnimationPlayer DeathAnim;
-    public float DedDuration;
-    
+
     void Start()
     {
         if (!InitOnStart)
@@ -63,15 +61,12 @@ public class Damageable : MonoBehaviour
 
     public void Dead()
     {
-        StartCoroutine(CoDead());
+        DeathAnim.Play();
     }
 
-    IEnumerator CoDead()
+    void Update()
     {
-        DeathAnim.Play();
-        var go = Instantiate(OnDead, transform.position, Quaternion.identity);
-        yield return new WaitForSeconds(DedDuration);
-        DestroyObject(go);
+        DeathAnim.Update();
     }
 
 #if UNITY_EDITOR

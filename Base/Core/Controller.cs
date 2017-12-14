@@ -12,9 +12,13 @@ namespace Framework
     {
         private readonly List<string> DebugTxt = new List<string>();
 
+        private static ControllSystem _cachedSystem;
+
         [Header("Debug")]
         public bool InitOnStart;
         public bool DrawDebug;
+        public bool UseCachedControllSystem = true;
+        public ControllSystem System;
 
         [Header("Gameplay")]
         public bool StopOnStateChange = true;
@@ -44,6 +48,14 @@ namespace Framework
             Enabled = false;
         }
 
+        public void KillImmediate()
+        {
+            System.Unregister(this);
+            
+            Pawn.SafeDestroy(Pawn.gameObject);
+            this.SafeDestroy(gameObject);
+        }
+
         public void Init()
         {
             if (FindByTag && Pawn == null)
@@ -54,11 +66,20 @@ namespace Framework
 
             if (Pawn != null) Pawn.Init();
 
-            var system = FindObjectOfType<ControllSystem>();
-            if (system)
-                system.Register(this);
-
-            OnInit();
+            System = System ?? (UseCachedControllSystem ? _cachedSystem : null) ?? FindObjectOfType<ControllSystem>();
+            
+            if (System)
+            {
+                if (!_cachedSystem)
+                    _cachedSystem = System;
+                
+                System.Register(this);
+                OnInit();
+            }
+            else
+            {
+                Debug.LogError("Unable to initialize controller - system not found!", this);
+            }
         }
 
         public void Stop()
