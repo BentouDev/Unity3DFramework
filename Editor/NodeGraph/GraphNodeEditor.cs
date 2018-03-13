@@ -499,6 +499,7 @@ namespace Framework.Editor
                         return true;
                     }
                     break;
+                            OnDoubleClick(Event.current.mousePosition);
                 case EventType.mouseDown:
                     if (HandleMouseDown())
                         return true;
