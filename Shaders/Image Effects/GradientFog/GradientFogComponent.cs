@@ -1,10 +1,10 @@
 ﻿using UnityEngine;
-using UnityEngine.PostProcessing;
-using UnityEngine.Rendering;
+using System;
+using UnityEngine.Rendering.PostProcessing;
 
-namespace Framework
+namespace UnityEngine.Rendering.PostProcessing
 {
-    public sealed class GradientFogComponent : PostProcessingComponentCommandBuffer<GradientFogModel>
+    public sealed class GradientFogComponent : PostProcessEffectRenderer<GradientFogModel>
     {
         static class Uniforms
         {
@@ -25,75 +25,65 @@ namespace Framework
 
         const string k_ShaderString = "Hidden/Post FX/GradientFog";
 
-        public override bool active
+//        public override string GetName()
+//        {
+//            return "GradientFog";
+//        }
+//
+//        public override DepthTextureMode GetCameraFlags()
+//        {
+//            return DepthTextureMode.Depth;
+//        }
+//
+//        public override CameraEvent GetCameraEvent()
+//        {
+//            return CameraEvent.AfterImageEffectsOpaque;
+//        }
+
+        public override void Render(PostProcessRenderContext context)
         {
-            get
-            {
-                return model.enabled
-                       && context.isGBufferAvailable // In forward fog is already done at shader level
-                       && RenderSettings.fog
-                       && !context.interrupted;
-            }
-        }
-
-        public override string GetName()
-        {
-            return "GradientFog";
-        }
-
-        public override DepthTextureMode GetCameraFlags()
-        {
-            return DepthTextureMode.Depth;
-        }
-
-        public override CameraEvent GetCameraEvent()
-        {
-            return CameraEvent.AfterImageEffectsOpaque;
-        }
-
-        public override void PopulateCommandBuffer(CommandBuffer cb)
-        {
-            var settings = model.settings;
-
-            var material = context.materialFactory.Get(k_ShaderString);
-            material.shaderKeywords = null;
-            var fogColor = GraphicsUtils.isLinearColorSpace ? RenderSettings.fogColor.linear : RenderSettings.fogColor;
-
-            material.SetColor(Uniforms._FogColor, fogColor);
-            material.SetColor(Uniforms._TopColor, model.settings.TopColor);
-            material.SetColor(Uniforms._MidColor, model.settings.MidColor);
-            material.SetColor(Uniforms._BottomColor, model.settings.BottomColor);
-
-            material.SetFloat(Uniforms._BlendFactor, model.settings.Blend);
-            material.SetFloat(Uniforms._Min, model.settings.Minimum);
-            material.SetFloat(Uniforms._Max, model.settings.Maximum);
-            material.SetFloat(Uniforms._Density, RenderSettings.fogDensity);
-            material.SetFloat(Uniforms._Start, RenderSettings.fogStartDistance);
-            material.SetFloat(Uniforms._End, RenderSettings.fogEndDistance);
-
-            material.SetVector(Uniforms._CamDir, context.camera.transform.forward.normalized);
-
-            switch (RenderSettings.fogMode)
-            {
-                case FogMode.Linear:
-                    material.EnableKeyword("FOG_LINEAR");
-                    break;
-                case FogMode.Exponential:
-                    material.EnableKeyword("FOG_EXP");
-                    break;
-                case FogMode.ExponentialSquared:
-                    material.EnableKeyword("FOG_EXP2");
-                    break;
-            }
-
-            var fbFormat = context.isHdr
-                ? RenderTextureFormat.DefaultHDR
-                : RenderTextureFormat.Default;
-
-            cb.GetTemporaryRT(Uniforms._TempRT, context.width, context.height, 24, FilterMode.Bilinear, fbFormat);
-            cb.Blit(BuiltinRenderTextureType.CameraTarget, Uniforms._TempRT);
-            cb.Blit(Uniforms._TempRT, BuiltinRenderTextureType.CameraTarget, material, settings.excludeSkybox ? 1 : 0);
-            cb.ReleaseTemporaryRT(Uniforms._TempRT);
+//            var cmd = context.command;
+//            var settings = model.settings;
+//
+//            var material = context.materialFactory.Get(k_ShaderString);
+//            material.shaderKeywords = null;
+//            var fogColor = GraphicsUtils.isLinearColorSpace ? RenderSettings.fogColor.linear : RenderSettings.fogColor;
+//
+//            material.SetColor(Uniforms._FogColor, fogColor);
+//            material.SetColor(Uniforms._TopColor, model.settings.TopColor);
+//            material.SetColor(Uniforms._MidColor, model.settings.MidColor);
+//            material.SetColor(Uniforms._BottomColor, model.settings.BottomColor);
+//
+//            material.SetFloat(Uniforms._BlendFactor, model.settings.Blend);
+//            material.SetFloat(Uniforms._Min, model.settings.Minimum);
+//            material.SetFloat(Uniforms._Max, model.settings.Maximum);
+//            material.SetFloat(Uniforms._Density, RenderSettings.fogDensity);
+//            material.SetFloat(Uniforms._Start, RenderSettings.fogStartDistance);
+//            material.SetFloat(Uniforms._End, RenderSettings.fogEndDistance);
+//
+//            material.SetVector(Uniforms._CamDir, context.camera.transform.forward.normalized);
+//
+//            switch (RenderSettings.fogMode)
+//            {
+//                case FogMode.Linear:
+//                    material.EnableKeyword("FOG_LINEAR");
+//                    break;
+//                case FogMode.Exponential:
+//                    material.EnableKeyword("FOG_EXP");
+//                    break;
+//                case FogMode.ExponentialSquared:
+//                    material.EnableKeyword("FOG_EXP2");
+//                    break;
+//            }
+//
+//            var fbFormat = context.isHdr
+//                ? RenderTextureFormat.DefaultHDR
+//                : RenderTextureFormat.Default;
+//
+//            cb.GetTemporaryRT(Uniforms._TempRT, context.width, context.height, 24, FilterMode.Bilinear, fbFormat);
+//            cb.Blit(BuiltinRenderTextureType.CameraTarget, Uniforms._TempRT);
+//            cb.Blit(Uniforms._TempRT, BuiltinRenderTextureType.CameraTarget, material, settings.excludeSkybox ? 1 : 0);
+//            cb.ReleaseTemporaryRT(Uniforms._TempRT);
         }
     }
 }

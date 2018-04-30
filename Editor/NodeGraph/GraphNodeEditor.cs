@@ -490,7 +490,7 @@ namespace Framework.Editor
 
             switch (type)
             {
-                case EventType.mouseUp:
+                case EventType.MouseUp:
                     if (Event.current.button == 0 && CurrentMouseMode != null)
                     {
                         CurrentMouseMode.End(Event.current.mousePosition);
@@ -499,8 +499,8 @@ namespace Framework.Editor
                         return true;
                     }
                     break;
-                            OnDoubleClick(Event.current.mousePosition);
-                case EventType.mouseDown:
+                            //OnDoubleClick(Event.current.mousePosition);
+                case EventType.MouseDown:
                     if (HandleMouseDown())
                         return true;
                     break;

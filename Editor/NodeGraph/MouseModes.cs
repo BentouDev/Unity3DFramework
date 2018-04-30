@@ -33,7 +33,7 @@ namespace Framework.Editor.MouseModes
                     Editor.ZoomLevel -= Event.current.delta.y * Editor.ZoomSpeed;
                     Event.current.Use();
                     break;
-                case EventType.mouseUp:
+                case EventType.MouseUp:
                     if (Event.current.button == 0)
                     {
                         //Editor.OnLeftClick?.Invoke(Event.current.mousePosition);
@@ -47,7 +47,7 @@ namespace Framework.Editor.MouseModes
                         Event.current.Use();
                     }
                     break;
-                case EventType.mouseDown:
+                case EventType.MouseDown:
                     if (Event.current.button == 2)
                     {
                         Editor.NextMouseMode = new PannMode(Editor);

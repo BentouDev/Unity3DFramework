@@ -1,0 +1,10 @@
+{
+    "name": "Framework",
+    "references": [
+        "com.unity.postprocessing.Runtime"
+    ],
+    "optionalUnityReferences": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false
+}

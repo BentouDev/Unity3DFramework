@@ -1,0 +1,14 @@
+{
+    "name": "Framework.Editor",
+    "references": [
+        "Framework",
+        "com.unity.postprocessing.Editor",
+        "com.unity.postprocessing.Runtime"
+    ],
+    "optionalUnityReferences": [],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false
+}
