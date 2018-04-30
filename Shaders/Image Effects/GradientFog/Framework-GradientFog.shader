@@ -1,162 +1,110 @@
-﻿// Upgrade NOTE: replaced '_World2Object' with 'unity_WorldToObject'
-
-Shader "Hidden/Post FX/GradientFog"
+﻿Shader "Hidden/PostProcessing/Framework-GradientFog"
 {
-	Properties
-	{
-		_MainTex("Main Texture", 2D) = "white" {}
-		_ColorTop("Top Color", Color) = (1,1,1,1)
-		_ColorMid("Mid Color", Color) = (1,1,1,1)
-		_ColorBot("Bot Color", Color) = (1,1,1,1)
-		_Blend("Blend Factor", Range(0.001, 0.999)) = 1
-		_Minimum("Minimum", Range(0.001, 0.999)) = 1
-		_Maximum("Maximum", Range(0.001, 0.999)) = 1
-		_CamDir("Camera Direction", Vector) = (0,0,0,0)
-	}
+    HLSLINCLUDE
 
-	CGINCLUDE
+        #pragma multi_compile __ FOG_LINEAR FOG_EXP FOG_EXP2
+        #include "PostProcessing/Shaders/StdLib.hlsl"
+        #include "PostProcessing/Shaders/Builtins/Fog.hlsl"
 
-	#pragma multi_compile __ FOG_LINEAR FOG_EXP FOG_EXP2
-	#include "UnityCG.cginc"
-	#include "../../../../PostProcessing/Resources/Shaders/Common.cginc"
+        TEXTURE2D_SAMPLER2D(_MainTex, sampler_MainTex);
+        TEXTURE2D_SAMPLER2D(_CameraDepthTexture, sampler_CameraDepthTexture);
 
-	#define SKYBOX_THREASHOLD_VALUE 0.9999
+        #define SKYBOX_THREASHOLD_VALUE 0.9999
+        
+        half4 _ColorTop;
+        half4 _ColorMid;
+        half4 _ColorBot;
+        
+        float _Blend;
+        float _Minimum;
+        float _Maximum;
+        
+        float _Density;
+        float _Start;
+        float _End;
+        
+        float4 _CamDir;
+        
+        half4 ComputeGradientColor(float pos)
+        {
+            float length = _Maximum - _Minimum;
+            float eval   = min(pos, 0.9f);
+            
+            float center = _Minimum + 0.5f * length;
+            float halfBlend = _Blend * 0.5f;
+                
+            float bottomStrength  = min(max(pos - _Minimum + halfBlend, 0.0f) / _Blend, 1.0f);
+            float topStrength     = min(max(pos - _Maximum + halfBlend, 0.0f) / _Blend, 1.0f);
+            float bottomStrength2 = min(max(pos - _Minimum + _Blend, 0.0f) / _Blend, 1.0f);
+            float topStrength2    = min(max(pos - _Maximum + _Blend, 0.0f) / _Blend, 1.0f);
+            
+            half4 color  = lerp(_ColorBot, _ColorMid, bottomStrength) * (1 - bottomStrength2);
+                  color += lerp(_ColorMid, _ColorTop, topStrength)    * (topStrength2);
+        
+            color.a = 1;
 
-	struct Varyings
-	{
-		float2 uv : TEXCOORD0;
-		float4 vertex : SV_POSITION;
-	};
+            return color;
+        }
 
-	Varyings VertFog(AttributesDefault v)
-	{
-		Varyings o;
-		o.vertex = UnityObjectToClipPos(v.vertex);
-		o.uv = UnityStereoScreenSpaceUVAdjust(v.texcoord, _MainTex_ST);
-		return o;
-	}
+        float4 Frag(VaryingsDefault i) : SV_Target
+        {
+            half4 color = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.texcoordStereo);
 
-	sampler2D _CameraDepthTexture;
+            float depth = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, sampler_CameraDepthTexture, i.texcoordStereo);
+            depth = Linear01Depth(depth);
+            float dist = ComputeFogDistance(depth);
+            half fog = 1.0 - ComputeFog(dist);
 
-	half4 _FogColor;
+            float coeff = sin(60);
+            float pos   = ((_CamDir.y + 1) * 0.33f) + (i.texcoordStereo.y) * -coeff;
+        
+            half4 c = ComputeGradientColor(pos);
 
-	half4 _ColorTop;
-	half4 _ColorMid;
-	half4 _ColorBot;
+            return lerp(color, c, fog);
+        }
 
-	float _Blend;
-	float _Minimum;
-	float _Maximum;
+        float4 FragExcludeSkybox(VaryingsDefault i) : SV_Target
+        {
+            half4 color = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.texcoordStereo);
 
-	float _Density;
-	float _Start;
-	float _End;
+            float depth = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, sampler_CameraDepthTexture, i.texcoordStereo);
+            depth = Linear01Depth(depth);
+            float skybox = depth < SKYBOX_THREASHOLD_VALUE;
+            float dist = ComputeFogDistance(depth);
+            half fog = 1.0 - ComputeFog(dist);
+            
+            float coeff = sin(60);
+            float pos   = ((_CamDir.y + 1) * 0.33f) + (i.texcoordStereo.y) * -coeff;
+        
+            half4 c = ComputeGradientColor(pos);
 
-	float4 _CamDir;
-	float _CamFov;
+            return lerp(color, c, fog * skybox);
+        }
 
-	half ComputeFog(float z)
-	{
-		half fog = 0.0;
-#if FOG_LINEAR
-		fog = (_End - z) / (_End - _Start);
-#elif FOG_EXP
-		fog = exp2(-_Density * z);
-#else // FOG_EXP2
-		fog = _Density * z;
-		fog = exp2(-fog * fog);
-#endif
-		return saturate(fog);
-	}
+    ENDHLSL
 
-	float ComputeDistance(float depth)
-	{
-		float dist = depth * _ProjectionParams.z;
-		dist -= _ProjectionParams.y;
-		return dist;
-	}
+    SubShader
+    {
+        Cull Off ZWrite Off ZTest Always
 
-	fixed4 ComputeFogColor(float pos)
-	{
-		float length = _Maximum - _Minimum;
+        Pass
+        {
+            HLSLPROGRAM
 
-		pos = min(pos, 0.9f);
-		
-		float center    = _Minimum + 0.5f * length;
-		float halfBlend = _Blend * 0.5f;
+                #pragma vertex VertDefault
+                #pragma fragment Frag
 
-		float bottomStrength  = min(max(pos - _Minimum + halfBlend, 0) / _Blend, 1);
-		float topStrength     = min(max(pos - _Maximum + halfBlend, 0) / _Blend, 1);
-		float bottomStrength2 = min(max(pos - _Minimum + _Blend, 0) / _Blend, 1);
-		float topStrength2    = min(max(pos - _Maximum + _Blend, 0) / _Blend, 1);
+            ENDHLSL
+        }
 
-		fixed4 color  = lerp(_ColorBot, _ColorMid, bottomStrength) * (1 - bottomStrength2);
-		       color += lerp(_ColorMid, _ColorTop, topStrength)    * (topStrength2);
+        Pass
+        {
+            HLSLPROGRAM
 
-		color.a = 1;
+                #pragma vertex VertDefault
+                #pragma fragment FragExcludeSkybox
 
-		return (color);
-	}
-
-	half4 FragFog(Varyings i) : SV_Target
-	{
-		half4 color = tex2D(_MainTex, i.uv);
-
-		float depth = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.uv);
-		depth = Linear01Depth(depth);
-		float dist = ComputeDistance(depth);
-		half fog = 1.0 - ComputeFog(dist);
-
-		float coeff = sin(60);
-		float pos   = ((_CamDir.y + 1) * 0.33f) + (i.uv.y) * -coeff;
-
-		fixed4 c = ComputeFogColor(pos);
-
-		return lerp(color, c, fog);
-	}
-
-	half4 FragFogExcludeSkybox(Varyings i) : SV_Target
-	{
-		half4 color = tex2D(_MainTex, i.uv);
-
-		float depth = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.uv);
-		depth = Linear01Depth(depth);
-		float skybox = depth < SKYBOX_THREASHOLD_VALUE;
-		float dist = ComputeDistance(depth);
-		half fog = 1.0 - ComputeFog(dist);
-
-		float coeff = sin(60);
-		float pos   = ((_CamDir.y + 1) * 0.33f) + (i.uv.y) * -coeff;
-
-		fixed4 c = ComputeFogColor(pos);
-
-		return lerp(color, c, fog * skybox);
-	}
-
-	ENDCG
-
-	SubShader
-	{
-		Cull Off ZWrite Off ZTest Always
-
-		Pass
-		{
-			CGPROGRAM
-
-			#pragma vertex VertFog
-			#pragma fragment FragFog
-
-			ENDCG
-		}
-
-		Pass
-		{
-			CGPROGRAM
-
-			#pragma vertex VertFog
-			#pragma fragment FragFogExcludeSkybox
-
-			ENDCG
-		}
-	}
+            ENDHLSL
+        }
+    }
 }
