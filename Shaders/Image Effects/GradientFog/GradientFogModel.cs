@@ -5,7 +5,7 @@ using UnityEngine.Rendering.PostProcessing;
 namespace UnityEngine.Rendering.PostProcessing
 {
     [Serializable]
-    [PostProcess(typeof(GradientFogRenderer), PostProcessEvent.AfterStack, "Unity/Gradient Fog")]
+    [PostProcess(typeof(GradientFogRenderer), PostProcessEvent.AfterStack, "Framework/Gradient Fog")]
     public class GradientFogModel : PostProcessEffectSettings
     {
         [Tooltip("Should the fog affect the skybox?")]
