@@ -4,8 +4,8 @@ using UnityEngine;
 
 namespace UnityEditor.Rendering.PostProcessing
 {
-    [PostProcessEditor(typeof(DitheringModel))]
-    public class DitheringModelEditor : PostProcessEffectEditor<DitheringModel>
+    [PostProcessEditor(typeof(FullscreenDithering))]
+    public class DitheringModelEditor : PostProcessEffectEditor<FullscreenDithering>
     {
         SerializedParameterOverride Pattern;
         SerializedParameterOverride DitherSize;

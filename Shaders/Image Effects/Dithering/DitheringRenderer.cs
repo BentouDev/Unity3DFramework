@@ -4,7 +4,7 @@ using UnityEngine.Rendering.PostProcessing;
 
 namespace UnityEngine.Rendering.PostProcessing
 {
-    public class DitheringRenderer : PostProcessEffectRenderer<DitheringModel>
+    public class DitheringRenderer : PostProcessEffectRenderer<FullscreenDithering>
     {
         static class Uniforms
         {
@@ -15,7 +15,12 @@ namespace UnityEngine.Rendering.PostProcessing
             internal static readonly int Third = Shader.PropertyToID("_Third");
             internal static readonly int TextureScale = Shader.PropertyToID("_TextureScale");
         }
-        
+
+        public override DepthTextureMode GetCameraFlags()
+        {
+            return DepthTextureMode.Depth;
+        }
+
         public override void Render(PostProcessRenderContext context)
         {
             var cmd = context.command;

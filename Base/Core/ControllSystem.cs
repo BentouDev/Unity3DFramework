@@ -8,9 +8,22 @@ namespace Framework
     {
         public List<Controller> AllControllers;
 
+        public bool InitOnStart;
+        public bool EnableOnStart;
+        public bool AutoUpdate = false;
+
         private int DisableCounter;
 
         public bool IsEnabled => DisableCounter == 0;
+
+        void Start()
+        {
+            if (InitOnStart) 
+                Init();
+            
+            if (EnableOnStart) 
+                Enable();
+        }
 
         public void Init()
         {
@@ -82,6 +95,21 @@ namespace Framework
             {
                 controller.LateTick();
             }
+        }
+
+        void Update()
+        {
+            if (AutoUpdate) Tick();
+        }
+
+        void FixedUpdate()
+        {
+            if (AutoUpdate) FixedTick();
+        }
+
+        void LateUpdate()
+        {
+            if (AutoUpdate) LateTick();
         }
     }
 }

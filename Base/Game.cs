@@ -20,6 +20,8 @@ namespace Framework
         public GameState CurrentState { get; protected set; }
         public GameState PreviousState { get; protected set; }
 
+        protected GameState NextState;
+
         public List<GameState> AllStates { get; protected set; }
 
         void Start()
@@ -58,6 +60,9 @@ namespace Framework
                 AllStates = new List<GameState>();
 
             AllStates.AddRange(GetComponentsInChildren<GameState>());
+            
+            if (!Controllers.InitOnStart)
+                Controllers.Init();
 
             if (Loader)
             {
@@ -87,6 +92,28 @@ namespace Framework
 
         public void SwitchState(GameState state)
         {
+            if (NextState)
+                Debug.LogWarningFormat(
+                    "Changed state twice in this frame! From '{0}' to '{1}' and now to '{2}'", 
+                    CurrentState, NextState, state
+                );
+            
+            NextState = state;
+        }
+
+        public void SwitchState<TState>() where TState : GameState
+        {
+            if (NextState)
+                Debug.LogWarningFormat(
+                    "Changed state twice in this frame! From '{0}' to '{1}' and now to '{2}'", 
+                    CurrentState, NextState, nameof(TState)
+                );
+
+            NextState = FindState<TState>();
+        }
+
+        public void SwitchStateImmediate(GameState state)
+        {
             if (state != CurrentState)
                 PreviousState = CurrentState;
 
@@ -95,9 +122,14 @@ namespace Framework
             if (CurrentState != null) CurrentState.DoStart();
         }
 
-        public void SwitchState<TState>() where TState : GameState
+        public void SwitchStateImmediate<TState>() where TState : GameState
         {
-            SwitchState(AllStates.FirstOrDefault(s => s is TState));
+            SwitchStateImmediate(FindState<TState>());
+        }
+
+        public TState FindState<TState>() where TState : GameState
+        {
+            return (TState) AllStates.FirstOrDefault(s => s is TState);
         }
 
         public void QuitGame()
@@ -135,6 +167,15 @@ namespace Framework
         {
             if (Loader && !Loader.IsReady)
                 return;
+
+            if (NextState)
+            {
+                var desiredState = NextState;
+                
+                NextState = null;
+                
+                SwitchStateImmediate(desiredState);
+            }
 
             if (CurrentState != null)
             {

@@ -4,8 +4,8 @@ using UnityEngine;
 
 namespace UnityEditor.Rendering.PostProcessing
 {
-    [PostProcessEditor(typeof(GradientFogModel))]
-    public class GradientFogModelEditor : PostProcessEffectEditor<GradientFogModel>
+    [PostProcessEditor(typeof(GradientFog))]
+    public class GradientFogModelEditor : PostProcessEffectEditor<GradientFog>
     {
         SerializedParameterOverride  m_ExcludeSkybox;
         SerializedParameterOverride  m_TopColor;

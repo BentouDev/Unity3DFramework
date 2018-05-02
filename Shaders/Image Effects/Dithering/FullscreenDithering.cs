@@ -6,7 +6,7 @@ namespace UnityEngine.Rendering.PostProcessing
 {
     [Serializable]
     [PostProcess(typeof(DitheringRenderer), PostProcessEvent.AfterStack, "Framework/Dithering")]
-    public class DitheringModel : PostProcessEffectSettings
+    public class FullscreenDithering : PostProcessEffectSettings
     {
         public TextureParameter Pattern = new TextureParameter();
         

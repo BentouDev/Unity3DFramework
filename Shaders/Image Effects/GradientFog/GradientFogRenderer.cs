@@ -4,7 +4,7 @@ using UnityEngine.Rendering.PostProcessing;
 
 namespace UnityEngine.Rendering.PostProcessing
 {
-    public sealed class GradientFogRenderer : PostProcessEffectRenderer<GradientFogModel>
+    public sealed class GradientFogRenderer : PostProcessEffectRenderer<GradientFog>
     {
         static class Uniforms
         {

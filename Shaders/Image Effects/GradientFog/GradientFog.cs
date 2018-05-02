@@ -6,7 +6,7 @@ namespace UnityEngine.Rendering.PostProcessing
 {
     [Serializable]
     [PostProcess(typeof(GradientFogRenderer), PostProcessEvent.AfterStack, "Framework/Gradient Fog")]
-    public class GradientFogModel : PostProcessEffectSettings
+    public class GradientFog : PostProcessEffectSettings
     {
         [Tooltip("Should the fog affect the skybox?")]
         public BoolParameter ExcludeSkybox = new BoolParameter { value = true };
