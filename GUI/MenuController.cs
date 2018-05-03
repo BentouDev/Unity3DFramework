@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.Audio;
@@ -32,8 +33,9 @@ public class MenuController : GUIBase
 
     private List<MenuBase> allMenus = new List<MenuBase>();
 
-    private MenuBase CurrentMenu;
-    private MenuBase LastMenu;
+    private MenuBase             CurrentMenu;
+    private MenuBase             PreviousMenu;
+    private Tuple<MenuBase,bool> NextMenu;
 
     public override bool IsGameplayGUI { get { return false; } }
 
@@ -74,22 +76,29 @@ public class MenuController : GUIBase
 
         float elapsed = 0;
 
-        menu.Show();
-        menu.gameObject.SetActive(true);
-
-        while (elapsed < AnimDuration)
+        if (!menu)
         {
-            elapsed += Time.unscaledDeltaTime;
-
-            var ratio = Mathf.Lerp(0, 1, elapsed / AnimDuration);
-            CanvasGroup.alpha = ratio;
-
-            if (GameplayMixer)
-                GameplayMixer.SetFloat(GameplayVolume, SettingsManager.LinearToDecibel(1 - ratio));
-
-            yield return null;
+            Debug.LogError("Unable to pick menu to show!");
         }
+        else
+        {
+            menu.Show();
+            menu.gameObject.SetActive(true);
 
+            while (elapsed < AnimDuration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+
+                var ratio = Mathf.Lerp(0, 1, elapsed / AnimDuration);
+                CanvasGroup.alpha = ratio;
+
+                if (GameplayMixer)
+                    GameplayMixer.SetFloat(GameplayVolume, SettingsManager.LinearToDecibel(1 - ratio));
+
+                yield return null;
+            }            
+        }
+        
         IsDuringShowing = false;
 
         CanvasGroup.alpha = 1;
@@ -177,7 +186,7 @@ public class MenuController : GUIBase
 
         if (menu == MainMenu)
         {
-            if(OnStartingBack != null)
+            if (OnStartingBack != null)
                 OnStartingBack.Invoke();
             
             return;
@@ -186,36 +195,52 @@ public class MenuController : GUIBase
         if (UICancel)
             UICancel.Play();
 
-        if (LastMenu == TitleMenu)
+        if (PreviousMenu == TitleMenu)
             return;
 
-        SwitchToMenu(LastMenu, false);
+        SwitchToMenu(PreviousMenu, false);
     }
 
-    public void SwitchToMenu(MenuBase baseMenu, bool playEffect = true)
+    public void SwitchToMenuImmediate(MenuBase baseMenu, bool playEffect = true)
     {
         if (playEffect && UIConfirm)
             UIConfirm.Play();
 
-        LastMenu = CurrentMenu;
+        PreviousMenu = CurrentMenu;
 
-        if (LastMenu)
-        {
-            LastMenu.OnEnd();
-        }
+        if (PreviousMenu) PreviousMenu.End();
 
         CurrentMenu = baseMenu;
 
-        if (CurrentMenu)
+        if (CurrentMenu) CurrentMenu.Begin();
+    }
+
+    public void SwitchToMenu(MenuBase baseMenu, bool playEffect = true)
+    {
+        if (NextMenu != null && NextMenu.Item1 != null )
         {
-            CurrentMenu.OnStart();
+            Debug.LogWarningFormat(
+                "Changed menu twice in this frame! From '{0}' to '{1}' and now to '{2}'", 
+                CurrentMenu, NextMenu.Item1, baseMenu
+            );
         }
+        
+        NextMenu = new Tuple<MenuBase, bool>(baseMenu, playEffect);
     }
 
     void Update()
     {
         if (IsDuringShowing || IsDuringHiding)
             return;
+
+        if (NextMenu != null && NextMenu.Item1 != null)
+        {
+            var nextMenu = NextMenu;
+            
+            NextMenu = null;
+            
+            SwitchToMenuImmediate(nextMenu.Item1, nextMenu.Item2);
+        }
 
         if (EventSystem.current && EventSystem.current.currentSelectedGameObject == null && CurrentMenu && CurrentMenu.FirstToSelect)
         {

@@ -138,9 +138,9 @@ namespace Framework
 
 #if UNITY_EDITOR
             UnityEditor.EditorApplication.isPlaying = false;
-    #else
+#else
             Application.Quit();
-    #endif
+#endif
         }
 
         public void RestartGame()

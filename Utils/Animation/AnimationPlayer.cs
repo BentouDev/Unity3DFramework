@@ -65,7 +65,7 @@ public struct AnimationPlayer
             // Animator.StartPlayback();
 	        Animator.Play(Animation);
 	    }
-
+		
 		OnStart.Invoke();
 	}
 

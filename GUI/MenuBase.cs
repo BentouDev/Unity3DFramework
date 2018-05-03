@@ -11,6 +11,18 @@ public abstract class MenuBase : GUIBase
     protected CanvasGroup Canvas;
 
     public override bool IsGameplayGUI { get { return false; } }
+    
+    [Header("Show")]
+    public bool IsShowAnim;
+    
+    [SerializeField]
+    public AnimationPlayer OnShow;
+    
+    [Header("Hide")]
+    public bool IsHideAnim;
+    
+    [SerializeField]
+    public AnimationPlayer OnHide;
 
     public override void Hide()
     {
@@ -32,24 +44,52 @@ public abstract class MenuBase : GUIBase
         Controller.SwitchToMenu(this);
     }
 
-    public virtual void OnEnd()
+    public void End()
     {
         Canvas.interactable = false;
-        Canvas.alpha = 0;
 
-        gameObject.SetActive(false);
+        if (!IsHideAnim)
+        {
+            Canvas.alpha = 0;
+            gameObject.SetActive(false);
+            
+            OnHide.OnStart.Invoke();
+        }
+        else
+        {
+            OnHide.Play();
+        }
+
+        OnEnd();
     }
+    
+    protected virtual void OnEnd()
+    { }
 
-    public virtual void OnStart()
+    public void Begin()
     {
         gameObject.SetActive(true);
 
         Canvas.interactable = true;
-        Canvas.alpha = 1;
 
+        if (!IsShowAnim)
+        {
+            Canvas.alpha = 1;
+            OnShow.OnStart.Invoke();
+        }
+        else
+        {            
+            OnShow.Play();
+        }
+        
         if (FirstToSelect)
             StartCoroutine(SelectFirst(FirstToSelect));
+        
+        OnBegin();
     }
+
+    protected virtual void OnBegin()
+    { }
 
     IEnumerator SelectFirst(Selectable select)
     {
