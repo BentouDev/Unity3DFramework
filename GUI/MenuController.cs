@@ -2,12 +2,16 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using UnityEngine.Audio;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 public class MenuController : GUIBase
 {
+    [Header("Debug")] 
+    public bool Verbose;
+    
     [Header("Misc")]
     public bool Autostart = true;
     public string BackButton = "Back";
@@ -66,8 +70,11 @@ public class MenuController : GUIBase
     public Button.ButtonClickedEvent OnStartingBack;
 
     private List<MenuBase> allMenus = new List<MenuBase>();
-
-    private MenuBase             CurrentMenu;
+    public IList<MenuBase> AllMenus => allMenus;
+    
+    private bool                 SkipLocalAnim;
+    private bool                 IsDuringSwitch;
+    public  MenuBase             CurrentMenu { get; private set; }
     private MenuBase             PreviousMenu;
     private Tuple<MenuBase,bool> NextMenu;
 
@@ -76,12 +83,30 @@ public class MenuController : GUIBase
     public bool IsDuringShowing { get; private set; }
     public bool IsDuringHiding { get; private set; }
 
+    protected IEnumerator CoHandleAlphaAnim(float from, float to, float duration, CanvasGroup canvas)
+    {
+        float elapsed  = 0;
+        while (elapsed < duration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+    
+            var ratio = Mathf.Lerp(from, to, elapsed / duration);
+            canvas.alpha = ratio;
+    
+            if (GameplayMixer)
+                GameplayMixer.SetFloat(GameplayVolume, SettingsManager.LinearToDecibel(1 - ratio));
+    
+            yield return null;
+        }
+        
+        canvas.alpha = 0;
+    }
+
     protected IEnumerator DoHideAnim()
     {
         IsDuringHiding = true;
         CanvasGroup.interactable = false;
 
-        float elapsed  = 0;
         float duration = Master.Hide.Duration;
 
         Master.Hide.Play();
@@ -92,18 +117,7 @@ public class MenuController : GUIBase
                 break;
             case AlphaMode.Animate:
             {
-                while (elapsed < duration)
-                {
-                    elapsed += Time.unscaledDeltaTime;
-    
-                    var ratio = Mathf.Lerp(1, 0, elapsed / duration);
-                    CanvasGroup.alpha = ratio;
-    
-                    if (GameplayMixer)
-                        GameplayMixer.SetFloat(GameplayVolume, SettingsManager.LinearToDecibel(1 - ratio));
-    
-                    yield return null;
-                }
+                yield return StartCoroutine(CoHandleAlphaAnim(1, 0, duration, CanvasGroup));
                 CanvasGroup.alpha = 0;
                 break;
             }
@@ -125,12 +139,13 @@ public class MenuController : GUIBase
 
         CanvasGroup.alpha = 0;
 
-        SwitchToMenu(null, false);
+        SkipLocalAnim = true;
+        SwitchToMenuImmediate(null, false);
     }
 
-    protected IEnumerator DoShowAnim()
+    protected IEnumerator DoShowAnim(MenuBase menuBase = null)
     {
-        var menu = TitleMenu ?? MainMenu;
+        var menu = menuBase ?? TitleMenu ?? MainMenu;
         IsDuringShowing = true;
 
         if (!menu)
@@ -153,18 +168,7 @@ public class MenuController : GUIBase
                     break;
                 case AlphaMode.Animate:
                 {
-                    while (elapsed < duration)
-                    {
-                        elapsed += Time.unscaledDeltaTime;
-    
-                        var ratio = Mathf.Lerp(0, 1, elapsed / duration);
-                        CanvasGroup.alpha = ratio;
-    
-                        if (GameplayMixer)
-                            GameplayMixer.SetFloat(GameplayVolume, SettingsManager.LinearToDecibel(1 - ratio));
-    
-                        yield return null;
-                    }
+                    yield return StartCoroutine(CoHandleAlphaAnim(0, 1, duration, CanvasGroup));
                     CanvasGroup.alpha = 1;
                     break;
                 }
@@ -178,10 +182,19 @@ public class MenuController : GUIBase
         }
  
         IsDuringShowing = false;
-
+        
         CanvasGroup.interactable = true;
 
+        SkipLocalAnim = true;
         SwitchToMenu(menu, false);
+    }
+
+    public void AnimShow(MenuBase menu)
+    {
+        if (IsDuringShowing || IsDuringHiding)
+            return;
+
+        StartCoroutine(DoShowAnim(menu));        
     }
 
     public void AnimShow()
@@ -261,7 +274,7 @@ public class MenuController : GUIBase
         if (menu != CurrentMenu || CurrentMenu == TitleMenu)
             return;
 
-        if (menu == MainMenu)
+        if (menu == MainMenu || menu.AlwaysBack)
         {
             if (OnStartingBack != null)
                 OnStartingBack.Invoke();
@@ -278,6 +291,104 @@ public class MenuController : GUIBase
         SwitchToMenu(PreviousMenu, false);
     }
 
+    IEnumerator CoSwitchAnimWorker(MenuBase baseMenu)
+    {
+        IsDuringSwitch = true;
+        
+        // override local anim
+        if (PreviousMenu && PreviousMenu.IsHideAnim)
+        {
+            PreviousMenu.OnHide.Play();
+            yield return new WaitForSeconds(PreviousMenu.OnHide.Duration);
+        }
+        else if (Local.Hide.DoPlay)
+        {
+            Local.Hide.Play();
+            switch (Local.Hide.AlphaMode)
+            {
+                case AlphaMode.Custom:
+                    yield return new WaitForSeconds(Local.Hide.Duration);
+                    break;
+                case AlphaMode.Snap:
+                {
+                    yield return new WaitForSeconds(Local.Hide.Duration);
+                    if (PreviousMenu) PreviousMenu.Hide();
+                    
+                    break;
+                }
+                case AlphaMode.Animate:
+                {
+                    if (CurrentMenu)
+                    {
+                        yield return StartCoroutine(CoHandleAlphaAnim(1, 0, Local.Hide.Duration, PreviousMenu.Canvas));
+                        PreviousMenu.Hide();
+                    }
+                    else
+                    {
+                        yield return new WaitForSeconds(Local.Hide.Duration);
+                    }
+                    
+                    break;
+                }
+            }
+        }
+        else
+        {
+            if (PreviousMenu) PreviousMenu.Hide();
+        }
+        
+        if (PreviousMenu) PreviousMenu.End();
+        
+        CurrentMenu = baseMenu;
+
+        if (CurrentMenu) CurrentMenu.gameObject.SetActive(true);
+
+        if (CurrentMenu && CurrentMenu.IsShowAnim)
+        {
+            CurrentMenu.OnShow.Play();
+            yield return new WaitForSeconds(CurrentMenu.OnShow.Duration);
+        }
+        else if (Local.Show.DoPlay)
+        {
+            Local.Show.Play();
+            switch (Local.Show.AlphaMode)
+            {
+                case AlphaMode.Custom:
+                    yield return new WaitForSeconds(Local.Show.Duration);
+                    break;
+                case AlphaMode.Snap:
+                {
+                    yield return new WaitForSeconds(Local.Show.Duration);
+                    if (CurrentMenu) CurrentMenu.Show();
+                    
+                    break;
+                }
+                case AlphaMode.Animate:
+                {
+                    if (CurrentMenu)
+                    {
+                        yield return StartCoroutine(CoHandleAlphaAnim(1, 0, Local.Show.Duration, CurrentMenu.Canvas));
+                        CurrentMenu.Show();
+                    }
+                    else
+                    {
+                        yield return new WaitForSeconds(Local.Show.Duration);
+                    }
+                    
+                    break;
+                }
+            }            
+        }
+        else
+        {
+            if (CurrentMenu) CurrentMenu.Show();
+        }
+        
+        if (CurrentMenu) CurrentMenu.Begin();
+        
+        IsDuringSwitch = false;
+    }
+
     public void SwitchToMenuImmediate(MenuBase baseMenu, bool playEffect = true)
     {
         if (playEffect && UIConfirm)
@@ -285,19 +396,34 @@ public class MenuController : GUIBase
 
         PreviousMenu = CurrentMenu;
 
-        if (PreviousMenu) PreviousMenu.End();
-        CurrentMenu = baseMenu;
-        if (CurrentMenu) CurrentMenu.Begin();
+        if (SkipLocalAnim)
+        {
+            SkipLocalAnim = false;
+            
+            if (PreviousMenu) PreviousMenu.End();
+            CurrentMenu = baseMenu;
+            if (CurrentMenu) CurrentMenu.Begin();
+        }
+        else
+        {
+            StartCoroutine(CoSwitchAnimWorker(baseMenu));            
+        }
     }
 
     public void SwitchToMenu(MenuBase baseMenu, bool playEffect = true)
     {
         if (NextMenu != null && NextMenu.Item1 != null )
         {
-            Debug.LogWarningFormat(
+            Debug.LogWarningFormat
+            (
                 "Changed menu twice in this frame! From '{0}' to '{1}' and now to '{2}'", 
                 CurrentMenu, NextMenu.Item1, baseMenu
             );
+        }
+
+        if (Verbose)
+        {
+            Debug.LogFormat("{0}: Switch from '{1}' to '{2}'", this, CurrentMenu, baseMenu);
         }
         
         NextMenu = new Tuple<MenuBase, bool>(baseMenu, playEffect);
@@ -309,6 +435,14 @@ public class MenuController : GUIBase
         {
             Master.Show.Anim.Update();
             Master.Hide.Anim.Update();
+            
+            return;
+        }
+
+        if (IsDuringSwitch)
+        {
+            Local.Show.Anim.Update();
+            Local.Hide.Anim.Update();
             
             return;
         }
