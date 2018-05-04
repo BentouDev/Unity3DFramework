@@ -134,7 +134,13 @@ namespace Framework
 
         public void QuitGame()
         {
-            gameObject.BroadcastToAll("OnLevelCleanUp");
+            GlobalQuitGame();
+        }
+
+        public static void GlobalQuitGame()
+        {
+            if (Game<TGame>.Instance)
+                Game<TGame>.Instance.gameObject.BroadcastToAll("OnLevelCleanUp");
 
 #if UNITY_EDITOR
             UnityEditor.EditorApplication.isPlaying = false;
@@ -175,14 +181,15 @@ namespace Framework
                 NextState = null;
                 
                 SwitchStateImmediate(desiredState);
+
+                return;
             }
 
             if (CurrentState != null)
-            {
                 CurrentState.Tick();
-            }
 
-            Controllers.Tick();
+            if (Controllers)
+                Controllers.Tick();
         }
 
         void FixedUpdate()
@@ -191,11 +198,10 @@ namespace Framework
                 return;
 
             if (CurrentState != null)
-            {
                 CurrentState.FixedTick();
-            }
-
-            Controllers.FixedTick();
+            
+            if (Controllers)
+                Controllers.FixedTick();
         }
 
         void LateUpdate()
@@ -204,11 +210,10 @@ namespace Framework
                 return;
 
             if (CurrentState != null)
-            {
                 CurrentState.LateTick();
-            }
             
-            Controllers.LateTick();
+            if (Controllers)
+                Controllers.LateTick();
         }
     }
 }

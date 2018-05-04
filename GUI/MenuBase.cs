@@ -7,7 +7,9 @@ using UnityEngine.UI;
 public abstract class MenuBase : GUIBase
 {
     public Selectable FirstToSelect;
-    protected MenuController Controller;
+    
+    public MenuController Controller { get; set; }
+    
     protected CanvasGroup Canvas;
 
     public override bool IsGameplayGUI { get { return false; } }

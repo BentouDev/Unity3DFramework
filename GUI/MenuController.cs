@@ -11,9 +11,6 @@ public class MenuController : GUIBase
     [Header("Misc")]
     public bool Autostart = true;
     public string BackButton = "Back";
-
-    [Header("Animation")]
-    public float AnimDuration;
     
     [Header("Main Menu References")]
     public MenuBase TitleMenu;
@@ -26,6 +23,43 @@ public class MenuController : GUIBase
 
     public AudioSource UIConfirm;
     public AudioSource UICancel;
+
+    public enum AlphaMode
+    {
+        Animate,
+        Snap,
+        Custom,
+    }
+
+    [System.Serializable]
+    public struct AnimInfo
+    {
+        [SerializeField] public bool DoPlay;
+        [SerializeField] public AlphaMode AlphaMode;
+        [SerializeField] public AnimationPlayer Anim;
+
+        public float Duration => DoPlay ? Anim.Duration : 0;
+
+        public void Play()
+        {
+            if (DoPlay)
+                Anim.Play();
+            else
+                Anim.OnStart.Invoke();
+        }
+    }
+
+    [System.Serializable]
+    public struct AnimPair
+    {
+        [SerializeField] public AnimInfo Show;
+        [SerializeField] public AnimInfo Hide;
+    }
+
+    [Header("Animation")]
+    [SerializeField] public AnimPair Master;
+    
+    [SerializeField] public AnimPair Local;
 
     [Space]
     
@@ -47,21 +81,46 @@ public class MenuController : GUIBase
         IsDuringHiding = true;
         CanvasGroup.interactable = false;
 
-        float elapsed = 0;
+        float elapsed  = 0;
+        float duration = Master.Hide.Duration;
 
-        while (elapsed < AnimDuration)
+        Master.Hide.Play();
+        switch (Master.Hide.AlphaMode)
         {
-            elapsed += Time.unscaledDeltaTime;
-
-            var ratio = Mathf.Lerp(1, 0, elapsed / AnimDuration);
-            CanvasGroup.alpha = ratio;
-
-            if (GameplayMixer)
-                GameplayMixer.SetFloat(GameplayVolume, SettingsManager.LinearToDecibel(1 - ratio));
-
-            yield return null;
+            case AlphaMode.Custom:
+                yield return new WaitForSecondsRealtime(duration);
+                break;
+            case AlphaMode.Animate:
+            {
+                while (elapsed < duration)
+                {
+                    elapsed += Time.unscaledDeltaTime;
+    
+                    var ratio = Mathf.Lerp(1, 0, elapsed / duration);
+                    CanvasGroup.alpha = ratio;
+    
+                    if (GameplayMixer)
+                        GameplayMixer.SetFloat(GameplayVolume, SettingsManager.LinearToDecibel(1 - ratio));
+    
+                    yield return null;
+                }
+                CanvasGroup.alpha = 0;
+                break;
+            }
+            case AlphaMode.Snap:
+            {
+                yield return new WaitForSecondsRealtime(duration);
+                CanvasGroup.alpha = 0;
+                break;
+            }
         }
 
+        if (CurrentMenu)
+        {
+            CurrentMenu.Hide();
+            CurrentMenu.gameObject.SetActive(false);
+        }
+        
         IsDuringHiding = false;
 
         CanvasGroup.alpha = 0;
@@ -74,34 +133,52 @@ public class MenuController : GUIBase
         var menu = TitleMenu ?? MainMenu;
         IsDuringShowing = true;
 
-        float elapsed = 0;
-
         if (!menu)
         {
             Debug.LogError("Unable to pick menu to show!");
         }
         else
         {
+            float elapsed  = 0;
+            float duration = Master.Show.Duration;
+        
             menu.Show();
             menu.gameObject.SetActive(true);
 
-            while (elapsed < AnimDuration)
+            Master.Show.Play();
+            switch (Master.Show.AlphaMode)
             {
-                elapsed += Time.unscaledDeltaTime;
-
-                var ratio = Mathf.Lerp(0, 1, elapsed / AnimDuration);
-                CanvasGroup.alpha = ratio;
-
-                if (GameplayMixer)
-                    GameplayMixer.SetFloat(GameplayVolume, SettingsManager.LinearToDecibel(1 - ratio));
-
-                yield return null;
+                case AlphaMode.Custom:
+                    yield return new WaitForSecondsRealtime(duration);
+                    break;
+                case AlphaMode.Animate:
+                {
+                    while (elapsed < duration)
+                    {
+                        elapsed += Time.unscaledDeltaTime;
+    
+                        var ratio = Mathf.Lerp(0, 1, elapsed / duration);
+                        CanvasGroup.alpha = ratio;
+    
+                        if (GameplayMixer)
+                            GameplayMixer.SetFloat(GameplayVolume, SettingsManager.LinearToDecibel(1 - ratio));
+    
+                        yield return null;
+                    }
+                    CanvasGroup.alpha = 1;
+                    break;
+                }
+                case AlphaMode.Snap:
+                {
+                    CanvasGroup.alpha = 1;
+                    yield return new WaitForSecondsRealtime(duration);
+                    break;
+                }
             }            
         }
-        
+ 
         IsDuringShowing = false;
 
-        CanvasGroup.alpha = 1;
         CanvasGroup.interactable = true;
 
         SwitchToMenu(menu, false);
@@ -209,9 +286,7 @@ public class MenuController : GUIBase
         PreviousMenu = CurrentMenu;
 
         if (PreviousMenu) PreviousMenu.End();
-
         CurrentMenu = baseMenu;
-
         if (CurrentMenu) CurrentMenu.Begin();
     }
 
@@ -231,7 +306,12 @@ public class MenuController : GUIBase
     void Update()
     {
         if (IsDuringShowing || IsDuringHiding)
+        {
+            Master.Show.Anim.Update();
+            Master.Hide.Anim.Update();
+            
             return;
+        }
 
         if (NextMenu != null && NextMenu.Item1 != null)
         {
@@ -242,9 +322,12 @@ public class MenuController : GUIBase
             SwitchToMenuImmediate(nextMenu.Item1, nextMenu.Item2);
         }
 
-        if (EventSystem.current && EventSystem.current.currentSelectedGameObject == null && CurrentMenu && CurrentMenu.FirstToSelect)
+        if (EventSystem.current
+        &&  EventSystem.current.currentSelectedGameObject == null
+        &&  CurrentMenu && CurrentMenu.FirstToSelect)
         {
             CurrentMenu.FirstToSelect.Select();
+            CurrentMenu.FirstToSelect.OnSelect(new BaseEventData(EventSystem.current));
         }
 
         if (Input.GetButtonDown(BackButton))

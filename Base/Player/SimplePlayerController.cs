@@ -81,6 +81,8 @@ namespace Framework
                         PawnCamera.transform.forward.z
                     ), Time.deltaTime * 10);
                 }
+                
+                PawnCamera.OnUpdate();
             }
 
             Pawn.LateTick();
