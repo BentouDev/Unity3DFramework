@@ -60,9 +60,6 @@ namespace Framework
                 AllStates = new List<GameState>();
 
             AllStates.AddRange(GetComponentsInChildren<GameState>());
-            
-            if (!Controllers.InitOnStart)
-                Controllers.Init();
 
             if (Loader)
             {
