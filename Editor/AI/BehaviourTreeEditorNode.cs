@@ -13,7 +13,7 @@ namespace Framework.AI.Editor
         public static readonly int NodeHeight = 40;
 
         private readonly BehaviourTree TreeAsset;
-        private readonly BehaviourTreeNode TreeNode;
+        public BehaviourTreeNode TreeNode { get; private set; }
         private readonly BehaviourTreeEditorPresenter Presenter;
 
         private Rect TextRect = new Rect();
@@ -31,6 +31,15 @@ namespace Framework.AI.Editor
 
             WindowTitle = GUIContent.none;
             WindowStyle = SpaceEditorStyles.GraphNodeBackground;
+        }
+
+        protected override void OnConnectToChild(GraphNode node)
+        {
+            var asBehaviour = node as BehaviourTreeEditorNode;
+            if (asBehaviour != null)
+            {
+                Presenter.OnConnectNodes(TreeNode, asBehaviour.TreeNode);
+            }
         }
 
         protected override void OnSelected(bool value)
@@ -55,7 +64,7 @@ namespace Framework.AI.Editor
             var textDimensions = EditorStyles.largeLabel.CalcSize(new GUIContent(Name));
 
             TextRect.Set(drawRect.x + 0.5f * (drawRect.width - textDimensions.x), drawRect.y + 0.5f * (drawRect.height - textDimensions.y), textDimensions.x, textDimensions.y);
-            GUI.Label(TextRect, new GUIContent(Name, TreeNode.Description), EditorStyles.largeLabel);
+            GUI.Label(TextRect, new GUIContent(Name, TreeNode.Description), EditorStyles.whiteLargeLabel);
         }
 
         void DrawConnectDots(Rect dotRect)

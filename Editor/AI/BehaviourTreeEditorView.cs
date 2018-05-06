@@ -13,6 +13,7 @@ namespace Framework.AI.Editor
     {
         protected bool bShowParameters;
         private readonly GraphNodeEditor Nodes = new GraphNodeEditor();
+        private Dictionary<BehaviourTreeNode, BehaviourTreeEditorNode> NodeLookup;
 
         #region Creation
 
@@ -48,12 +49,36 @@ namespace Framework.AI.Editor
 
         internal void RecreateNodes(ref BehaviourTreeEditorPresenter.Model model)
         {
+            if (NodeLookup != null)
+                NodeLookup.Clear();
+            else
+                NodeLookup = new Dictionary<BehaviourTreeNode, BehaviourTreeEditorNode>();
+            
             Nodes.ClearNodes();
             Nodes.ScrollPos = model.TreeAsset.EditorPos;
 
             foreach (var node in model.TreeAsset.Nodes)
             {
-                Nodes.AddNode(new BehaviourTreeEditorNode(model.TreeAsset, node, Presenter));
+                var editorNode = new BehaviourTreeEditorNode(model.TreeAsset, node, Presenter);
+                NodeLookup[node] = editorNode;
+                Nodes.AddNode(editorNode);
+            }
+
+            foreach (var node in Nodes.AllNodes.Select(n => n as BehaviourTreeEditorNode))
+            {
+                if (node != null && node.TreeNode.IsParentNode())
+                {
+                    var childNodes = node.TreeNode.AsParentNode().GetChildNodes();
+                    if (childNodes != null)
+                    {
+                        foreach (var childNode in childNodes)
+                        {
+                            var foundNode = NodeLookup[childNode];
+                            if (GraphNode.CanMakeConnection(node, foundNode))
+                                GraphNode.MakeConnection(node, foundNode);
+                        }
+                    }
+                }
             }
         }
 
@@ -185,7 +210,8 @@ namespace Framework.AI.Editor
 
         public void TryBeginConnection(BehaviourTreeEditorNode source, Vector2 position)
         {
-            Nodes.StartConnection(source, position);
+            if (source.TreeNode.IsParentNode())
+                Nodes.StartConnection(source, position);
         }
     }
 }

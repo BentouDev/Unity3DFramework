@@ -50,6 +50,8 @@ namespace Framework.Editor
         public readonly EventQueue<NodeEvent>  OnDeselectNode = new EventQueue<NodeEvent>();
         public readonly EventQueue<MouseEvent> OnRightClick   = new EventQueue<MouseEvent>();
         public readonly EventQueue<MouseEvent> OnDoubleClick  = new EventQueue<MouseEvent>();
+        
+        public readonly EventQueue<NodeConnectionEvent> OnConnection = new EventQueue<NodeConnectionEvent>();
        
         private bool CtrlPressed;
         private bool SelectionOverride;
@@ -117,6 +119,17 @@ namespace Framework.Editor
                 SelectedNodes.Remove(data.Node);
                 return true;
             });
+            
+            OnConnection.Reassign(data =>
+            {
+                if (data.Target != null)
+                {
+                    GraphNode.MakeConnection(data.Source, data.Target);
+                    return true;
+                }
+
+                return false;
+            });
         }
 
         public void ClearNodes()
@@ -145,9 +158,9 @@ namespace Framework.Editor
             if (onScrolledPosition)
                 node.Position += scrollPos;
             
-            node.Editor = this;
-            node.Id = AllNodes.Count;
-            node.UniqueName = node.Id + "::" + node.Name;
+            node.Editor     = this;
+            node.Id         = AllNodes.Count;
+            node.UniqueName = $"{node.Id}::{node.Name}";
             
             AllNodes.Add(node);
         }
@@ -230,7 +243,7 @@ namespace Framework.Editor
                         foreach (GraphNode.ConnectionInfo child in parent.connectedTo)
                         {
                             DrawNodeConnectionBezierHorizontal (
-                                parent.GetChildConnectPosition(child.Node), 
+                                parent.GetChildConnectPosition(child.Node),
                                 child.Node.GetParentConnectPosition(child.Node),
                                 child.Node.GetParentConnectColor(parent)
                             );
@@ -244,8 +257,8 @@ namespace Framework.Editor
                         foreach (GraphNode.ConnectionInfo child in parent.connectedTo)
                         {
                             DrawNodeConnectionBezierVertical (
-                                parent.GetChildConnectPosition(child.Node),
-                                child.Node.GetParentConnectPosition(child.Node),
+                                parent.GetChildConnectPosition(child.Node) + PannedOffset,
+                                child.Node.GetParentConnectPosition(child.Node) + PannedOffset,
                                 child.Node.GetParentConnectColor(parent)
                             );
                         }
@@ -360,11 +373,6 @@ namespace Framework.Editor
             }
         }
 
-        private void HandleDelete()
-        {
-            OnDeleteNode.Process();
-        }
-        
         public void SelectOnly(params GraphNode[] nodes)
         {
             SelectOnly(nodes as IEnumerable<GraphNode>);
@@ -520,9 +528,10 @@ namespace Framework.Editor
 
             HandleMouseMode();
             ProcessSelection();
+            
             OnRightClick.Process();
-
-            HandleDelete();
+            OnConnection.Process();
+            OnDeleteNode.Process();
         }
 
         GenericMenu.MenuFunction CreateRemoveConnectionCallback(GraphNode source, GraphNode.ConnectionInfo toRemove)
@@ -530,21 +539,21 @@ namespace Framework.Editor
             return () => source.RemoveConnection(toRemove);
         }
 
-        void HandleConnectionMenu(GraphNode action, int index)
-        {
-            GenericMenu menu = new GenericMenu();
-
-            if (index > 0)
-            {
-                int i = 0;
-                foreach (GraphNode.ConnectionInfo connection in action.connectedTo.Where(c => c.IndexFrom == index))
-                {
-                    menu.AddItem(new GUIContent(++i + ") Remove connection to '" + connection.Node.Name + "' ..."), false, CreateRemoveConnectionCallback(action, connection));
-                }
-            }
-
-            menu.ShowAsContext();
-        }
+//        void HandleConnectionMenu(GraphNode action, int index)
+//        {
+//            GenericMenu menu = new GenericMenu();
+//
+//            if (index > 0)
+//            {
+//                int i = 0;
+//                foreach (GraphNode.ConnectionInfo connection in action.connectedTo.Where(c => c.IndexFrom == index))
+//                {
+//                    menu.AddItem(new GUIContent(++i + ") Remove connection to '" + connection.Node.Name + "' ..."), false, CreateRemoveConnectionCallback(action, connection));
+//                }
+//            }
+//
+//            menu.ShowAsContext();
+//        }
 
         /*[Obsolete("Deprecated, use StartConnection(BaseNode node)")]
         void HandleConnection(GraphNode actionNode, int result)

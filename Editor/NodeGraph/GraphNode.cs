@@ -27,16 +27,34 @@ namespace Framework.Editor
         public List<ConnectionInfo> connectedTo = new List<ConnectionInfo>();
         
         [System.Serializable]
-        public struct ConnectionInfo
+        public struct ConnectionInfo : IEquatable<ConnectionInfo>
         {
             [SerializeField]
             public GraphNode Node;
 
-            [SerializeField]
-            public int IndexTo;
+//            [SerializeField]
+//            [System.Obsolete("Deprecated")]
+//            public int IndexTo;
+//
+//            [SerializeField]
+//            [System.Obsolete("Deprecated")]
+//            public int IndexFrom;
+            
+            public bool Equals(ConnectionInfo other)
+            {
+                return Equals(Node, other.Node);
+            }
 
-            [SerializeField]
-            public int IndexFrom;
+            public override bool Equals(object obj)
+            {
+                if (ReferenceEquals(null, obj)) return false;
+                return obj is ConnectionInfo && Equals((ConnectionInfo) obj);
+            }
+
+            public override int GetHashCode()
+            {
+                return (Node != null ? Node.GetHashCode() : 0);
+            }
         }
 
         public string UniqueName { get; internal set; }
@@ -140,7 +158,7 @@ namespace Framework.Editor
                 
             GUI.color = Color.white;
 
-            GUI.Label(drawRect, UniqueName, EditorStyles.largeLabel);
+            GUI.Label(drawRect, UniqueName, EditorStyles.whiteLargeLabel);
         }
 
         protected virtual void DrawContent()
@@ -197,6 +215,17 @@ namespace Framework.Editor
                 );
         }
 
+        public static bool CanMakeConnection(GraphNode parent, GraphNode child)
+        {
+            if (parent == null || child == null)
+                return false;
+
+            return !parent.connectedTo.Contains(new ConnectionInfo()
+            {
+                Node = child
+            });
+        }
+
         public static void MakeConnection(GraphNode parent, GraphNode child)
         {
             parent.connectedTo.Add(new ConnectionInfo()
@@ -208,12 +237,12 @@ namespace Framework.Editor
             child.OnConnectToParent(parent);
         }
 
-        public virtual void OnConnectToChild(GraphNode node)
+        protected virtual void OnConnectToChild(GraphNode node)
         {
 
         }
 
-        public virtual void OnConnectToParent(GraphNode parent)
+        protected virtual void OnConnectToParent(GraphNode parent)
         {
 
         }
@@ -221,15 +250,15 @@ namespace Framework.Editor
         [System.Obsolete("Deprecated, use CanMakeConnection(BaseNode parent, BaseNode child) instead")]
         public static bool CanMakeConnection(GraphNode left, int leftIndex, GraphNode right, int rightIndex)
         {
-            return leftIndex != 0 && rightIndex != 0 && left != right && !left.connectedTo.Contains(new ConnectionInfo() { Node = right, IndexTo = rightIndex, IndexFrom = leftIndex });
+            return false;//leftIndex != 0 && rightIndex != 0 && left != right && !left.connectedTo.Contains(new ConnectionInfo() { Node = right, IndexTo = rightIndex, IndexFrom = leftIndex });
         }
 
         [System.Obsolete("Deprecated, use MakeConnection(BaseNode parent, BaseNode child) instead")]
         public static void MakeConnection(GraphNode left, int leftIndex, GraphNode right, int rightIndex)
         {
-            left.connectedTo.Add(new ConnectionInfo() { Node = right, IndexTo = rightIndex, IndexFrom = leftIndex });
-            left.OnConnectToRight(right, leftIndex, rightIndex);
-            right.OnConnectToLeft(left, rightIndex, leftIndex);
+//            left.connectedTo.Add(new ConnectionInfo() { Node = right, IndexTo = rightIndex, IndexFrom = leftIndex });
+//            left.OnConnectToRight(right, leftIndex, rightIndex);
+//            right.OnConnectToLeft(left, rightIndex, leftIndex);
         }
 
         [System.Obsolete("Deprecated, use OnConnectToChild(BaseNode child)")]

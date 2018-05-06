@@ -311,7 +311,7 @@ public static class SpaceEditorStyles
         get
         {
             if (_graphNodeEditorBackground == null)
-                _graphNodeEditorBackground = (GUIStyle)"flow background";
+                _graphNodeEditorBackground = (GUIStyle) "flow background";
             return _graphNodeEditorBackground;
         }
     }

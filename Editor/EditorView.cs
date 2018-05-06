@@ -1,8 +1,5 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEditor;
+﻿using UnityEditor;
 using UnityEngine;
-using Debug = System.Diagnostics.Debug;
 
 namespace Framework.Editor
 {
@@ -57,6 +54,11 @@ namespace Framework.Editor
         {
             
         }
+
+        protected void OnDestroy()
+        {
+            Presenter.OnDestroy();
+        }
         
         protected void OnFocus()
         {
@@ -75,9 +77,41 @@ namespace Framework.Editor
 
         protected void OnGUI()
         {
+            switch (Event.current.type)
+            {
+                case EventType.ValidateCommand:
+                    if (ValidateCommand (Event.current.commandName))
+                        Event.current.Use();
+                    break;
+                case EventType.ExecuteCommand:
+                    ExecuteCommand (Event.current.commandName);
+                    break;
+            }
+            
             EditorSize = new Vector2(position.width, position.height);
             Presenter.OnDraw();
         }
+
+        protected virtual bool ValidateCommand(string command)
+        {
+            switch (command)
+            {
+                case "UndoRedoPerformed":
+                    return true;
+            }
+
+            return false;
+        }
+
+        protected virtual void ExecuteCommand(string command)
+        {
+            switch (command)
+            {
+                case "UndoRedoPerformed":
+                    Presenter.OnUndoRedo();
+                    Repaint();
+                    break;
+            }
+        }
     }
 }
-

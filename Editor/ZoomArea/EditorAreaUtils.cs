@@ -110,8 +110,8 @@ public static class EditorAreaUtils
         
         AreaRect.Set(viewRect.x, viewRect.y, viewRect.width, viewRect.height);
 
-        GUI.color = Color.red;
-        GUI.Box(AreaRect, GUIContent.none);
+        //GUI.color = Color.red;
+        //GUI.Box(AreaRect, GUIContent.none);
         GUI.color = Color.white;
 
         var pivot = AreaRect.min;

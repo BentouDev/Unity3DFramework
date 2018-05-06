@@ -8,6 +8,12 @@ namespace Framework.Editor
     {
         internal virtual void OnEnable()
         { }
+        
+        internal virtual void OnUndoRedo()
+        { }
+        
+        internal virtual void OnDestroy()
+        { }
 
         internal virtual void OnFocus()
         { }

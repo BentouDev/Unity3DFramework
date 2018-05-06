@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.CompilerServices;
 using Framework.Editor;
 using UnityEditor;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace Framework.AI.Editor
 {
@@ -12,6 +15,16 @@ namespace Framework.AI.Editor
         protected BehaviourTreeEditorView View;
         private BehaviourTree TreeAsset;
         private string AssetPath;
+
+        private bool DuringRecreate;
+
+        public class ConnectEvent
+        {
+            public BehaviourTreeNode Parent;
+            public BehaviourTreeNode Child;
+        }
+        
+        public readonly EventQueue<ConnectEvent> OnConnectNodesQueue = new EventQueue<ConnectEvent>();
 
         internal struct Model
         {
@@ -22,8 +35,63 @@ namespace Framework.AI.Editor
         public BehaviourTreeEditorPresenter(BehaviourTreeEditorView view)
         {
             View = view;
+            
+            OnConnectNodesQueue.Reassign(data =>
+            {
+                if (!data.Parent || !data.Child)
+                    return false;
+                
+                Undo.RecordObject(data.Parent, $"Connect nodes {data.Child.Name} to {data.Parent.Name}");
+                data.Parent.AsParentNode().AddOrSetChild(data.Child);
+
+                return true;
+            });
         }
-        
+
+        internal override void OnUndoRedo()
+        {
+            TryRepairAsset(AssetPath, TreeAsset);
+            
+            //EditorUtility.SetDirty(TreeAsset);
+            //AssetDatabase.SaveAssets();
+            //AssetDatabase.Refresh();
+            
+            RecreateNodes();
+        }
+
+        private void TryRepairAsset(string path, BehaviourTree asset)
+        {
+            bool assetChanged = false;
+            foreach (var obj in AssetDatabase.LoadAllAssetsAtPath(path))
+            {
+                var asTree = obj as BehaviourTree;
+                if (asTree)
+                    continue;
+                
+                var asNode = obj as BehaviourTreeNode;
+                if (asNode)
+                {
+                    if (asset.Nodes.Contains(asNode))
+                        continue;
+                    
+                    foreach (var node in asset.Nodes.Where(n => n.IsParentNode()))
+                    {
+                        node.AsParentNode().GetChildNodes().Remove(asNode);
+                    }
+                }
+
+                assetChanged = true;
+                Object.DestroyImmediate(asNode, true);
+            }
+
+            if (!assetChanged) 
+                return;
+            
+            EditorUtility.SetDirty(TreeAsset);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+        }
+
         internal override void OnEnable()
         {
             ReloadAssetFromSelection();
@@ -60,6 +128,8 @@ namespace Framework.AI.Editor
             {
                 View.DrawCreationButton();
             }
+            
+            OnConnectNodesQueue.Process();
         }
 
         internal void OnLostAsset()
@@ -85,12 +155,7 @@ namespace Framework.AI.Editor
 
             //View.RecreateParameterList();
 
-            Model model;
-            model.TreeAsset = TreeAsset;
-            model.AssetPath = AssetPath;
-
-            View.RecreateNodes(ref model);
-            View.Repaint();
+            RecreateNodes();
         }
 
         internal void OnReloadAssetFromSelection()
@@ -148,6 +213,7 @@ namespace Framework.AI.Editor
 
         private void AddToAsset(UnityEngine.Object asset)
         {
+//            asset.hideFlags |= HideFlags.HideInHierarchy;
             AssetDatabase.AddObjectToAsset(asset, TreeAsset);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -162,6 +228,22 @@ namespace Framework.AI.Editor
             View.OnNodeAdded(TreeAsset, node);
         }
 
+        private void RecreateNodes()
+        {
+            DuringRecreate = true;
+            {
+                OnConnectNodesQueue.Clear();
+            
+                Model model;
+                model.TreeAsset = TreeAsset;
+                model.AssetPath = AssetPath;
+            
+                View.RecreateNodes(ref model);
+                View.Repaint();
+            }
+            DuringRecreate = false;
+        }
+
         public void OnRightClick(Vector2 mousePosition)
         {
             ShowMainContextMenu((type) =>
@@ -172,7 +254,13 @@ namespace Framework.AI.Editor
                     obj.EditorPosition = mousePosition;
                     obj.name = obj.Name;
                     
+                    Undo.RecordObject(TreeAsset, $"Created {obj.name} node");
+                    // Undo.RegisterCompleteObjectUndo(TreeAsset, $"Created {obj.name} node");
+                    
                     AddNewNode(obj);
+                    
+                    // Undo.RegisterCreatedObjectUndo(obj, $"Created {obj.name} node");
+                    // Undo.RegisterFullObjectHierarchyUndo(TreeAsset, $"Created {obj.name} node");
                 }
                 else
                 {
@@ -200,13 +288,7 @@ namespace Framework.AI.Editor
             }
 
             menu.AddSeparator(string.Empty);
-            menu.AddItem(new GUIContent("Refresh"), false, () =>
-            {
-                Model model;
-                model.TreeAsset = TreeAsset;
-                model.AssetPath = AssetPath;
-                View.RecreateNodes(ref model);
-            });
+            menu.AddItem(new GUIContent("Refresh"), false, RecreateNodes);
 
             menu.ShowAsContext();
         }
@@ -214,6 +296,16 @@ namespace Framework.AI.Editor
         public void OnEmptyDotClicked(BehaviourTreeEditorNode source, Vector2 position)
         {
             View.TryBeginConnection(source, position);
+        }
+
+        public void OnConnectNodes(BehaviourTreeNode parent, BehaviourTreeNode child)
+        {
+            if (DuringRecreate)
+                return;
+
+            var data = OnConnectNodesQueue.Post();
+            data.Parent = parent;
+            data.Child  = child;
         }
     }
 }
