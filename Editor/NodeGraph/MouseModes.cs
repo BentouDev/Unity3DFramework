@@ -237,10 +237,11 @@ namespace Framework.Editor.MouseModes
 
         public void End(Vector2 pos)
         {
-            var physicalPos = pos * Editor.ZoomLevel;
-            var data        = Editor.OnConnection.Post();
-                data.Source = ConnectionSource;
-                data.Target = Editor.AllNodes
+            var physicalPos   = pos * Editor.ZoomLevel;
+            var data          = Editor.OnConnection.Post();
+                data.MousePos = pos;
+                data.Source   = ConnectionSource;
+                data.Target   = Editor.AllNodes
                     .Where(n => n.PhysicalRect.Contains(physicalPos))
                     .OrderByDescending(n => n.Position.y)
                     .FirstOrDefault();

@@ -32,7 +32,34 @@ namespace Framework.AI.Editor
             WindowTitle = GUIContent.none;
             WindowStyle = SpaceEditorStyles.GraphNodeBackground;
         }
-
+        
+        public override Vector2 GetParentConnectPosition(GraphNode parent)
+        {
+            return new Vector2(drawRect.center.x, drawRect.yMin + 2);
+        }
+        
+        public override Vector2 GetChildConnectPosition(GraphNode child)
+        {
+            if (TreeNode.IsParentNode())
+            {
+                var asParent  = TreeNode.AsParentNode();
+                var nodeIndex = connectedTo.FindIndex(x => x.Node == child);
+                if (nodeIndex != -1)
+                {
+                    var offset = ConnectorSize.x * nodeIndex;
+                    if (asParent.HasChildrenSlots())
+                        offset -= ConnectorSize.x * asParent.GetChildNodes().Count * 0.5f;
+                    
+                    return new Vector2
+                    (
+                        drawRect.center.x + offset,
+                        drawRect.yMax + ConnectorSize.y * 0.25f
+                    );
+                }
+            }
+            return drawRect.center;
+        }
+        
         protected override void OnConnectToChild(GraphNode node)
         {
             var asBehaviour = node as BehaviourTreeEditorNode;
@@ -78,7 +105,7 @@ namespace Framework.AI.Editor
 
                 if (nodeCount > 0)
                 {
-                    if(asParent.HasChildrenSlots())
+                    if (asParent.HasChildrenSlots())
                         offset.x -= ConnectorSize.x * nodeCount * 0.5f;
 
                     for (int i = 0; i < nodeCount; i++)

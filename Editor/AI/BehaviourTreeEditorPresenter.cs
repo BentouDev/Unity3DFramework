@@ -16,7 +16,8 @@ namespace Framework.AI.Editor
         private BehaviourTree TreeAsset;
         private string AssetPath;
 
-        private bool DuringRecreate;
+        private bool _duringRecreate;
+        private bool _doRepair;
 
         public class ConnectEvent
         {
@@ -48,18 +49,23 @@ namespace Framework.AI.Editor
             });
         }
 
+        private readonly Stack<int> _indexStack = new Stack<int>();
         internal override void OnUndoRedo()
         {
-            TryRepairAsset(AssetPath, TreeAsset);
+            _indexStack.Clear();
+            for (int i = 0; i < TreeAsset.Nodes.Count; i++)
+            {
+                if (TreeAsset.Nodes[i] == null)
+                    _indexStack.Push(i);
+            }
             
-            //EditorUtility.SetDirty(TreeAsset);
-            //AssetDatabase.SaveAssets();
-            //AssetDatabase.Refresh();
+            while (_indexStack.Count != 0)
+                TreeAsset.Nodes.RemoveAt(_indexStack.Pop());
             
             RecreateNodes();
         }
 
-        private void TryRepairAsset(string path, BehaviourTree asset)
+        internal bool NeedsRepair(string path, BehaviourTree asset)
         {
             bool assetChanged = false;
             foreach (var obj in AssetDatabase.LoadAllAssetsAtPath(path))
@@ -73,23 +79,12 @@ namespace Framework.AI.Editor
                 {
                     if (asset.Nodes.Contains(asNode))
                         continue;
-                    
-                    foreach (var node in asset.Nodes.Where(n => n.IsParentNode()))
-                    {
-                        node.AsParentNode().GetChildNodes().Remove(asNode);
-                    }
                 }
 
                 assetChanged = true;
-                Object.DestroyImmediate(asNode, true);
             }
 
-            if (!assetChanged) 
-                return;
-            
-            EditorUtility.SetDirty(TreeAsset);
-            AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh();
+            return assetChanged;
         }
 
         internal override void OnEnable()
@@ -116,6 +111,16 @@ namespace Framework.AI.Editor
 
         internal override void OnDraw()
         {
+            if (_doRepair)
+            {
+                _doRepair = false;
+
+                BehaviourTree.TryRepairAsset(AssetPath, TreeAsset);
+                RecreateNodes();
+
+                return;
+            }
+            
             if (TreeAsset != null)
             {
                 Model model;
@@ -219,18 +224,18 @@ namespace Framework.AI.Editor
             AssetDatabase.Refresh();
         }
 
-        private void AddNewNode(BehaviourTreeNode node)
+        private GraphNode AddNewNode(BehaviourTreeNode node)
         {
             AddToAsset(node);
             
             TreeAsset.Nodes.Add(node);
 
-            View.OnNodeAdded(TreeAsset, node);
+            return View.OnNodeAdded(TreeAsset, node);
         }
 
         private void RecreateNodes()
         {
-            DuringRecreate = true;
+            _duringRecreate = true;
             {
                 OnConnectNodesQueue.Clear();
             
@@ -241,7 +246,7 @@ namespace Framework.AI.Editor
                 View.RecreateNodes(ref model);
                 View.Repaint();
             }
-            DuringRecreate = false;
+            _duringRecreate = false;
         }
 
         public void OnRightClick(Vector2 mousePosition)
@@ -253,14 +258,21 @@ namespace Framework.AI.Editor
                 {
                     obj.EditorPosition = mousePosition;
                     obj.name = obj.Name;
+
+                    //Undo.IncrementCurrentGroup();
+                    //
+                    //int    index     = Undo.GetCurrentGroup();
+                    string undoName = $"Created {obj.name} node";
                     
-                    Undo.RecordObject(TreeAsset, $"Created {obj.name} node");
-                    // Undo.RegisterCompleteObjectUndo(TreeAsset, $"Created {obj.name} node");
+                    Undo.SetCurrentGroupName(undoName);
+                    Undo.RecordObject(TreeAsset, undoName);
                     
                     AddNewNode(obj);
-                    
-                    // Undo.RegisterCreatedObjectUndo(obj, $"Created {obj.name} node");
-                    // Undo.RegisterFullObjectHierarchyUndo(TreeAsset, $"Created {obj.name} node");
+
+//                    if (index == Undo.GetCurrentGroup())
+//                    {
+//                        Undo.CollapseUndoOperations(index);
+//                    }
                 }
                 else
                 {
@@ -300,12 +312,43 @@ namespace Framework.AI.Editor
 
         public void OnConnectNodes(BehaviourTreeNode parent, BehaviourTreeNode child)
         {
-            if (DuringRecreate)
+            if (_duringRecreate)
                 return;
 
             var data = OnConnectNodesQueue.Post();
             data.Parent = parent;
             data.Child  = child;
+        }
+
+        public void ScheduleRepair()
+        {
+            _doRepair = true;
+        }
+
+        public void OnDropFailed(GraphNode node, Vector2 mousePos)
+        {
+            ShowMainContextMenu((type) =>
+            {
+                var obj = ScriptableObject.CreateInstance(type) as BehaviourTreeNode;
+                if (obj)
+                {
+                    obj.EditorPosition = mousePos;
+                    obj.name = obj.Name;
+
+                    string undoName = $"Created {obj.name} node";
+                    
+                    Undo.SetCurrentGroupName(undoName);
+                    Undo.RecordObject(TreeAsset, undoName);
+
+                    GraphNode.MakeConnection(node, AddNewNode(obj));
+                    
+                    View.Repaint();
+                }
+                else
+                {
+                    Debug.LogErrorFormat("Unable to create node '{0}'!", type.Name);
+                }
+            });
         }
     }
 }

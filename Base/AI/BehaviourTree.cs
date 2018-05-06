@@ -1,6 +1,11 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
+
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Framework.AI
 {
@@ -86,5 +91,59 @@ namespace Framework.AI
 
             return false;
         }
+
+#if UNITY_EDITOR        
+        public static void TryRepairAsset(string path, BehaviourTree asset)
+        {
+            bool assetChanged = false;
+            foreach (var obj in AssetDatabase.LoadAllAssetsAtPath(path))
+            {
+                var asTree = obj as BehaviourTree;
+                if (asTree)
+                    continue;
+                
+                var asNode = obj as BehaviourTreeNode;
+                if (asNode)
+                {
+                    if (asset.Nodes.Contains(asNode))
+                        continue;
+                    
+                    foreach (var node in asset.Nodes.Where(n => n.IsParentNode()))
+                    {
+                        node.AsParentNode().GetChildNodes().Remove(asNode);
+                    }
+                }
+
+                assetChanged = true;
+                Object.DestroyImmediate(asNode, true);
+            }
+
+            if (!assetChanged) 
+                return;
+            
+            EditorUtility.SetDirty(asset);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+        }
+
+        [MenuItem("CONTEXT/BehaviourTree/Optimize")]
+        static void RebuildCommand(MenuCommand command)
+        {
+            if (EditorUtility.DisplayDialog
+            (
+                "Optimize Asset",
+                "This will remove unused nodes inside asset, but will break redo command stack. Are you sure?",
+                "Optimize",
+                "Cancel"
+            ))
+            {
+                TryRepairAsset
+                (
+                    AssetDatabase.GetAssetPath(command.context), 
+                    command.context as BehaviourTree
+                );
+            }
+        }
+#endif
     }
 }

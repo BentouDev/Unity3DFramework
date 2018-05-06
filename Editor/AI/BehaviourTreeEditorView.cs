@@ -31,6 +31,14 @@ namespace Framework.AI.Editor
                 Presenter.OnRightClick(data.MousePos);
                 return true;
             });
+            
+            Nodes.OnConnection.AddPost(data =>
+            {
+                if (data.Target == null)
+                {
+                    Presenter.OnDropFailed(data.Source, data.MousePos);
+                }
+            });
         }
 
         void OnEnable()
@@ -42,9 +50,12 @@ namespace Framework.AI.Editor
             Presenter.OnEnable();
         }
         
-        internal void OnNodeAdded(BehaviourTree asset, BehaviourTreeNode node)
+        internal GraphNode OnNodeAdded(BehaviourTree asset, BehaviourTreeNode node)
         {
-            Nodes.AddNode(new BehaviourTreeEditorNode(asset, node, Presenter));
+            var newNode = new BehaviourTreeEditorNode(asset, node, Presenter);
+            Nodes.AddNode(newNode);
+
+            return newNode;
         }
 
         internal void RecreateNodes(ref BehaviourTreeEditorPresenter.Model model)
@@ -109,7 +120,7 @@ namespace Framework.AI.Editor
         {
             GUILayout.BeginVertical();
             {
-                DrawToolbar(model.TreeAsset);
+                DrawToolbar(ref model);
 
                 GUILayout.BeginHorizontal();
                 {
@@ -149,11 +160,11 @@ namespace Framework.AI.Editor
             GUILayout.EndVertical();
         }
 
-        private void DrawToolbar(BehaviourTree asset)
+        private void DrawToolbar(ref BehaviourTreeEditorPresenter.Model model)
         {
             EditorGUILayout.BeginHorizontal(EditorStyles.toolbar, GUILayout.ExpandWidth(true));
             {
-                GUILayout.Label(asset.name);
+                GUILayout.Label(model.TreeAsset.name);
 
                 /*if (ExecuteInRuntime())
                 {
@@ -170,6 +181,15 @@ namespace Framework.AI.Editor
                         Selection.activeGameObject = RuntimeController.gameObject;
                     }
                 }*/
+
+                if (Presenter.NeedsRepair(model.AssetPath, model.TreeAsset))
+                {
+                    using (new EditorAreaUtils.GUIColor(Color.red))
+                    {
+                        EditorGUILayout.Separator();
+                        GUILayout.Label("Optimizeable");
+                    }
+                }
 
                 GUILayout.FlexibleSpace();
 

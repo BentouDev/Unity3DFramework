@@ -36,13 +36,14 @@ namespace Framework.Editor
         public class NodeMouseEvent
         {
             public GraphNode Node; 
-            public Vector2 MousePos;
+            public Vector2   MousePos;
         }
         
         public class NodeConnectionEvent
         { 
             public GraphNode Source;
-            public GraphNode Target; 
+            public GraphNode Target;
+            public Vector2   MousePos;
         }
 
         public readonly EventQueue<NodeEvent>  OnDeleteNode   = new EventQueue<NodeEvent>();
@@ -503,7 +504,9 @@ namespace Framework.Editor
                     {
                         CurrentMouseMode.End(Event.current.mousePosition);
                         CurrentMouseMode = null;
+
                         Event.current.Use();
+
                         return true;
                     }
                     break;

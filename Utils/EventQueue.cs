@@ -88,6 +88,9 @@ namespace Framework
 
 		public void Process()
 		{
+			AnyFailrue = false;
+			AnySuccess = false;
+
 			if (_processor == null)
 				return;
 			

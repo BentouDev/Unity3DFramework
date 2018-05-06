@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using UnityEditor;
@@ -7,6 +8,21 @@ using UnityEngine;
 [InitializeOnLoad]
 public static class EditorAreaUtils
 {
+    public class GUIColor : IDisposable
+    {
+        private Color _old;
+        public GUIColor(Color color)
+        {
+            _old = GUI.color;
+            GUI.color = color;
+        }
+        
+        public void Dispose()
+        {
+            GUI.color = _old;
+        }
+    }
+    
     private static Matrix4x4 lastMatrix;
 
     private static MethodInfo GetTopRect;
