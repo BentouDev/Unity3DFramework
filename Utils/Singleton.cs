@@ -1,6 +1,11 @@
 ﻿using UnityEngine;
 using System.Collections;
 
+public interface ISingletonInstanceListener
+{
+	void OnSetInstance();
+}
+
 public class Singleton<T> : MonoBehaviour where T : MonoBehaviour
 {
 	private static bool		 IsQuitting	= false;
@@ -10,20 +15,20 @@ public class Singleton<T> : MonoBehaviour where T : MonoBehaviour
 	{
 		get
 		{
-			if(IsQuitting)
+			if (IsQuitting)
 			{
 				Debug.LogWarning("[Singleton] Instance '"+ typeof(T) +
 								 "' already destroyed on application quit." +
 								 " Unable create again - returning null.");
 				return null;
 			}
-			lock(_lock)
+			lock (_lock)
 			{
 				if (_instance == null)
 				{
-					_instance = (T) FindObjectOfType(typeof(T));
+					SetInstance((T) FindObjectOfType(typeof(T)));
 					
-					if ( FindObjectsOfType(typeof(T)).Length > 1 )
+					if (FindObjectsOfType(typeof(T)).Length > 1 )
 					{
 						Debug.LogError(	"[Singleton] Multiple instances of '" + typeof(T).Name +
 										"' found - This means some serious problems. " +
@@ -51,6 +56,12 @@ public class Singleton<T> : MonoBehaviour where T : MonoBehaviour
 				return _instance;
 			}
 		}
+	}
+
+	private static void SetInstance(T instance)
+	{
+		_instance = instance;
+		(_instance as ISingletonInstanceListener)?.OnSetInstance();
 	}
 
     public void OnDestroy()

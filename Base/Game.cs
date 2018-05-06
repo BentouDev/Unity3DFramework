@@ -5,7 +5,26 @@ using UnityEngine.SceneManagement;
 
 namespace Framework
 {
-    public abstract class Game<TGame> : Singleton<TGame> where TGame : Game<TGame>
+    public static class BaseGame
+    {
+        public static IGame Instance { get; internal set; }
+    }
+
+    public interface IGame
+    {
+        void SwitchState(GameState state);
+        void SwitchState<TState>() where TState : GameState;
+        void SwitchStateImmediate(GameState state);
+        void SwitchStateImmediate<TState>() where TState : GameState;
+
+        TState FindState<TState>() where TState : GameState;
+
+        bool IsPlaying();
+        void QuitGame();
+        void RestartGame();
+    }
+    
+    public abstract class Game<TGame> : Singleton<TGame>, IGame, ISingletonInstanceListener where TGame : Game<TGame>
     {
         public bool InitOnStart;
 
@@ -23,6 +42,11 @@ namespace Framework
         protected GameState NextState;
 
         public List<GameState> AllStates { get; protected set; }
+
+        public void OnSetInstance()
+        {
+            BaseGame.Instance = this;
+        }
 
         void Start()
         {
