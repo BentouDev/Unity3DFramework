@@ -78,7 +78,7 @@ namespace Framework.AI
             TargetColor = GetColor();//Color.white;
         }
 
-        protected override void OnGUI(int id)
+        protected override void OnGUI()
         {
             if (TreeNode.IsRootNode())
                 DrawBigTitle("Root");
@@ -94,7 +94,7 @@ namespace Framework.AI
             GUI.color = Color.white;
         }
 
-        protected override void OnDrawContent(int id)
+        protected override void OnDrawContent()
         {
             DrawIndexInParent(new Rect(0, 0, drawRect.width, drawRect.height));
 

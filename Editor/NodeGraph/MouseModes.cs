@@ -43,7 +43,7 @@ namespace Framework.Editor.MouseModes
                     else if (Event.current.button == 1)
                     {
                         //Editor.OnRightClick();
-                        //Editor.OnRightClick?.Invoke(Editor.ScrollPos);
+                        Editor.OnRightClick.Post().MousePos = Event.current.mousePosition;
                         Event.current.Use();
                     }
                     break;
@@ -211,7 +211,8 @@ namespace Framework.Editor.MouseModes
             if (Event.current.type == EventType.Layout 
             ||  Event.current.type == EventType.Repaint)
             {
-                GUI.Box(DrawRect, new GUIContent("Count: " + Editor.SelectedNodes.Count), SpaceEditorStyles.SelectorRectangle);
+                // new GUIContent("Count: " + Editor.SelectedNodes.Count)
+                GUI.Box(DrawRect, GUIContent.none, SpaceEditorStyles.SelectorRectangle);
             }
         }
     }
