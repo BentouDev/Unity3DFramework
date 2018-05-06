@@ -39,7 +39,7 @@ namespace Framework.AI.Editor
                 Selection.activeObject = TreeNode;
         }
 
-        protected override void OnGUI(int id)
+        protected override void OnGUI()
         {
             WindowStyle = Selected
                 ? SpaceEditorStyles.GraphNodeBackgroundSelected
@@ -50,7 +50,7 @@ namespace Framework.AI.Editor
             DrawConnectDots(drawRect);
         }
 
-        protected override void OnDrawContent(int id)
+        protected override void OnDrawContent()
         {
             var textDimensions = EditorStyles.largeLabel.CalcSize(new GUIContent(Name));
 

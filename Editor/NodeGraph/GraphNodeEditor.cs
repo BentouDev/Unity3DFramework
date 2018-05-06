@@ -319,11 +319,11 @@ namespace Framework.Editor
 
         void DrawWindows(EditorWindow editor)
         {
-            for (int i = 0; i < AllNodes.Count; i++)
+            foreach (var node in AllNodes.OrderBy(n => n.Position.y))
             {
-                AllNodes[i].DrawGUI(i);
+                node.DrawGUI();
             }
-
+            
             if (NextMouseMode != null)
             {
                 CurrentMouseMode?.End(Event.current.mousePosition);
@@ -490,7 +490,7 @@ namespace Framework.Editor
 
             switch (type)
             {
-                case EventType.mouseUp:
+                case EventType.MouseUp:
                     if (Event.current.button == 0 && CurrentMouseMode != null)
                     {
                         CurrentMouseMode.End(Event.current.mousePosition);
@@ -499,7 +499,7 @@ namespace Framework.Editor
                         return true;
                     }
                     break;
-                case EventType.mouseDown:
+                case EventType.MouseDown:
                     if (HandleMouseDown())
                         return true;
                     break;
@@ -520,6 +520,7 @@ namespace Framework.Editor
 
             HandleMouseMode();
             ProcessSelection();
+            OnRightClick.Process();
 
             HandleDelete();
         }

@@ -108,15 +108,15 @@ namespace Framework.Editor
         protected virtual void OnSelected(bool value)
         { }
 
-        public void DrawGUI(int id)
+        public void DrawGUI()
         {
             if (Event.current.type == EventType.Layout
             || Editor.BoundsRect.Overlaps(BoundsRect))
             {
                 drawRect.center += Editor.PannedOffset;
                 
-                OnGUI(id);
-                DrawContent(id);
+                OnGUI();
+                DrawContent();
                 SnapToGrid();
             }
         }
@@ -132,7 +132,7 @@ namespace Framework.Editor
             RecalculateDrawRect();
         }
 
-        protected virtual void OnGUI(int id)
+        protected virtual void OnGUI()
         {
             if (Selected)
                 GUI.color = Color.cyan;
@@ -143,12 +143,12 @@ namespace Framework.Editor
             GUI.Label(drawRect, UniqueName, EditorStyles.largeLabel);
         }
 
-        protected virtual void DrawContent(int id)
+        protected virtual void DrawContent()
         {
-            OnDrawContent(id);
+            OnDrawContent();
         }
 
-        protected abstract void OnDrawContent(int id);
+        protected abstract void OnDrawContent();
         
         public virtual Vector2 GetMaxCoordinates()
         {

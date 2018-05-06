@@ -33,7 +33,7 @@ namespace Framework.Editor.MouseModes
                     Editor.ZoomLevel -= Event.current.delta.y * Editor.ZoomSpeed;
                     Event.current.Use();
                     break;
-                case EventType.mouseUp:
+                case EventType.MouseUp:
                     if (Event.current.button == 0)
                     {
                         //Editor.OnLeftClick?.Invoke(Event.current.mousePosition);
@@ -43,11 +43,11 @@ namespace Framework.Editor.MouseModes
                     else if (Event.current.button == 1)
                     {
                         //Editor.OnRightClick();
-                        //Editor.OnRightClick?.Invoke(Editor.ScrollPos);
+                        Editor.OnRightClick.Post().MousePos = Event.current.mousePosition;
                         Event.current.Use();
                     }
                     break;
-                case EventType.mouseDown:
+                case EventType.MouseDown:
                     if (Event.current.button == 2)
                     {
                         Editor.NextMouseMode = new PannMode(Editor);
@@ -211,7 +211,8 @@ namespace Framework.Editor.MouseModes
             if (Event.current.type == EventType.Layout 
             ||  Event.current.type == EventType.Repaint)
             {
-                GUI.Box(DrawRect, new GUIContent("Count: " + Editor.SelectedNodes.Count), SpaceEditorStyles.SelectorRectangle);
+                // new GUIContent("Count: " + Editor.SelectedNodes.Count)
+                GUI.Box(DrawRect, GUIContent.none, SpaceEditorStyles.SelectorRectangle);
             }
         }
     }
