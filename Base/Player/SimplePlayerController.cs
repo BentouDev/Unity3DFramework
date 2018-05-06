@@ -48,9 +48,11 @@ namespace Framework
 
                 var flatVelocity = new Vector3(CurrentInput.x, 0, CurrentInput.y);
                     direction = Quaternion.LookRotation(Vector3.Normalize(Pawn.DesiredForward)) * flatVelocity;
+                
+                direction.Normalize();
             }
             
-            Pawn.ProcessMovement(direction.normalized);
+            Pawn.ProcessMovement(direction);
             Pawn.Tick();
         }
 
@@ -79,6 +81,8 @@ namespace Framework
                         PawnCamera.transform.forward.z
                     ), Time.deltaTime * 10);
                 }
+                
+                PawnCamera.OnUpdate();
             }
 
             Pawn.LateTick();

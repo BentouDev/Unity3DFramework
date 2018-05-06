@@ -6,11 +6,27 @@ using UnityEngine.UI;
 [RequireComponent(typeof(CanvasGroup))]
 public abstract class MenuBase : GUIBase
 {
+    [Header("Behaviour")] 
+    public bool       AlwaysBack;
     public Selectable FirstToSelect;
-    protected MenuController Controller;
-    protected CanvasGroup Canvas;
+    
+    public MenuController Controller { get; private set; }
+    
+    public CanvasGroup Canvas { get; private set; }
 
     public override bool IsGameplayGUI { get { return false; } }
+    
+    [Header("Show")]
+    public bool IsShowAnim;
+    
+    [SerializeField]
+    public AnimationPlayer OnShow;
+    
+    [Header("Hide")]
+    public bool IsHideAnim;
+    
+    [SerializeField]
+    public AnimationPlayer OnHide;
 
     public override void Hide()
     {
@@ -32,24 +48,38 @@ public abstract class MenuBase : GUIBase
         Controller.SwitchToMenu(this);
     }
 
-    public virtual void OnEnd()
+    public void End()
     {
         Canvas.interactable = false;
-        Canvas.alpha = 0;
 
+        if (!IsHideAnim)
+            OnHide.OnStart.Invoke();
+        
         gameObject.SetActive(false);
-    }
 
-    public virtual void OnStart()
+        OnEnd();
+    }
+    
+    protected virtual void OnEnd()
+    { }
+
+    public void Begin()
     {
         gameObject.SetActive(true);
 
         Canvas.interactable = true;
-        Canvas.alpha = 1;
 
+        if (!IsShowAnim)
+            OnShow.OnStart.Invoke();
+        
         if (FirstToSelect)
             StartCoroutine(SelectFirst(FirstToSelect));
+        
+        OnBegin();
     }
+
+    protected virtual void OnBegin()
+    { }
 
     IEnumerator SelectFirst(Selectable select)
     {

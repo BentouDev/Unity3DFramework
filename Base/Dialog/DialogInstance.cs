@@ -118,7 +118,7 @@ namespace Framework
             FuncDic.Clear();
         }
 
-        internal void Invoke(DialogFunctionSlot function)
+        public void InvokeFunction(DialogFunctionSlot function)
         {
             var func = FuncDic[function.name];
             func?.Function.Invoke();

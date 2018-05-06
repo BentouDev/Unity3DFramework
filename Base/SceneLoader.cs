@@ -17,13 +17,14 @@ namespace Framework
         public delegate void SceneLoad();
 
         public event SceneLoad OnSceneLoad;
-        
+       
         private void EndLoadScene()
         {
             CurrentScene = _nextScene;
-            IsReady = true;
+            IsReady      = true;
             _waitForLoad = false;
-            Debug.Log("Loaded scene " + _nextScene + "!");
+            
+            Debug.Log("Loaded scene " + SceneManager.GetActiveScene().buildIndex + "!");
 
             if (OnSceneLoad != null)
                 OnSceneLoad();
@@ -44,7 +45,7 @@ namespace Framework
 
         public void StartLoadScene(int i)
         {
-            if (_waitForLoad || i == 0)
+            if (_waitForLoad || SceneManager.GetActiveScene().buildIndex == i)
                 return;
 
             _nextScene = i;

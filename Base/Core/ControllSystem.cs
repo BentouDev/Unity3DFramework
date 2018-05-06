@@ -8,9 +8,26 @@ namespace Framework
     {
         public List<Controller> AllControllers;
 
+        public bool InitOnStart;
+        public bool EnableOnStart;
+        public bool AutoUpdate = false;
+
         private int DisableCounter;
 
         public bool IsEnabled => DisableCounter == 0;
+
+        private bool IsInitialized;
+        
+        void Start()
+        {
+            IsInitialized = false;
+            
+            if (InitOnStart) 
+                Init();
+            
+            if (EnableOnStart) 
+                Enable();
+        }
 
         public void Init()
         {
@@ -25,6 +42,8 @@ namespace Framework
             {
                 controller.Init();
             }
+
+            IsInitialized = true;
         }
 
         public void Register(Controller controller)
@@ -62,6 +81,9 @@ namespace Framework
 
         public void Tick()
         {
+            if (!IsInitialized)
+                return;
+            
             foreach (Controller controller in AllControllers)
             {
                 controller.Tick();
@@ -70,6 +92,9 @@ namespace Framework
 
         public void FixedTick()
         {
+            if (!IsInitialized)
+                return;
+
             foreach (Controller controller in AllControllers)
             {
                 controller.FixedTick();
@@ -78,10 +103,28 @@ namespace Framework
 
         public void LateTick()
         {
+            if (!IsInitialized)
+                return;
+
             foreach (Controller controller in AllControllers)
             {
                 controller.LateTick();
             }
+        }
+
+        void Update()
+        {
+            if (AutoUpdate) Tick();
+        }
+
+        void FixedUpdate()
+        {
+            if (AutoUpdate) FixedTick();
+        }
+
+        void LateUpdate()
+        {
+            if (AutoUpdate) LateTick();
         }
     }
 }

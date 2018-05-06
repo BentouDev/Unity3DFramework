@@ -10,6 +10,7 @@ namespace Framework
     {
         [Header("Debug")]
         public bool InitOnStart;
+        public bool Autoupdate;
         public bool DrawDebug;
 
         [Header("Target")]
@@ -65,7 +66,7 @@ namespace Framework
 
         void LateUpdate()
         {
-            OnUpdate();
+            if (Autoupdate) OnUpdate();
         }
 
         public void SetLockOn(Transform lockOn)

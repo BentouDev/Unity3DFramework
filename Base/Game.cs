@@ -5,7 +5,26 @@ using UnityEngine.SceneManagement;
 
 namespace Framework
 {
-    public abstract class Game<TGame> : Singleton<TGame> where TGame : Game<TGame>
+    public static class BaseGame
+    {
+        public static IGame Instance { get; internal set; }
+    }
+
+    public interface IGame
+    {
+        void SwitchState(GameState state);
+        void SwitchState<TState>() where TState : GameState;
+        void SwitchStateImmediate(GameState state);
+        void SwitchStateImmediate<TState>() where TState : GameState;
+
+        TState FindState<TState>() where TState : GameState;
+
+        bool IsPlaying();
+        void QuitGame();
+        void RestartGame();
+    }
+    
+    public abstract class Game<TGame> : Singleton<TGame>, IGame, ISingletonInstanceListener where TGame : Game<TGame>
     {
         public bool InitOnStart;
 
@@ -20,7 +39,14 @@ namespace Framework
         public GameState CurrentState { get; protected set; }
         public GameState PreviousState { get; protected set; }
 
+        protected GameState NextState;
+
         public List<GameState> AllStates { get; protected set; }
+
+        public void OnSetInstance()
+        {
+            BaseGame.Instance = this;
+        }
 
         void Start()
         {
@@ -87,6 +113,28 @@ namespace Framework
 
         public void SwitchState(GameState state)
         {
+            if (NextState)
+                Debug.LogWarningFormat(
+                    "Changed state twice in this frame! From '{0}' to '{1}' and now to '{2}'", 
+                    CurrentState, NextState, state
+                );
+            
+            NextState = state;
+        }
+
+        public void SwitchState<TState>() where TState : GameState
+        {
+            if (NextState)
+                Debug.LogWarningFormat(
+                    "Changed state twice in this frame! From '{0}' to '{1}' and now to '{2}'", 
+                    CurrentState, NextState, nameof(TState)
+                );
+
+            NextState = FindState<TState>();
+        }
+
+        public void SwitchStateImmediate(GameState state)
+        {
             if (state != CurrentState)
                 PreviousState = CurrentState;
 
@@ -95,20 +143,31 @@ namespace Framework
             if (CurrentState != null) CurrentState.DoStart();
         }
 
-        public void SwitchState<TState>() where TState : GameState
+        public void SwitchStateImmediate<TState>() where TState : GameState
         {
-            SwitchState(AllStates.FirstOrDefault(s => s is TState));
+            SwitchStateImmediate(FindState<TState>());
+        }
+
+        public TState FindState<TState>() where TState : GameState
+        {
+            return (TState) AllStates.FirstOrDefault(s => s is TState);
         }
 
         public void QuitGame()
         {
-            gameObject.BroadcastToAll("OnLevelCleanUp");
+            GlobalQuitGame();
+        }
+
+        public static void GlobalQuitGame()
+        {
+            if (Game<TGame>.Instance)
+                Game<TGame>.Instance.gameObject.BroadcastToAll("OnLevelCleanUp");
 
 #if UNITY_EDITOR
             UnityEditor.EditorApplication.isPlaying = false;
-    #else
+#else
             Application.Quit();
-    #endif
+#endif
         }
 
         public void RestartGame()
@@ -136,12 +195,22 @@ namespace Framework
             if (Loader && !Loader.IsReady)
                 return;
 
-            if (CurrentState != null)
+            if (NextState)
             {
-                CurrentState.Tick();
+                var desiredState = NextState;
+                
+                NextState = null;
+                
+                SwitchStateImmediate(desiredState);
+
+                return;
             }
 
-            Controllers.Tick();
+            if (CurrentState != null)
+                CurrentState.Tick();
+
+            if (Controllers)
+                Controllers.Tick();
         }
 
         void FixedUpdate()
@@ -150,11 +219,10 @@ namespace Framework
                 return;
 
             if (CurrentState != null)
-            {
                 CurrentState.FixedTick();
-            }
-
-            Controllers.FixedTick();
+            
+            if (Controllers)
+                Controllers.FixedTick();
         }
 
         void LateUpdate()
@@ -163,11 +231,10 @@ namespace Framework
                 return;
 
             if (CurrentState != null)
-            {
                 CurrentState.LateTick();
-            }
             
-            Controllers.LateTick();
+            if (Controllers)
+                Controllers.LateTick();
         }
     }
 }
