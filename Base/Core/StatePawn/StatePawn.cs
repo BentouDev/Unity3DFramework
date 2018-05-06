@@ -29,6 +29,17 @@ namespace Framework
         [HideInInspector]
         public Vector3 VelocityChange;
 
+        [System.Serializable]
+        public enum MovementType
+        {
+            Velocity,
+            Physics,
+            MovementPhysics
+        }
+
+        [SerializeField]
+        public MovementType MovementFactor = MovementType.MovementPhysics;
+        
         protected override void OnInit()
         {
             if (AllStates != null)
@@ -155,7 +166,22 @@ namespace Framework
             if (!Anim || !Anim.isActiveAndEnabled)
                 return;
 
-            float movementFactor = Velocity.magnitude / MaxSpeed;
+            Vector3 target = Vector3.zero;
+            switch (MovementFactor)
+            {
+                case MovementType.Velocity:
+                    target = Velocity;
+                    break;
+                case MovementType.Physics:
+                    target = Body.velocity;
+                    break;
+                case MovementType.MovementPhysics:
+                    target = Body.velocity.magnitude < Velocity.magnitude 
+                           ? Body.velocity : Velocity; 
+                    break;
+            }
+            
+            float movementFactor = target.magnitude / MaxSpeed;
 
             if (!string.IsNullOrEmpty(Animation.MovementBlend))
                 Anim.SetFloat(Animation.MovementBlend, movementFactor);

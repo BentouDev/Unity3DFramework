@@ -19,6 +19,8 @@ namespace Framework
 
         TState FindState<TState>() where TState : GameState;
 
+        ControllSystem GetControllers();
+
         bool IsPlaying();
         void QuitGame();
         void RestartGame();
@@ -42,6 +44,8 @@ namespace Framework
         protected GameState NextState;
 
         public List<GameState> AllStates { get; protected set; }
+
+        public ControllSystem GetControllers() => Controllers;
 
         public void OnSetInstance()
         {

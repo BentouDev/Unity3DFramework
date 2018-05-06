@@ -6,17 +6,17 @@ namespace Framework.Base.Gameplay
     [RequireComponent(typeof(SphereCollider))]
     public class ActionActivator : MonoBehaviour
     {
-        public  bool         Enabled = true;
-        public  string       Message = "Activate";
-        public  UnityEvent   Action;
-        private Activateable LastActivateable;
+        public bool         Enabled = true;
+        public string       Name = "Activate";
+        public UnityEvent   Action;
+        public Activateable CurrentActivateable { get; private set; }
     
         public void Activate(Activateable act)
         {
-            LastActivateable = act;
+            CurrentActivateable = act;
             Enabled = false;
 
-            LastActivateable.PopActivator(this);
+            CurrentActivateable.PopActivator(this);
             Action.Invoke();
         }
 
@@ -32,10 +32,10 @@ namespace Framework.Base.Gameplay
 
         private void OnTriggerStay(Collider other)
         {
-            if (!Enabled || !LastActivateable)
+            if (!Enabled || !CurrentActivateable)
                 return;
         
-            LastActivateable.PushActivator(this);
+            CurrentActivateable.PushActivator(this);
         }
 
         private void OnTriggerEnter(Collider other)
@@ -52,7 +52,7 @@ namespace Framework.Base.Gameplay
             var act = other.gameObject.GetComponentInChildren<Activateable>() ?? other.gameObject.GetComponentInParent<Activateable>();
             if (act) act.PopActivator(this);
 
-            LastActivateable = null;
+            CurrentActivateable = null;
         }
     }
 }

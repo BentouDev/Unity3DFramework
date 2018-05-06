@@ -64,6 +64,11 @@ public class Singleton<T> : MonoBehaviour where T : MonoBehaviour
 		(_instance as ISingletonInstanceListener)?.OnSetInstance();
 	}
 
+	private void Awake()
+	{
+		IsQuitting = false;
+	}
+
     public void OnDestroy()
     {
         IsQuitting = true;

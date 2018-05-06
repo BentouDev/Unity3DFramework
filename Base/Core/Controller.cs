@@ -14,9 +14,16 @@ namespace Framework
 
         private static ControllSystem _cachedSystem;
 
+        public enum DebugMode
+        {
+            None,
+            WhenEnabled,
+            Always
+        }
+
         [Header("Debug")]
+        public DebugMode DrawDebug;
         public bool InitOnStart;
-        public bool DrawDebug;
         public bool UseCachedControllSystem = true;
         public ControllSystem System;
 
@@ -56,6 +63,25 @@ namespace Framework
             this.SafeDestroy(gameObject);
         }
 
+        private ControllSystem FindSystem()
+        {
+            var result = System;
+            if (result)
+                return result;
+
+            if (UseCachedControllSystem)
+                result = _cachedSystem;
+            if (result)
+                return result;
+
+            result = BaseGame.Instance.GetControllers();
+            if (result)
+                return result;
+
+            result = FindObjectOfType<ControllSystem>();
+            return result;
+        }
+
         public void Init()
         {
             if (FindByTag && Pawn == null)
@@ -66,8 +92,7 @@ namespace Framework
 
             if (Pawn != null) Pawn.Init();
 
-            System = System ?? (UseCachedControllSystem ? _cachedSystem : null) ?? FindObjectOfType<ControllSystem>();
-            
+            System = FindSystem();
             if (System)
             {
                 if (!_cachedSystem)
@@ -126,7 +151,10 @@ namespace Framework
 
         void OnGUI()
         {
-            if (!DrawDebug)
+            if (DrawDebug == DebugMode.None)
+                return;
+
+            if (DrawDebug == DebugMode.WhenEnabled && !Enabled)
                 return;
             
             OnDrawDebug();

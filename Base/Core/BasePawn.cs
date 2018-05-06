@@ -28,6 +28,7 @@ namespace Framework
         {
             Velocity,
             Physics,
+            MovementPhysics,
             Direction
         }
 
@@ -225,6 +226,11 @@ namespace Framework
                     break;
                 case FaceMode.Velocity:
                     target = Velocity;
+                    break;
+                case FaceMode.MovementPhysics:
+                    target = Body.velocity.magnitude < Velocity.magnitude 
+                           ? Body.velocity : Velocity;
+//                    target = Vector3.Lerp(Body.velocity, Velocity, 0.5f);
                     break;
                 case FaceMode.Physics:
                     target = Body.velocity;
