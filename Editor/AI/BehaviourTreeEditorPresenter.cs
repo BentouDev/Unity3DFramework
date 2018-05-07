@@ -216,6 +216,19 @@ namespace Framework.AI.Editor
             OnLoadAsset(asset);
         }
 
+        private void DeleteFromAsset(BehaviourTreeEditorNode node)
+        {
+            Undo.RecordObject(TreeAsset, $"Removed {node.Name}");
+            
+            foreach (BehaviourTreeNode treeNode in TreeAsset.Nodes)
+            {
+                if (treeNode.IsParentNode())
+                    treeNode.AsParentNode().GetChildNodes().Remove(node.TreeNode);
+            }
+            
+            TreeAsset.Nodes.Remove(node.TreeNode);
+        }
+
         private void AddToAsset(UnityEngine.Object asset)
         {
 //            asset.hideFlags |= HideFlags.HideInHierarchy;
@@ -247,6 +260,11 @@ namespace Framework.AI.Editor
                 View.Repaint();
             }
             _duringRecreate = false;
+        }
+
+        public void OnNodeRightClick(BehaviourTreeEditorNode node, Vector2 mousePos)
+        {
+            ShowNodeContextMenu(node);
         }
 
         public void OnRightClick(Vector2 mousePosition)
@@ -287,6 +305,32 @@ namespace Framework.AI.Editor
             {
                 callback(type);
             };
+        }
+
+        private void ShowNodeContextMenu(BehaviourTreeEditorNode node)
+        {
+            GenericMenu menu = new GenericMenu();
+
+            if (node.connectedTo.Any())
+            {
+                foreach (var info in node.connectedTo)
+                {
+                    menu.AddItem
+                    (
+                        new GUIContent($"Disconnect.../{info.Node.Name}"), 
+                        false, 
+                        () => View.DisconnectNodes(node, info.Node as BehaviourTreeEditorNode)
+                    );
+                }
+            }
+            else
+            {
+                menu.AddDisabledItem(new GUIContent("Disconnect..."));
+            }
+            
+            menu.AddItem(new GUIContent("Delete"), false, () => View.DeleteNode(node));
+            
+            menu.ShowAsContext();
         }
 
         private void ShowMainContextMenu(System.Action<Type> callback)
@@ -349,6 +393,19 @@ namespace Framework.AI.Editor
                     Debug.LogErrorFormat("Unable to create node '{0}'!", type.Name);
                 }
             });
+        }
+
+        public void OnNodeDisconnected(BehaviourTreeEditorNode parent, BehaviourTreeEditorNode child)
+        {
+            if (parent.TreeNode.IsParentNode())
+            {
+                parent.TreeNode.AsParentNode().GetChildNodes().Remove(child.TreeNode);
+            }
+        }
+
+        public void OnNodeDeleted(BehaviourTreeEditorNode node)
+        {
+            DeleteFromAsset(node);
         }
     }
 }

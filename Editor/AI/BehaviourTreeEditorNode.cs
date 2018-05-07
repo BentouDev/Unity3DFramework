@@ -17,6 +17,7 @@ namespace Framework.AI.Editor
         private readonly BehaviourTreeEditorPresenter Presenter;
 
         private Rect TextRect = new Rect();
+        private bool HasParent;
 
         public override string Name => TreeNode.Name;
 
@@ -59,13 +60,36 @@ namespace Framework.AI.Editor
             }
             return drawRect.center;
         }
-        
+
+        protected override bool CanConnectTo(GraphNode child)
+        {
+            var asBehaviour = child as BehaviourTreeEditorNode;
+            if (asBehaviour == null)
+                return false;
+            
+            return !asBehaviour.HasParent && base.CanConnectTo(child);
+        }
+
+        protected override void OnConnectToParent(GraphNode parent)
+        {
+            HasParent = true;
+        }
+
         protected override void OnConnectToChild(GraphNode node)
         {
             var asBehaviour = node as BehaviourTreeEditorNode;
             if (asBehaviour != null)
             {
                 Presenter.OnConnectNodes(TreeNode, asBehaviour.TreeNode);
+            }
+        }
+
+        protected override void OnParentDisconnected(GraphNode node)
+        {
+            var asBehaviour = node as BehaviourTreeEditorNode;
+            if (asBehaviour != null)
+            {
+                asBehaviour.HasParent = false;
             }
         }
 

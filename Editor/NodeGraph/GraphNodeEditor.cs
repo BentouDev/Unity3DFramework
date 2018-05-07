@@ -125,8 +125,13 @@ namespace Framework.Editor
             {
                 if (data.Target != null)
                 {
-                    GraphNode.MakeConnection(data.Source, data.Target);
-                    return true;
+                    if (GraphNode.CanMakeConnection(data.Source, data.Target))
+                    {
+                        GraphNode.MakeConnection(data.Source, data.Target);
+                        return true;
+                    }
+                    
+                    return false;
                 }
 
                 return false;

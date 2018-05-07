@@ -28,7 +28,17 @@ namespace Framework.AI.Editor
             Presenter = new BehaviourTreeEditorPresenter(this);
             Nodes.OnRightClick.Reassign(data =>
             {
-                Presenter.OnRightClick(data.MousePos);
+                var node = Nodes.AllNodes.FirstOrDefault
+                (
+                    n => n.PhysicalRect.Contains(
+                        (data.MousePos * Nodes.ZoomLevel) 
+                )) as BehaviourTreeEditorNode;
+                
+                if (node != null)
+                    Presenter.OnNodeRightClick(node, data.MousePos);
+                else
+                    Presenter.OnRightClick(data.MousePos);
+                
                 return true;
             });
             
@@ -38,6 +48,12 @@ namespace Framework.AI.Editor
                 {
                     Presenter.OnDropFailed(data.Source, data.MousePos);
                 }
+            });
+            
+            Nodes.OnDeleteNode.AddPost(data =>
+            {
+                Presenter.OnNodeDeleted(data.Node as BehaviourTreeEditorNode);
+                Nodes.AllNodes.Remove(data.Node);
             });
         }
 
@@ -232,6 +248,17 @@ namespace Framework.AI.Editor
         {
             if (source.TreeNode.IsParentNode())
                 Nodes.StartConnection(source, position);
+        }
+
+        public void DeleteNode(BehaviourTreeEditorNode node)
+        {
+            Nodes.OnDeleteNode.Post().Node = node;
+        }
+
+        public void DisconnectNodes(BehaviourTreeEditorNode parent, BehaviourTreeEditorNode toRemove)
+        {
+            parent.RemoveConnection(toRemove);
+            Presenter.OnNodeDisconnected(parent, toRemove);
         }
     }
 }

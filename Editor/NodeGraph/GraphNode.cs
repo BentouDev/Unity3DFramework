@@ -215,15 +215,20 @@ namespace Framework.Editor
                 );
         }
 
+        protected virtual bool CanConnectTo(GraphNode child)
+        {
+            return !connectedTo.Contains(new ConnectionInfo()
+            {
+                Node = child
+            });
+        }
+
         public static bool CanMakeConnection(GraphNode parent, GraphNode child)
         {
             if (parent == null || child == null)
                 return false;
 
-            return !parent.connectedTo.Contains(new ConnectionInfo()
-            {
-                Node = child
-            });
+            return parent.CanConnectTo(child);
         }
 
         public static void MakeConnection(GraphNode parent, GraphNode child)
@@ -284,16 +289,32 @@ namespace Framework.Editor
             baseNode.OnBeingConnected(this, currentIndex);
         }*/
 
-        public virtual void RemoveConnection(GraphNode node)
+        public void RemoveConnection(GraphNode node)
         {
             if (connectedTo.Any(c => c.Node == node))
                 connectedTo.RemoveAll(c => c.Node == node);
+            
+            OnConnectionRemoved(node);
+            node.OnParentDisconnected(this);
         }
 
-        public virtual void RemoveConnection(ConnectionInfo baseNode)
+        public void RemoveConnection(ConnectionInfo connection)
         {
-            if (connectedTo.Contains(baseNode))
-                connectedTo.Remove(baseNode);
+            if (connectedTo.Contains(connection))
+                connectedTo.Remove(connection);
+            
+            OnConnectionRemoved(connection.Node);
+            connection.Node.OnParentDisconnected(this);
+        }
+
+        protected virtual void OnConnectionRemoved(GraphNode node)
+        {
+            
+        }
+
+        protected virtual void OnParentDisconnected(GraphNode node)
+        {
+            
         }
 
         /*public virtual void OnBeingConnected(BaseNode node, int index)

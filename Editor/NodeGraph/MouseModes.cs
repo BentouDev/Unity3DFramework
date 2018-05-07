@@ -237,7 +237,7 @@ namespace Framework.Editor.MouseModes
 
         public void End(Vector2 pos)
         {
-            var physicalPos   = pos * Editor.ZoomLevel;
+            var physicalPos   = (pos * Editor.ZoomLevel) - new Vector2(0,16);
             var data          = Editor.OnConnection.Post();
                 data.MousePos = pos;
                 data.Source   = ConnectionSource;
