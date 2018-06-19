@@ -86,11 +86,7 @@ namespace Framework.AI.Editor
 
         protected override void OnParentDisconnected(GraphNode node)
         {
-            var asBehaviour = node as BehaviourTreeEditorNode;
-            if (asBehaviour != null)
-            {
-                asBehaviour.HasParent = false;
-            }
+            HasParent = false;
         }
 
         protected override void OnSelected(bool value)
@@ -108,6 +104,11 @@ namespace Framework.AI.Editor
 
             GUI.Box(drawRect, GUIContent.none, WindowStyle);
             DrawConnectDots(drawRect);
+
+            if (TreeAsset.RootNode == TreeNode)
+            {
+                GUI.Label(drawRect, new GUIContent("Root"), EditorStyles.whiteBoldLabel);
+            }
         }
 
         protected override void OnDrawContent()

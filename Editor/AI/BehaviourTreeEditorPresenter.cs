@@ -329,6 +329,11 @@ namespace Framework.AI.Editor
             }
             
             menu.AddItem(new GUIContent("Delete"), false, () => View.DeleteNode(node));
+            menu.AddItem(new GUIContent("Set as Root"), false, () =>
+            {
+                Undo.RecordObject(TreeAsset, "Set root node");
+                TreeAsset.RootNode = node.TreeNode;
+            });
             
             menu.ShowAsContext();
         }

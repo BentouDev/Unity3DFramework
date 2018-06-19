@@ -8,8 +8,6 @@ namespace Framework
 {
     public abstract class KnownType
     {
-        // protected internal System.Func<GenericParameter, Blackboard.IValue> ValueCreator;
-
         public System.Type HoldType;
         public string GenericName;
 

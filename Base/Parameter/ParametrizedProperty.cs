@@ -42,13 +42,22 @@ namespace Framework
             _instance = instance;
             _propertyInfo = typeof(T).GetProperty(propertyName);
             
-            Debug.Log(string.Format("Creating PropertyReference for '{0}' in type '{1}' ", typeof(F).Name, typeof(T).Name));
+            Debug.Log($"Creating PropertyReference for '{typeof(F).Name}' in type '{typeof(T).Name}' ");
 
-            Getter = (System.Func  <T, F>) System.Delegate.CreateDelegate(typeof(System.Func  <T, F>), _propertyInfo.GetGetMethod());
+            Getter = BuildGetter(_propertyInfo);
             Setter = BuildSetter(_propertyInfo);
         }
+
+        public static System.Func<T, F> BuildGetter(System.Reflection.PropertyInfo propertyInfo)
+        {
+            return (System.Func<T, F>) System.Delegate.CreateDelegate
+            (
+                typeof(System.Func<T, F>),
+                propertyInfo.GetGetMethod()
+            );
+        }
         
-        private System.Action<T, F> BuildSetter(System.Reflection.PropertyInfo propertyInfo)
+        public static System.Action<T, F> BuildSetter(System.Reflection.PropertyInfo propertyInfo)
         {
             var typedMi = propertyInfo.GetSetMethod();
             var obj     = System.Linq.Expressions.Expression.Parameter(typeof(T), "instance");
@@ -61,19 +70,19 @@ namespace Framework
             return System.Linq.Expressions.Expression.Lambda<System.Action<T, F>>(call, obj, param).Compile();
         }
 
-        private System.Action<T, F> CreateSetter(System.Reflection.PropertyInfo propertyInfo)
-        {
-            var instance  = System.Linq.Expressions.Expression.Parameter(typeof(T), "instance");
-            var parameter = System.Linq.Expressions.Expression.Parameter(typeof(F), "param");
-
-            var cast = System.Linq.Expressions.Expression.TypeAs(parameter, propertyInfo.PropertyType);
-
-            var methodCall = System.Linq.Expressions.Expression.Call(instance, propertyInfo.GetSetMethod(), cast);
-            
-            var typeAs = System.Linq.Expressions.Expression.Convert(methodCall, typeof(F));
-            
-            return System.Linq.Expressions.Expression.Lambda<System.Action<T, F>>(typeAs, instance, parameter).Compile();
-        }
+//        public static System.Action<T, F> CreateSetter(System.Reflection.PropertyInfo propertyInfo)
+//        {
+//            var instance  = System.Linq.Expressions.Expression.Parameter(typeof(T), "instance");
+//            var parameter = System.Linq.Expressions.Expression.Parameter(typeof(F), "param");
+//
+//            var cast = System.Linq.Expressions.Expression.TypeAs(parameter, propertyInfo.PropertyType);
+//
+//            var methodCall = System.Linq.Expressions.Expression.Call(instance, propertyInfo.GetSetMethod(), cast);
+//            
+//            var typeAs = System.Linq.Expressions.Expression.Convert(methodCall, typeof(F));
+//            
+//            return System.Linq.Expressions.Expression.Lambda<System.Action<T, F>>(typeAs, instance, parameter).Compile();
+//        }
 
         public override void GetFromParameter(GenericParameter parameter)
         {

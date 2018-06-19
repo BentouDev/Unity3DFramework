@@ -52,6 +52,6 @@ public class SerializedType : IEquatable<SerializedType>
 
     public bool Equals(SerializedType other)
     {
-        return string.Equals(this._serializedTypeName, other._serializedTypeName);
+        return other != null && string.Equals(this._serializedTypeName, other._serializedTypeName);
     }
 }

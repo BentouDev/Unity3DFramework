@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Framework.AI;
 
 #if UNITY_EDITOR
@@ -38,6 +39,17 @@ namespace Framework
 
         [SerializeField]
         private float[] _floats = new float[4];
+
+        private static KnownType CreateKnownType<T>(string name, string propertyName)
+        {
+            PropertyInfo propertyInfo = typeof(T).GetProperty(propertyName);
+            
+            return new KnownType<T>(name)
+            {
+                Getter = PropertyReference<GenericParameter, T>.BuildGetter(propertyInfo),
+                Setter = PropertyReference<GenericParameter, T>.BuildSetter(propertyInfo),
+            };
+        }
 
         public static void BuildKnownTypeList()
         {
@@ -228,27 +240,35 @@ namespace Framework
 
         public static void Draw(Rect drawRect, GenericParameter parameter, bool label)
         {
-            var typename = parameter.HoldType.Type.FullName;
-
-            KnownType info;
-            if (KnownType.Register.TryGetValue(typename, out info) && info.DrawFunc != null)
+            if (parameter.HoldType.Type != null)
             {
-                info.DrawFunc(drawRect, parameter, label);
-            }
+                var typename = parameter.HoldType.Type.FullName;
 
-            if (parameter.HoldType.Type.IsSubclassOf(KnownType.ComponentType)
-            && KnownType.Register.TryGetValue(KnownType.ComponentType.FullName, out info)
-            && info.DrawFunc != null)
-            {
-                info.DrawFunc(drawRect, parameter, label);
-            }
+                KnownType info;
+                if (KnownType.Register.TryGetValue(typename, out info) && info.DrawFunc != null)
+                {
+                    info.DrawFunc(drawRect, parameter, label);
+                    return;
+                }
 
-            if (parameter.HoldType.Type.IsSubclassOf(KnownType.ScriptableObjectType)
-            && KnownType.Register.TryGetValue(KnownType.ScriptableObjectType.FullName, out info) 
-            && info.DrawFunc != null)
-            {
-                info.DrawFunc(drawRect, parameter, label);
+                if (parameter.HoldType.Type.IsSubclassOf(KnownType.ComponentType)
+                    && KnownType.Register.TryGetValue(KnownType.ComponentType.FullName, out info)
+                    && info.DrawFunc != null)
+                {
+                    info.DrawFunc(drawRect, parameter, label);
+                    return;
+                }
+
+                if (parameter.HoldType.Type.IsSubclassOf(KnownType.ScriptableObjectType)
+                    && KnownType.Register.TryGetValue(KnownType.ScriptableObjectType.FullName, out info) 
+                    && info.DrawFunc != null)
+                {
+                    info.DrawFunc(drawRect, parameter, label);
+                    return;
+                }    
             }
+            
+            EditorGUI.LabelField(drawRect, new GUIContent(parameter.Name));
         }
 
         public static string GetDisplayedName(System.Type type)

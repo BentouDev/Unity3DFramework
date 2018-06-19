@@ -85,16 +85,23 @@ namespace Framework
 
         internal Vector3 LimitFlatDiagonalVector(Vector3 vector, float maxLength)
         {
-            float pythagoras = ((vector.x * vector.x) + (vector.z * vector.z));
-            if (pythagoras > (maxLength * maxLength))
-            {
-                float magnitude = Mathf.Sqrt(pythagoras);
-                float multiplier = maxLength / magnitude;
-                vector.x *= multiplier;
-                vector.y *= multiplier;
-            }
+//            float pythagoras = ((vector.x * vector.x) + (vector.z * vector.z));
+//            if (pythagoras > (maxLength * maxLength))
+//            {
+//                float magnitude = Mathf.Sqrt(pythagoras);
+//                float multiplier = maxLength / magnitude;
+//                vector.x *= multiplier;
+//                vector.y *= multiplier;
+//            }
 
-            return vector;
+            var inputCircle = new Vector3
+            (
+                vector.x * Mathf.Sqrt(1 - vector.z * vector.z * 0.5f),
+                0,
+                vector.z * Mathf.Sqrt(1 - vector.x * vector.x * 0.5f)
+            );
+
+            return inputCircle;
         }
         
         internal void CalcMovement()
