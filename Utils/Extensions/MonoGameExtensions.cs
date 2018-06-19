@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEditor;
 
 public static class MonoBehaviourExtenions
 {
@@ -44,5 +45,15 @@ public static class MonoBehaviourExtenions
         {
             Component.Destroy(obj);
         }
+    }
+
+    public static void DrawVector(this Component self, Vector3 vec, Color color)
+    {
+        Debug.DrawRay(self.transform.position, self.transform.rotation * vec, color);
+    }
+
+    public static void DrawLineTo(this Component self, Vector3 pos, Color color)
+    {
+        Debug.DrawLine(self.transform.position, self.transform.position + (self.transform.rotation * pos), color);
     }
 }

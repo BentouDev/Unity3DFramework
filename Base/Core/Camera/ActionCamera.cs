@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -96,17 +97,25 @@ namespace Framework
 
                 rot = Quaternion.Euler(AngleY, AngleX, 0);
             }
-            
-            var offset = new Vector3(RotatedOffset.x, RotatedOffset.y, CalcCameraDistance());
-            var pos = rot * offset + (
-                Target ? Target.position : Vector3.zero
-            ) + FlatOffset;
 
+            var offset    = rot * RotatedOffset + FlatOffset;
+            var basePos   = (Target ? Target.position : Vector3.zero);
+            var collision = CalcCameraDistance(basePos, offset);
+            
+            Debug.DrawRay(basePos, offset, Color.yellow);
+            
+            if (Mathf.Abs(collision) < offset.magnitude)
+                offset = offset.normalized * -collision;
+            
+            Debug.DrawRay(basePos, offset, Color.red);
+
+            var pos       = basePos + offset;
+                
             transform.position = pos;
             transform.rotation = rot; //Quaternion.RotateTowards(transform.rotation, rot, 360 * Time.deltaTime);
         }
 
-        public float CalcCameraDistance()
+        public float CalcCameraDistance(Vector3 from, Vector3 dir)
         {
             if (!Target)
                 return RotatedOffset.z;
@@ -114,7 +123,7 @@ namespace Framework
             RaycastHit hit;
             Vector3    offset = new Vector3(0, RotatedOffset.y, 0);
 
-            if (!Physics.Raycast(Target.position + offset, -transform.forward, out hit, Mathf.Abs(RotatedOffset.z), Mask))
+            if (!Physics.Raycast(from, dir, out hit, Mathf.Abs(RotatedOffset.z), Mask))
                 return RotatedOffset.z;
 
             if (DrawDebug)
