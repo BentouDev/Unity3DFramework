@@ -1,12 +1,14 @@
 ﻿using UnityEngine;
 using System.Collections;
 using UnityEngine.SceneManagement;
+using UnityEngine.Serialization;
 
 namespace Framework
 {
     public class SceneLoader : MonoBehaviour
     {
-        public int BaseScene;
+        [FormerlySerializedAs("BaseScene")]
+        public int SceneToLoad;
 
         private static bool _waitForLoad;
         private static int _nextScene;
@@ -18,13 +20,14 @@ namespace Framework
 
         public event SceneLoad OnSceneLoad;
        
-        private void EndLoadScene()
+        private void EndLoadScene(bool already_loaded = false)
         {
             CurrentScene = _nextScene;
             IsReady      = true;
             _waitForLoad = false;
             
-            Debug.Log("Loaded scene " + SceneManager.GetActiveScene().buildIndex + "!");
+            if (!already_loaded)
+                Debug.Log("Loaded scene " + SceneManager.GetActiveScene().buildIndex + "!");
 
             if (OnSceneLoad != null)
                 OnSceneLoad();
@@ -45,10 +48,15 @@ namespace Framework
 
         public void StartLoadScene(int i)
         {
-            if (_waitForLoad || SceneManager.GetActiveScene().buildIndex == i)
-                return;
-
             _nextScene = i;
+            
+            if (_waitForLoad || SceneManager.GetActiveScene().buildIndex == i)
+            {
+                Debug.Log("Scene " + i + " already loaded!");
+                EndLoadScene(already_loaded: true);
+                return;
+            }
+
             IsReady = false;
             _waitForLoad = true;
             Debug.Log("Loading scene " + i + " ...");

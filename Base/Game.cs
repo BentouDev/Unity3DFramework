@@ -94,7 +94,7 @@ namespace Framework
                 Loader.OnSceneLoad -= SceneLoaded;
                 Loader.OnSceneLoad += SceneLoaded;
 
-                Loader.StartLoadScene(Loader.BaseScene);                
+                Loader.StartLoadScene(Loader.SceneToLoad);
             }
             else
             {
