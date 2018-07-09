@@ -2,7 +2,7 @@
 
 namespace Framework
 {
-    public abstract class GameState : MonoBehaviour, ITickable
+    public abstract class GameState : Framework.BaseBehaviour, ITickable
     {
         public void Tick()
         {

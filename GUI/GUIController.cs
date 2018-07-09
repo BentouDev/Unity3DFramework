@@ -2,9 +2,23 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Framework;
 
 public class GUIController : MonoBehaviour
 {
+    [System.Serializable]
+    public struct CanvasMode
+    {
+        [SerializeField]
+        public Canvas        Canvas;
+        
+        public List<GUIBase> GUIs;
+    }
+
+    [Header("Canvas Modes")]
+    public CanvasMode Gameplay;
+    public CanvasMode Menu;
+    
     [System.Serializable]
     public struct FadeInfo
     {
@@ -25,6 +39,7 @@ public class GUIController : MonoBehaviour
         public AnimationPlayer UnfadePlayer;
     }
 
+    [Header("Animation")]
     public FadeInfo Fade;
     public CinematicInfo Cinematic;
 
@@ -57,6 +72,9 @@ public class GUIController : MonoBehaviour
     
     void Start()
     {
+        Gameplay.GUIs = new List<GUIBase>(Gameplay.Canvas.GetComponentsInChildren<GUIBase>());
+        Menu.GUIs     = new List<GUIBase>(Menu.Canvas.GetComponentsInChildren<GUIBase>());
+        
         if(Fade.FadePlayer.IsPlaying)
             Fade.FadePlayer.Play();
         if (Fade.UnfadePlayer.IsPlaying)
@@ -90,6 +108,22 @@ public class GUIController : MonoBehaviour
         {
             guiBase.Show();
         }
+    }
+
+    public void SwitchToGameplay()
+    {
+        foreach (GUIBase gui in Gameplay.GUIs)
+        {
+            gui.Show();
+        }
+    }
+    
+    public void SwitchToMenu()
+    {
+        foreach (GUIBase gui in Gameplay.GUIs)
+        {
+            gui.Hide();
+        }        
     }
 
     public bool IsCinematicShown()

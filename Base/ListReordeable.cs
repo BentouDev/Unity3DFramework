@@ -1,11 +1,9 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using System;
 
 namespace Framework
 {
-    public class ListReordeable : PropertyAttribute
+    public class ListReordeable : UnityEngine.PropertyAttribute
     {
-
+        
     }
 }

@@ -21,7 +21,7 @@ namespace Framework.AI
         private Vector2 paramScroll = Vector2.zero;
 
         private readonly GraphNodeEditor Nodes = new GraphNodeEditor();
-        private ReorderableList ParameterList;
+        private UnityEditorInternal.ReorderableList ParameterList;
 
         private BehaviourTree TreeAsset;
         private string AssetPath;
@@ -467,7 +467,7 @@ namespace Framework.AI
 
             GenericParamUtils.SetDrawersForKnownTypes();
 
-            ParameterList = new ReorderableList
+            ParameterList = new UnityEditorInternal.ReorderableList
             (
                 TreeAsset.Parameters, typeof(GenericParameter),
                 true, false, true, true
@@ -498,7 +498,7 @@ namespace Framework.AI
             };
         }
 
-        private void OnAddParameter(Rect buttonrect, ReorderableList list)
+        private void OnAddParameter(Rect buttonrect, UnityEditorInternal.ReorderableList list)
         {
             ShowAddParameterMenu();
         }

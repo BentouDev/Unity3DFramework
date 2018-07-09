@@ -4,10 +4,8 @@ using UnityEngine;
 
 namespace Framework
 {
-    public class ControllSystem : MonoBehaviour, ITickable
+    public class ControllSystem : Framework.BaseBehaviour, ITickable
     {
-        public List<Controller> AllControllers;
-
         public bool InitOnStart;
         public bool EnableOnStart;
         public bool AutoUpdate = false;
@@ -17,7 +15,9 @@ namespace Framework
         public bool IsEnabled => DisableCounter == 0;
 
         private bool IsInitialized;
-        
+     
+        public List<Controller> AllControllers;
+   
         void Start()
         {
             IsInitialized = false;

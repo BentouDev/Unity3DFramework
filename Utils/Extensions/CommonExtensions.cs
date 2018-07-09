@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public static class CommonExtensions
@@ -54,5 +55,14 @@ public static class CommonExtensions
     public static List<T> GetTo<T>(this List<T> list, int index)
     {
         return list.GetRange(0, Mathf.Clamp(index, 0, list.Count - 1));
+    }
+    
+    public static void Resize<T>(this List<T> list, int sz, T c = default(T))
+    {
+        int cur = list.Count;
+        if (sz < cur)
+            list.RemoveRange(sz, cur - sz);
+        else if (sz > cur)
+            list.AddRange(Enumerable.Repeat(c, sz - cur));
     }
 }

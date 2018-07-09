@@ -9,13 +9,23 @@ namespace Framework.Editor
     [CustomPropertyDrawer(typeof(ListReordeable))]
     public class ListReorderableDrawer : PropertyDrawer
     {
-        private ReorderableList List;
+        private UnityEditorInternal.ReorderableList List;
         private List<SerializedProperty> Proxy;
         private SerializedProperty LastProp;
         
-        public ListReorderableDrawer()
+        void Initialize()
         {
-            List = new ReorderableList(Proxy, Proxy.GetType())
+            if (List != null)
+                return;
+            
+            if (Proxy != null)
+                Proxy.Clear();
+            else
+            {
+                Proxy = new List<SerializedProperty>();
+            }
+            
+            List = new UnityEditorInternal.ReorderableList(Proxy, Proxy.GetType())
             {
                 drawElementCallback = (rect, index, active, focused) =>
                 {
@@ -41,7 +51,14 @@ namespace Framework.Editor
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            Proxy.Clear();
+            if (!property.isArray)
+            {
+                EditorGUI.HelpBox(position, $"Cannot use ListReorderable on {property.name} because its not an array!", MessageType.Error);
+                return;
+            }
+            
+            Initialize();
+ 
             for (int i = 0; i < property.arraySize; i++)
             {
                 Proxy.Add(property.GetArrayElementAtIndex(i));
