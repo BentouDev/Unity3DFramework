@@ -90,7 +90,7 @@ namespace Framework.Editor
 
             EditorGUI.BeginChangeCheck();
             serializedObject.Update();
-            
+
             DrawType();
 
             serializedObject.ApplyModifiedProperties();

@@ -35,7 +35,7 @@ public class SocketLoader : AssetPostprocessor
 
     static GameObject FindParent(GameObject go)
     {
-        GameObject parent = PrefabUtility.GetPrefabParent(go) as GameObject;
+        GameObject parent = PrefabUtility.GetCorrespondingObjectFromSource(go) as GameObject;
         if (parent == null)
             parent = PrefabUtility.GetPrefabObject(go) as GameObject;
 

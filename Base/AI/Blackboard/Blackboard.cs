@@ -8,7 +8,7 @@ namespace Framework.AI
     /// <summary>
     /// Works as a memory for AI
     /// </summary>
-    public class Blackboard : MonoBehaviour
+    public class Blackboard : Framework.BaseBehaviour
     {
         [System.AttributeUsage(System.AttributeTargets.Property)]
         public class Required : PropertyAttribute { }
@@ -60,20 +60,20 @@ namespace Framework.AI
         }
 
         // Naive implementation
-        public Dictionary<string, IValue> Values = new Dictionary<string, IValue>();
+        public Dictionary<string, IValue> Entries = new Dictionary<string, IValue>();
 
         public void InsertFromParameter(GenericParameter parameter)
         {
             if (!HasValue(parameter.HoldType.Type, parameter.Name))
             {
-                Values[parameter.Name] = parameter.CreateValue();
+                Entries[parameter.Name] = parameter.CreateValue();
             }
         }
 
         public void GetFromParameter(GenericParameter parameter)
         {
             IValue storedValue;
-            if (Values.TryGetValue(parameter.Name, out storedValue) && storedValue.GetValueType() == parameter.HoldType.Type)
+            if (Entries.TryGetValue(parameter.Name, out storedValue) && storedValue.GetValueType() == parameter.HoldType.Type)
             {
                 storedValue.GetFrom(parameter);
             }
@@ -86,7 +86,7 @@ namespace Framework.AI
         public void SetToParameter(GenericParameter parameter)
         {
             IValue storedValue;
-            if (Values.TryGetValue(parameter.Name, out storedValue) && storedValue.GetValueType() == parameter.HoldType.Type)
+            if (Entries.TryGetValue(parameter.Name, out storedValue) && storedValue.GetValueType() == parameter.HoldType.Type)
             {
                 storedValue.SetTo(parameter);
             }
@@ -99,7 +99,7 @@ namespace Framework.AI
         public bool HasValue(System.Type type, string name)
         {
             IValue value;
-            if (Values.TryGetValue(name, out value))
+            if (Entries.TryGetValue(name, out value))
             {
                 return value.GetValueType() == type;
             }
@@ -110,7 +110,7 @@ namespace Framework.AI
         public bool HasValue<T>(string name)
         {
             IValue value;
-            if (Values.TryGetValue(name, out value))
+            if (Entries.TryGetValue(name, out value))
             {
                 return value is Value<T>;
             }
@@ -121,7 +121,7 @@ namespace Framework.AI
         public T GetValue<T>(string name)
         {
             IValue value;
-            if (Values.TryGetValue(name, out value))
+            if (Entries.TryGetValue(name, out value))
             {
 #if UNITY_EDITOR
                 Value<T> valueT = value as Value<T>;
@@ -144,7 +144,7 @@ namespace Framework.AI
         public void SetValue<T>(string name, T newValue)
         {
             IValue value;
-            if (Values.TryGetValue(name, out value))
+            if (Entries.TryGetValue(name, out value))
             {
 #if UNITY_EDITOR
                 Value<T> valueT = value as Value<T>;
