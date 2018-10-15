@@ -3,7 +3,7 @@
     HLSLINCLUDE
 
         #include "PostProcessing/Shaders/StdLib.hlsl"
-        #include "../../Framework-Dithering.cginc"
+        #include "../../../Framework-Dithering.cginc"
         
         TEXTURE2D_SAMPLER2D(_MainTex, sampler_MainTex);
 
