@@ -21,6 +21,27 @@ namespace Framework
             HoldType = new SerializedType(type);
             _curve   = new AnimationCurve();
         }
+
+        public static GenericParameter Copy(GenericParameter other)
+        {
+            var self = new GenericParameter(other.GetType());
+            self.CopyFrom(other);
+            return self;
+        }
+
+        public void CopyFrom(GenericParameter other)
+        {
+            Name     = other.Name;
+            HoldType = other.HoldType;
+            
+            // By value
+            _string  = string.Copy(other._string);
+            _curve   = new AnimationCurve(other._curve.keys);
+            _floats  = new float[4] { other._floats[0], other._floats[1], other._floats[2], other._floats[3] };
+            
+            // By reference
+            _object  = other._object;
+        }
         
         [SerializeField]
         public string Name;
@@ -178,7 +199,7 @@ namespace Framework
             }
         }
         
-        public Blackboard.IValue CreateValue()
+        public DataSet.IValue CreateValue()
         {
 #if UNITY_EDITOR
             var knownType = GetKnownType(HoldType.Type);

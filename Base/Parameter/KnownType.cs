@@ -19,7 +19,7 @@ namespace Framework
         public TypeLayoutFunc LayoutFunc;
 #endif
 
-        public abstract Blackboard.IValue CreateValue(GenericParameter param);
+        public abstract DataSet.IValue CreateValue(GenericParameter param);
         public abstract PropertyReference CreateProperty<T>(T instance, string name);
 
         private static readonly Dictionary<string, KnownType> _knownTypes = new Dictionary<string, KnownType>();
@@ -76,9 +76,9 @@ namespace Framework
             HoldType = typeof(T);
         }
 
-        public override Blackboard.IValue CreateValue(GenericParameter param)
+        public override DataSet.IValue CreateValue(GenericParameter param)
         {
-            return new Blackboard.Value<T>(param.HoldType.Type);
+            return new DataSet.Value<T>(param.HoldType.Type);
         }
 
         public override PropertyReference CreateProperty<U>(U instance, string name)

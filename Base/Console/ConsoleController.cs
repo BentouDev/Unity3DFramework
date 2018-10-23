@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using UnityEngine;
 
@@ -7,50 +8,63 @@ namespace Framework
 {
     public class ConsoleController
     {
-        private readonly List<OutputMessage> ConsoleOutput = new List<OutputMessage>();
-        private readonly List<string> CommandHistory = new List<string>();
+        public enum Output
+        {
+            Command = 0,
+            Logger  = 1
+        }
+        
+        private int CurrentOutput = 0;
 
+        private readonly List<List<OutputMessage>> Outputs = new List<List<OutputMessage>>();
+        private List<OutputMessage> ConsoleOutput => Outputs[CurrentOutput];
+        
+        private readonly List<string> CommandHistory = new List<string>();
+        
         public Color CommandColor;
         public Color ErrorColor;
         public Color WarningColor;
         public Color NormalColor;
 
         private readonly Dictionary<string, CommandInfo> Commands = new Dictionary<string, CommandInfo>();
-        private readonly Dictionary<string, VariableInfo> Variables = new Dictionary<string, VariableInfo>();
+
+        private DataSet Variables;
+
+//        private readonly Dictionary<string, VariableInfo> Variables = new Dictionary<string, VariableInfo>();
 
         public delegate bool CommandHandler(params string[] param);
 
-        public class VariableInfo
-        {
-            public delegate float GetFloat();
-
-            public delegate void SetFloat(float val);
-
-            public delegate double GetDouble();
-
-            public delegate void SetDouble(double val);
-
-            public delegate int GetInt();
-
-            public delegate void SetInt(int val);
-
-            public delegate string VariablePrinter();
-
-            public delegate bool VariableParser(string value);
-
-            public readonly string Name;
-            public readonly string Help;
-            public readonly VariablePrinter Printer;
-            public readonly VariableParser Parser;
-
-            public VariableInfo(string name, string help, VariableParser parser, VariablePrinter printer)
-            {
-                Name = name;
-                Help = help;
-                Printer = printer;
-                Parser = parser;
-            }
-        }
+//        public class VariableInfo
+//        {
+//            public delegate float GetFloat();
+//
+//            public delegate void SetFloat(float val);
+//
+//            public delegate double GetDouble();
+//
+//            public delegate void SetDouble(double val);
+//
+//            public delegate int GetInt();
+//
+//            public delegate void SetInt(int val);
+//
+//            public delegate string VariablePrinter();
+//
+//            public delegate bool VariableParser(string value);
+//
+//            public readonly string Name;
+//            public readonly string Help;
+//            public readonly VariablePrinter Printer;
+//            public readonly VariableParser Parser;
+//
+//            public VariableInfo(string name, string help, VariableParser parser, VariablePrinter printer)
+//            {
+//                Name = name;
+//                Help = help;
+//                Printer = printer;
+//                Parser = parser;
+//            }
+//        }
 
         public struct CommandInfo
         {
@@ -80,7 +94,23 @@ namespace Framework
 
         public ConsoleController()
         {
+            Outputs.Add(new List<OutputMessage>());
+            Outputs.Add(new List<OutputMessage>());
             RegisterBasicCommands();
+        }
+
+        public void NextOutput()
+        {
+            CurrentOutput++;
+            if (CurrentOutput >= Outputs.Count)
+                CurrentOutput = 0;
+        }
+
+        public void PreviousOutput()
+        {
+            CurrentOutput--;
+            if (CurrentOutput < 0)
+                CurrentOutput = Outputs.Count - 1;
         }
 
         private void RegisterBasicCommands()
@@ -90,6 +120,11 @@ namespace Framework
             RegisterCommand("clear", "clears console output", CmdClear);
             RegisterCommand("echo", "prints message to console, @ to print variable value", CmdEcho);
             RegisterCommand("set", "set various game related variables", CmdSetVar);
+        }
+
+        public void RegisterVariableDataSet(DataSet set)
+        {
+            Variables = set;
         }
 
         public string GetHistory(int i)
@@ -223,7 +258,7 @@ namespace Framework
                     bool result = false;
                     try
                     {
-                        Print(command, CommandColor);
+                        Print(command, CommandColor, Output.Command);
                         result = cmd.Command(param);
                     }
                     catch (Exception e)
@@ -251,18 +286,18 @@ namespace Framework
                 Commands.Add(name, new CommandInfo(name, help, handler));
         }
 
-        public void RegisterVariable(string name, string help, VariableInfo.VariableParser parser,
-            VariableInfo.VariablePrinter printer)
-        {
-            if (Variables.ContainsKey(name))
-                Variables[name] = new VariableInfo(name, help, parser, printer);
-            else
-                Variables.Add(name, new VariableInfo(name, help, parser, printer));
-        }
+//        public void RegisterVariable(string name, string help, VariableInfo.VariableParser parser,
+//            VariableInfo.VariablePrinter printer)
+//        {
+//            if (Variables.ContainsKey(name))
+//                Variables[name] = new VariableInfo(name, help, parser, printer);
+//            else
+//                Variables.Add(name, new VariableInfo(name, help, parser, printer));
+//        }
 
         public void Error(string message)
         {
-            Print(message, ErrorColor);
+            Print(message, ErrorColor, Output.Logger);
 /*#if UNITY_EDITOR
         if (PasueOnError)
         {
@@ -274,17 +309,22 @@ namespace Framework
 
         public void Warning(string message)
         {
-            Print(message, WarningColor);
+            Print(message, WarningColor, Output.Logger);
         }
 
-        public void Print(string message)
+        private void Print(string message)
         {
-            Print(message, Color.white);
+            Print(message, Output.Command);
         }
 
-        public void Print(string message, Color color)
+        public void Print(string message, Output output)
         {
-            ConsoleOutput.Add(new OutputMessage(message, color));
+            Print(message, Color.white, output);
+        }
+
+        public void Print(string message, Color color, Output output)
+        {
+            Outputs[(int)output].Add(new OutputMessage(message, color));
         }
 
         public void Clear()
@@ -309,10 +349,14 @@ namespace Framework
             if (param.Length == 0)
             {
                 Print("Registred variables:");
-                foreach (var variable in Variables.Values)
+                if (Variables)
                 {
-                    Print(string.Format("{0} - {1} = {2}", variable.Name, variable.Help, variable.Printer()));
+                    foreach (var variable in Variables.GetPairs())
+                    {
+                        Print($"{variable.First} = {variable.Second}");
+                    }                    
                 }
+
                 return true;
             }
             else if (param.Length == 2)

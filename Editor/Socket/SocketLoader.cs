@@ -37,7 +37,7 @@ public class SocketLoader : AssetPostprocessor
     {
         GameObject parent = PrefabUtility.GetCorrespondingObjectFromSource(go) as GameObject;
         if (parent == null)
-            parent = PrefabUtility.GetPrefabObject(go) as GameObject;
+            parent = PrefabUtility.GetPrefabInstanceHandle(go) as GameObject;
 
         if (parent == null)
         {

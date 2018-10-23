@@ -16,6 +16,11 @@ public class ParamListDrawer
 
     private List<GenericParameter> Parameters;
 
+    public List<GenericParameter> GetParameters()
+    {
+        return Parameters;
+    }
+
     public void Init(List<GenericParameter> paramList)
     {
         Parameters = paramList;
@@ -88,10 +93,10 @@ public class ParamListDrawer
             OnAddNewParameter(type);
         };
     }
-    
+
     private void AddNewParam(Type type)
     {
-        string typename  = GenericParameter.GetDisplayedName(type);
+        string typename = GenericParameter.GetDisplayedName(type);
         string paramName = StringUtils.MakeUnique(string.Format("New {0}", typename), Parameters.Select(p => p.Name));
 
         Parameters.Add

@@ -30,6 +30,8 @@ namespace Framework
     {
         public bool InitOnStart;
 
+        public DataSet GlobalVars;
+
         public SceneLoader Loader;
 
         public DebugConsole Console;
@@ -62,6 +64,8 @@ namespace Framework
 
         private void RegisterConsoleCommands()
         {
+            Console.RegisterVariableDataSet(GlobalVars);
+            
             Console.RegisterCommand("exit", "closes console", (_) => 
             {
                 Console.Close(); return true;

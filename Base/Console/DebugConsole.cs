@@ -121,7 +121,7 @@ namespace Framework
                 switch (logType)
                 {
                     case LogType.Log:
-                        Console.Print(timePrefix + string.Format(format, args), LogColor);
+                        Console.Print(timePrefix + string.Format(format, args), LogColor, ConsoleController.Output.Logger);
                         break;
                     case LogType.Warning:
                         Console.Warning(timePrefix + string.Format(format, args));
@@ -186,44 +186,59 @@ namespace Framework
                 HistoryIndex = 0;
         }
 
+        public void OutputUp()
+        {
+            Controller.PreviousOutput();
+        }
+        
+        public void OutputDown()
+        {
+            Controller.NextOutput();
+        }
+
         public void RegisterCommand(string name, string help,
             ConsoleController.CommandHandler handler)
         {
             Controller.RegisterCommand(name, help, handler);
         }
 
-        public void RegisterVariable(string name, string help,
-            ConsoleController.VariableInfo.VariableParser parser,
-            ConsoleController.VariableInfo.VariablePrinter printer)
+        public void RegisterVariableDataSet(DataSet set)
         {
-            Controller.RegisterVariable(name, help, parser, printer);
+            Controller.RegisterVariableDataSet(set);
         }
 
-        public void RegisterVariableFloat(string name, string help,
-            ConsoleController.VariableInfo.SetFloat setter,
-            ConsoleController.VariableInfo.GetFloat getter)
-        {
-            RegisterVariable
-            (
-                name, help, str =>
-                {
-                    float val;
-                    if (!float.TryParse(str, out val)) return false;
-                    setter(val);
-                    return true;
-                },
-                () => getter().ToString(CultureInfo.InvariantCulture)
-            );
-        }
+//        public void RegisterVariable(string name, string help,
+//            ConsoleController.VariableInfo.VariableParser parser,
+//            ConsoleController.VariableInfo.VariablePrinter printer)
+//        {
+//            Controller.RegisterVariable(name, help, parser, printer);
+//        }
+//
+//        public void RegisterVariableFloat(string name, string help,
+//            ConsoleController.VariableInfo.SetFloat setter,
+//            ConsoleController.VariableInfo.GetFloat getter)
+//        {
+//            RegisterVariable
+//            (
+//                name, help, str =>
+//                {
+//                    float val;
+//                    if (!float.TryParse(str, out val)) return false;
+//                    setter(val);
+//                    return true;
+//                },
+//                () => getter().ToString(CultureInfo.InvariantCulture)
+//            );
+//        }
 
         public void Print(string message)
         {
-            Controller.Print(message);
+            Controller.Print(message, ConsoleController.Output.Logger);
         }
 
         public void Print(string message, Color color)
         {
-            Controller.Print(message, color);
+            Controller.Print(message, color, ConsoleController.Output.Logger);
         }
 
         public void Error(string message)
@@ -304,6 +319,20 @@ namespace Framework
                     current.Use();
 
                     HistoryDown();
+                    break;
+                
+                case KeyCode.PageUp:
+                    result = true;
+                    current.Use();
+
+                    OutputUp();
+                    break;
+                
+                case KeyCode.PageDown:
+                    result = true;
+                    current.Use();
+
+                    OutputDown();
                     break;
             }
 
