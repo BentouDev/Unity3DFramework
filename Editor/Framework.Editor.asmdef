@@ -2,8 +2,8 @@
     "name": "Framework.Editor",
     "references": [
         "Framework",
-        "com.unity.postprocessing.Editor",
-        "com.unity.postprocessing.Runtime"
+        "Unity.Postprocessing.Runtime",
+        "Unity.Postprocessing.Editor"
     ],
     "optionalUnityReferences": [],
     "includePlatforms": [

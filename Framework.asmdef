@@ -1,7 +1,7 @@
 {
     "name": "Framework",
     "references": [
-        "com.unity.postprocessing.Runtime"
+        "Unity.Postprocessing.Runtime"
     ],
     "optionalUnityReferences": [],
     "includePlatforms": [],
