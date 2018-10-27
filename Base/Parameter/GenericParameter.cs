@@ -16,6 +16,11 @@ namespace Framework
     [System.Serializable]
     public class GenericParameter
     {
+        public GenericParameter()
+        {
+            _curve   = new AnimationCurve();
+        }
+        
         public GenericParameter(System.Type type)
         {
             HoldType = new SerializedType(type);

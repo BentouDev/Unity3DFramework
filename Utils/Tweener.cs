@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace Utils
 {
@@ -26,7 +27,7 @@ namespace Utils
         
 		public void Start()
         {
-            if(!_tweens.Contains(this))
+            if (!_tweens.Contains(this))
                 _tweens.Add(this);
 
             _elapsed	= 0;
@@ -56,7 +57,7 @@ namespace Utils
 
             _toRemove.Clear();
 
-			foreach(var tween in _tweens)
+			foreach (var tween in _tweens)
 			{
 			    if (tween.enabled)
 			    {
@@ -70,24 +71,22 @@ namespace Utils
 			var diff	= target - from;
 				value	= from + diff * easing( _elapsed / this.time );
 
-			if(	Math.Abs(value - target) < double.Epsilon || _elapsed > this.time)
+			if (Math.Abs(value - target) < double.Epsilon 
+			|| _elapsed > this.time)
             {
 				enabled	= false;
 				value	= target;
 
-			    if (OnFinish != null)
-			    {
-			        OnFinish(this);
-			    }
+	            OnFinish?.Invoke(this);
 
-                Destroy();
+	            Destroy();
 			}
             else
             {
 				_elapsed += dt;
-				if(OnUpdate != null)
-					OnUpdate(this);
-			}
+	            Debug.LogFormat("time: {0}, value: {1}", _elapsed, value);
+	            OnUpdate?.Invoke(this);
+            }
 		}
 	}
 

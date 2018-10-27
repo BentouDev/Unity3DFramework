@@ -29,7 +29,7 @@ namespace Framework
             
             EditorGUI.BeginChangeCheck();
             {
-                Drawer.DrawerList.DoLayoutList();                
+                Drawer.DrawerList.DoLayoutList();
             }
             if (EditorGUI.EndChangeCheck())
             {

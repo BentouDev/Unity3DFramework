@@ -20,6 +20,7 @@ namespace Framework
         TState FindState<TState>() where TState : GameState;
 
         ControllSystem GetControllers();
+        GUIController  GetGUI();
 
         bool IsPlaying();
         void QuitGame();
@@ -38,6 +39,8 @@ namespace Framework
 
         public ControllSystem Controllers;
 
+        public GUIController GUI;
+
         public GameState StartState;
 
         public GameState CurrentState { get; protected set; }
@@ -48,6 +51,8 @@ namespace Framework
         public List<GameState> AllStates { get; protected set; }
 
         public ControllSystem GetControllers() => Controllers;
+
+        public GUIController GetGUI() => GUI;
 
         public void OnSetInstance()
         {
@@ -84,6 +89,8 @@ namespace Framework
 
         public void Init()
         {
+            Instance.OnSetInstance();
+            
             RegisterConsoleCommands();
             
             if (AllStates != null)

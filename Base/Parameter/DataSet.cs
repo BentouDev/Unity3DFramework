@@ -13,7 +13,7 @@ namespace Framework
 #if UNITY_EDITOR
     [CreateAssetMenu(fileName = "New Data Set", menuName = "Data/Data Set")]
 #endif
-    public class DataSet : ScriptableObject, IDataSet, ISerializationCallbackReceiver
+    public class DataSet : ScriptableObject, IDataSet// , ISerializationCallbackReceiver
     {
         public interface IValue
         {
@@ -73,13 +73,40 @@ namespace Framework
         [SerializeField]
         [HideInInspector]
         [FormerlySerializedAs("Values")]
-        private List<GenericParameter> Serialized;
+        private List<GenericParameter> Serialized = new List<GenericParameter>();
 
         [HideInInspector]
         public List<IValue> Runtime;
 
         public bool HasRuntime => Runtime != null;
 
+        public void OnBeforeSerialize()
+        {
+            if (HasRuntime)
+            {
+                List<string> Names = Serialized.ConvertAll(p => p.Name);
+                Serialized.Clear();
+                for (int i = 0; i < Runtime.Count; i++)
+                {
+                    var param = new GenericParameter(Runtime[i].GetValueType());
+                    Runtime[i].SetTo(param);
+
+                    param.Name = Names[i];
+                    Serialized.Add(param);
+                }
+            }
+        }
+
+        public void OnAfterDeserialize()
+        {
+            RebuildIndex();
+
+            foreach (GenericParameter parameter in Serialized)
+            {
+                InsertFromParameter(parameter);
+            }
+        }
+        
         public List<GenericParameter> GetSerialized()
         {
             return Serialized;
@@ -125,33 +152,6 @@ namespace Framework
             for (int i = 0; i < Serialized.Count; i++)
             {
                 Index[Serialized[i].Name] = i;
-            }
-        }
-
-        public void OnBeforeSerialize()
-        {
-            if (HasRuntime)
-            {
-                List<string> Names = Serialized.ConvertAll(p => p.Name);
-                Serialized.Clear();
-                for (int i = 0; i < Runtime.Count; i++)
-                {
-                    var param = new GenericParameter(Runtime[i].GetValueType());
-                    Runtime[i].SetTo(param);
-
-                    param.Name = Names[i];
-                    Serialized.Add(param);
-                }
-            }
-        }
-
-        public void OnAfterDeserialize()
-        {
-            RebuildIndex();
-
-            foreach (GenericParameter parameter in Serialized)
-            {
-                InsertFromParameter(parameter);
             }
         }
         
@@ -328,7 +328,7 @@ namespace Framework
                         Debug.LogErrorFormat("Parameter name {0} is not of type {1} in dataset {2}", name, typeof(T).Name, this);
                     }
 #else
-                    Values[index].SetAs<T>(newValue);
+                    Serialized[index].SetAs<T>(newValue);
 #endif
                 }
             }

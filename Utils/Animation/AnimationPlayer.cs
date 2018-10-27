@@ -2,7 +2,7 @@
 using UnityEngine.UI;
 
 [System.Serializable]
-public struct AnimationPlayer
+public class AnimationPlayer
 {
 	[SerializeField]
 	public bool IsPlaying;

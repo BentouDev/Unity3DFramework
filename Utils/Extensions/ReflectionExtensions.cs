@@ -2,6 +2,7 @@
 using System.Reflection;
 using UnityEditor;
 
+#if UNITY_EDITOR
 namespace Framework
 {
     public static class ReflectionExtensions
@@ -40,3 +41,4 @@ namespace Framework
         }
     }
 }
+#endif
