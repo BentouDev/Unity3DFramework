@@ -47,6 +47,9 @@ namespace Framework.Editor
         
         internal override void OnDraw()
         {
+            // ToDo: why is this not working?
+            Entries.RemoveWhere(e => !e.Target || e.Target == null);
+
             View.DrawHeader(Entries);
             View.DrawList(Entries);
         }

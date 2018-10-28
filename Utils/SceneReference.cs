@@ -22,8 +22,7 @@ namespace Framework
 
         public bool HasValue()
         {
-            return !string.IsNullOrWhiteSpace(SceneName) 
-               && SceneManager.GetSceneByPath(SceneName).IsValid();
+            return !string.IsNullOrWhiteSpace(SceneName);
         }
     }
 }

@@ -45,26 +45,31 @@ namespace Framework.Editor
         
         public void DrawHeader(ICollection<ValidatorPresenter.ValidationEntry> entries)
         {
-            EditorGUILayout.BeginHorizontal(EditorStyles.toolbar, GUILayout.ExpandWidth(true));
+            using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar, GUILayout.ExpandWidth(true)))
             {
                 GUILayout.Label("Validator");
                 GUILayout.FlexibleSpace();
 
-                var warningContent = new GUIContent($"{entries.Count(e => e.Result.Status == ValidationStatus.Warning)}",
-                    SpaceEditorStyles.WarningIconSmall);
+                var warningContent = new GUIContent(
+                    $"{entries.Count(e => e.Result.Status == ValidationStatus.Warning)}",
+                    SpaceEditorStyles.WarningIconSmall
+                );
 
-                var errorContent = new GUIContent($"{entries.Count(e => e.Result.Status == ValidationStatus.Error)}",
-                    SpaceEditorStyles.ErrorIconSmall);
+                var errorContent = new GUIContent(
+                    $"{entries.Count(e => e.Result.Status == ValidationStatus.Error)}",
+                    SpaceEditorStyles.ErrorIconSmall
+                );
                 
                 ShowWarnings = GUILayout.Toggle(ShowWarnings, 
                     warningContent, 
-                    EditorStyles.toolbarButton);
+                    EditorStyles.toolbarButton
+                );
                 
                 ShowErrors = GUILayout.Toggle(ShowErrors, 
                     errorContent,
-                    EditorStyles.toolbarButton);
+                    EditorStyles.toolbarButton
+                );
             }
-            EditorGUILayout.EndHorizontal();
         }
         
         public void DrawList(ICollection<ValidatorPresenter.ValidationEntry> entries)

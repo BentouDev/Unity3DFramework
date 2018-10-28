@@ -4,13 +4,14 @@ using UnityEngine;
 
 namespace Framework
 {
-    public abstract class BasePawn : MonoBehaviour, ITickable
+    public abstract class BasePawn : BaseBehaviour, ITickable
     {
         [Header("Debug")]
         public bool InitOnStart;
         public bool DrawDebug;
 
         [Header("Base Components")]
+        [RequireValue]
         public Rigidbody Body;
         public Damageable Damageable;
         public Animator Anim;

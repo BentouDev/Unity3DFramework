@@ -30,11 +30,13 @@ namespace Framework
     public abstract class Game<TGame> : Singleton<TGame>, IGame, ISingletonInstanceListener where TGame : Game<TGame>
     {
         public bool InitOnStart;
+        
+        [Validate("ValidateLoadOnStart")]
+        public bool LoadOnStart;
 
         [RequireValue]
         public DataSet GlobalVars;
 
-        [RequireValue]
         public SceneLoader Loader;
 
         public ControllSystem Controllers;
@@ -110,7 +112,10 @@ namespace Framework
                 Loader.OnSceneLoad -= SceneLoaded;
                 Loader.OnSceneLoad += SceneLoaded;
 
-                Loader.StartLoadScene(Loader.SceneToLoad);
+                if (LoadOnStart) 
+                    Loader.StartLoadScene(Loader.SceneToLoad);
+                else
+                    SceneLoaded();
             }
             else
             {
@@ -255,6 +260,17 @@ namespace Framework
             
             if (Controllers)
                 Controllers.LateTick();
+        }
+
+        public ValidationResult ValidateLoadOnStart()
+        {
+            if (LoadOnStart && !Loader)
+                return new ValidationResult(ValidationStatus.Warning, "No scene loader!");
+
+            if (LoadOnStart && Loader && !Loader.SceneToLoad.HasValue())
+                return new ValidationResult(ValidationStatus.Warning, "No scene to load, check SceneLoader");
+
+            return ValidationResult.Ok;
         }
     }
 }

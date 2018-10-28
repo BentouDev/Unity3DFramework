@@ -19,13 +19,12 @@ namespace Framework.Editor
 
         class ReflectionInfo
         {
-            internal delegate bool ValidateDelegate(out string msg);
-
-            internal ReflectionInfo(MemberInfo info, MemberType memberType)
+            internal ReflectionInfo(MemberInfo info, MemberType memberType, bool visible)
             {
                 Info           = info;
+                IsVisible      = visible;
                 MemberType     = memberType;
-                UnderlyingType = info.GetUnderlyingType();
+                //UnderlyingType = info.GetUnderlyingType();
 
                 foreach (var attrib in info.GetCustomAttributesData())
                 {
@@ -42,6 +41,14 @@ namespace Framework.Editor
                     else if (attrib.AttributeType == typeof(RequireValue))
                     {
                         RequireValue = true;
+                    }
+                    else if (attrib.AttributeType == typeof(VisibleInInspector))
+                    {
+                        IsVisible = true;
+                    }
+                    else if (attrib.AttributeType == typeof(HideInInspector))
+                    {
+                        IsVisible = false;   
                     }
                 }
             }
@@ -74,6 +81,7 @@ namespace Framework.Editor
                 return result;
             }
 
+            internal bool IsVisible = true;
             internal bool RequireValue = false;
             internal string ValidateMethodName;
             internal Func<UnityEngine.Object, ValidationResult> Validator;
@@ -103,7 +111,7 @@ namespace Framework.Editor
 
             return Expression.Lambda<Func<UnityEngine.Object, ValidationResult>>(call, obj).Compile();
         }
-        
+
         private void Initialize()
         {
             List<ReflectionInfo> cache;
@@ -119,9 +127,9 @@ namespace Framework.Editor
                         ReflectionInfo info = null;
 
                         if (member is FieldInfo)
-                            info = new ReflectionInfo(member, MemberType.Field);
+                            info = new ReflectionInfo(member, MemberType.Field, ((FieldInfo)member).IsPublic);
                         else if (member is PropertyInfo)
-                            info = new ReflectionInfo(member, MemberType.Property);
+                            info = new ReflectionInfo(member, MemberType.Property, false);
 
                         if (info != null)
                         {
@@ -209,6 +217,9 @@ namespace Framework.Editor
 
         private void DrawField(ReflectionInfo info, SerializedProperty property)
         {
+            if (!info.IsVisible)
+                return;
+            
             var result = info.CheckValidate(target, property);
             if (!result)
             {
@@ -231,7 +242,7 @@ namespace Framework.Editor
             if (!result)
             {
                 GUILayout.BeginVertical();
-                using (var layout = new EditorGUILayout.HorizontalScope(EditorStyles.helpBox))
+                using (new EditorGUILayout.HorizontalScope(EditorStyles.helpBox))
                 {
                     GUILayout.Box(SpaceEditorStyles.GetValidationIcon(result.Status), GUIStyle.none, GUILayout.Width(24));
                     GUILayout.Label(result.Message, EditorStyles.wordWrappedMiniLabel);
@@ -243,7 +254,10 @@ namespace Framework.Editor
 
         private void DrawProperty(ReflectionInfo info)
         {
-            // EditorGUILayout.HelpBox($"{info.MemberType.ToString()} : {info.Info.Name}", MessageType.Info);
+            if (!info.IsVisible)
+                return;
+
+            EditorGUILayout.HelpBox($"{info.MemberType.ToString()} : {info.Info.Name}", MessageType.Info);
         }
     }
 }
