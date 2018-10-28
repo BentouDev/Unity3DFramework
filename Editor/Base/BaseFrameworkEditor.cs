@@ -46,7 +46,8 @@ namespace Framework.Editor
                 }
             }
 
-            internal ValidationResult CheckValidate(SerializedProperty property)
+            // Move storage of last result to actual instance
+            internal ValidationResult CheckValidate(Framework.IBaseObject instance, SerializedProperty property)
             {
                 ValidationResult result = ValidationResult.Ok;
 
@@ -59,15 +60,15 @@ namespace Framework.Editor
                         result = new ValidationResult(ValidationStatus.Error, $"{Info.Name} is required!");
                 }
 
-                if (PreviousResult != null && !PreviousResult.Equals(result))
-                    ValidatorWindow.GetInstance().RemoveValidation(PreviousResult);
+                var previous = instance.PreviousResult(Info.Name);
+                if (previous != null && !previous.Equals(result))
+                    ValidatorWindow.GetInstance().RemoveValidation(previous);
 
-                PreviousResult = result;
+                instance.UpdateValidation(Info.Name, result);
 
                 return result;
             }
 
-            internal ValidationResult PreviousResult;
             internal bool RequireValue = false;
             internal string ValidateMethodName;
             internal System.Func<ValidationResult> Validator;
@@ -188,7 +189,7 @@ namespace Framework.Editor
 
         private void DrawField(ReflectionInfo info, SerializedProperty property)
         {
-            var result = info.CheckValidate(property);
+            var result = info.CheckValidate(target as IBaseObject, property);
             if (!result)
             {
                 ValidatorWindow.GetInstance().RegisterValidation(result, target);

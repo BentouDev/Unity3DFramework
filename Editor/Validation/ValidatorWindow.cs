@@ -21,15 +21,26 @@ namespace Framework.Editor
         {
             Presenter = new ValidatorPresenter(this);
         }
+        
+        void OnEnable()
+        {
+            name = " Validator   ";
+            titleContent.image = SpaceEditorStyles.InfoIconSmall;
+            titleContent.text = name;
 
+            Presenter.OnEnable();
+        }
+        
         public void RemoveValidation(ValidationResult result)
         {
             Presenter.OnRemoveValidation(result);
+            Repaint();
         }
 
         public void RegisterValidation(ValidationResult result, UnityEngine.Object target = null)
         {
             Presenter.OnRegisterValidation(result, target);
+            Repaint();
         }
         
         public void DrawHeader(ICollection<ValidatorPresenter.ValidationEntry> entries)
