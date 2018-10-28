@@ -12,10 +12,14 @@ using UnityEngine.Serialization;
 
 namespace Framework
 {
-    public class SceneLoader : MonoBehaviour
+    public class SceneLoader : Framework.BaseBehaviour
     {
+        [RequireValue]
         public SceneReference BaseScene;
+        
+        [RequireValue]
         public SceneReference LoadingScreen;
+        
         public SceneReference SceneToLoad;
 
         private static bool _isLoading;

@@ -6,7 +6,7 @@ public interface ISingletonInstanceListener
 	void OnSetInstance();
 }
 
-public class Singleton<T> : MonoBehaviour where T : MonoBehaviour
+public class Singleton<T> : Framework.BaseBehaviour where T : Framework.BaseBehaviour
 {
 	private static bool		 IsQuitting	= false;
 	private	static object	_lock		= new object();

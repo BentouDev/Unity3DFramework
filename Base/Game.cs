@@ -31,16 +31,21 @@ namespace Framework
     {
         public bool InitOnStart;
 
+        [RequireValue]
         public DataSet GlobalVars;
 
+        [RequireValue]
         public SceneLoader Loader;
-
-        public DebugConsole Console;
 
         public ControllSystem Controllers;
 
+        [RequireValue]
+        public DebugConsole Console;
+
+        [RequireValue]
         public GUIController GUI;
 
+        [RequireValue]
         public GameState StartState;
 
         public GameState CurrentState { get; protected set; }

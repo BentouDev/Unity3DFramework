@@ -12,6 +12,14 @@ namespace Framework.Editor
 
         protected Vector2 EditorSize = Vector2.zero;
 
+        public static TView GetInstance()
+        {
+            if (!BaseInstance)
+                FocusOrCreate();
+
+            return BaseInstance;
+        }
+
         public static void FocusOrCreate()
         {
             FocusOrCreate<ScriptableObject>();

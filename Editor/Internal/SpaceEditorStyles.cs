@@ -2,6 +2,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
+using Framework;
 using UnityEditor;
 
 public static class SpaceEditorStyles
@@ -14,6 +15,63 @@ public static class SpaceEditorStyles
             if (_skin == null)
                 _skin = AssetDatabase.LoadAssetAtPath<GUISkin>("Assets/Framework/Gizmos/SpaceEditorGUI.guiskin");
             return _skin;
+        }
+    }
+ 
+    public static Texture2D GetValidationIcon(ValidationStatus status)
+    {
+        switch (status)
+        {
+            case ValidationStatus.Error:
+                return ErrorIconSmall;
+            case ValidationStatus.Warning:
+                return WarningIconSmall;
+        }
+
+        return InfoIconSmall;
+    }
+    
+    private static Texture2D _infoIconSmall;
+    public static Texture2D InfoIconSmall
+    {
+        get
+        {
+            if (!_infoIconSmall)
+            {
+                _infoIconSmall = EditorGUIUtility.FindTexture("console.infoicon.sml");
+            }
+
+            return _infoIconSmall;
+        }
+    }
+    
+
+    private static Texture2D _warningIconSmall;
+    public static Texture2D WarningIconSmall
+    {
+        get
+        {
+            if (!_warningIconSmall)
+            {
+                _warningIconSmall = EditorGUIUtility.FindTexture("console.warnicon.sml");
+            }
+
+            return _warningIconSmall;
+        }
+    }
+
+    
+    private static Texture2D _errorIconSmall;
+    public static Texture2D ErrorIconSmall
+    {
+        get
+        {
+            if (!_errorIconSmall)
+            {
+                _errorIconSmall = EditorGUIUtility.FindTexture("console.erroricon.sml");
+            }
+
+            return _errorIconSmall;
         }
     }
 

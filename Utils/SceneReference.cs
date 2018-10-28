@@ -1,11 +1,12 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Framework
 {
     [System.Serializable]
-    public class SceneReference
+    public class SceneReference : IValueChecker
     {
-        [SerializeField] 
+        [SerializeField]
         private Object sceneAsset;
 
         [SerializeField] 
@@ -17,6 +18,12 @@ namespace Framework
         public static implicit operator string(SceneReference sceneField)
         {
             return sceneField.SceneName;
+        }
+
+        public bool HasValue()
+        {
+            return !string.IsNullOrWhiteSpace(SceneName) 
+               && SceneManager.GetSceneByPath(SceneName).IsValid();
         }
     }
 }

@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using UnityEditor;
+using UnityEditor.VersionControl;
 using UnityEngine;
 
 namespace Framework.Editor
@@ -17,25 +19,61 @@ namespace Framework.Editor
 
         class ReflectionInfo
         {
+            internal delegate bool ValidateDelegate(out string msg);
+
             internal ReflectionInfo(MemberInfo info, MemberType memberType)
             {
                 Info           = info;
                 MemberType     = memberType;
                 UnderlyingType = info.GetUnderlyingType();
 
-                foreach (var attrib in UnderlyingType.GetCustomAttributesData())
+                foreach (var attrib in info.GetCustomAttributesData())
                 {
                     foreach (Type attributeType in AttributeTypes)
                     {
                         if (attrib.AttributeType.IsSubclassOf(attributeType))
                             Attributes.Add(attrib);
-                    }   
+                    }
+
+                    if (attrib.AttributeType == typeof(Validate))
+                    {
+                        ValidateMethodName = attrib.ConstructorArguments[0].Value as string;
+                    }
+                    else if (attrib.AttributeType == typeof(RequireValue))
+                    {
+                        RequireValue = true;
+                    }
                 }
             }
 
-            internal Type                      UnderlyingType;
-            internal MemberType                MemberType;
-            internal MemberInfo                Info;
+            internal ValidationResult CheckValidate(SerializedProperty property)
+            {
+                ValidationResult result = ValidationResult.Ok;
+
+                if (Validator != null)
+                    result = Validator.Invoke();
+
+                else if (RequireValue)
+                {
+                    if (property.objectReferenceValue == null && !property.hasVisibleChildren)
+                        result = new ValidationResult(ValidationStatus.Error, $"{Info.Name} is required!");
+                }
+
+                if (PreviousResult != null && !PreviousResult.Equals(result))
+                    ValidatorWindow.GetInstance().RemoveValidation(PreviousResult);
+
+                PreviousResult = result;
+
+                return result;
+            }
+
+            internal ValidationResult PreviousResult;
+            internal bool RequireValue = false;
+            internal string ValidateMethodName;
+            internal System.Func<ValidationResult> Validator;
+            internal Type UnderlyingType;
+            internal MemberType MemberType;
+            internal MemberInfo Info;
             internal List<CustomAttributeData> Attributes = new List<CustomAttributeData>();
         }
         
@@ -56,16 +94,31 @@ namespace Framework.Editor
             List<ReflectionInfo> cache;
             if (Cache == null || !Cache.TryGetTarget(out cache))
             {
-                if (!ReflectionCache.TryGetValue(serializedObject.targetObject.GetType(), out cache))
+                var targetType = serializedObject.targetObject.GetType();
+                if (!ReflectionCache.TryGetValue(targetType, out cache))
                 {
                     cache = new List<ReflectionInfo>();
-                
-                    foreach (var member in serializedObject.targetObject.GetType().GetMembers())
+
+                    foreach (var member in targetType.GetMembers())
                     {
+                        ReflectionInfo info = null;
+
                         if (member is FieldInfo)
-                            cache.Add(new ReflectionInfo(member, MemberType.Field));
+                            info = new ReflectionInfo(member, MemberType.Field);
                         else if (member is PropertyInfo)
-                            cache.Add(new ReflectionInfo(member, MemberType.Property));
+                            info = new ReflectionInfo(member, MemberType.Property);
+
+                        if (info != null)
+                        {
+                            if (!string.IsNullOrEmpty(info.ValidateMethodName))
+                            {
+                                info.Validator = Delegate.CreateDelegate(typeof(System.Func<ValidationResult>),
+                                    serializedObject.targetObject,
+                                    info.ValidateMethodName, false) as System.Func<ValidationResult>;
+                            }
+
+                            cache.Add(info);                            
+                        }
                     }
 
                     ReflectionCache[serializedObject.targetObject.GetType()] = cache;
@@ -118,8 +171,30 @@ namespace Framework.Editor
             }
         }
 
+        private MessageType ToMessageType(ValidationStatus status)
+        {
+            switch (status)
+            {
+                case ValidationStatus.Info:
+                    return MessageType.Info;
+                case ValidationStatus.Warning:
+                    return MessageType.Warning;
+                case ValidationStatus.Error:
+                    return MessageType.Error;
+            }
+            
+            return MessageType.None;
+        }
+
         private void DrawField(ReflectionInfo info, SerializedProperty property)
         {
+            var result = info.CheckValidate(property);
+            if (!result)
+            {
+                ValidatorWindow.GetInstance().RegisterValidation(result, target);
+                GUILayout.BeginVertical(EditorStyles.helpBox);
+            }
+            
             if (!property.isArray || property.type == "string")
             {
                 // Somehow check if this type can be drawn other way
@@ -130,6 +205,18 @@ namespace Framework.Editor
             {
                 ReorderableList list = ReorderableDrawer.GetList(property);
                 list.DoLayoutList();
+            }
+
+            if (!result)
+            {
+                GUILayout.BeginVertical();
+                using (var layout = new EditorGUILayout.HorizontalScope(EditorStyles.helpBox))
+                {
+                    GUILayout.Box(SpaceEditorStyles.GetValidationIcon(result.Status), GUIStyle.none, GUILayout.Width(24));
+                    GUILayout.Label(result.Message, EditorStyles.wordWrappedMiniLabel);
+                }
+                GUILayout.EndVertical();
+                GUILayout.EndVertical();
             }
         }
 
