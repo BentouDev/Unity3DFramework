@@ -46,13 +46,22 @@ namespace Framework.Editor
                 }
             }
 
+            internal void UpdateResultCache(Framework.IBaseObject instance, ValidationResult result)
+            {
+                var previous = instance.PreviousResult(Info.Name);
+                if (previous != null && !previous.Equals(result))
+                    ValidatorWindow.GetInstance().RemoveValidation(previous);
+
+                instance.UpdateValidation(Info.Name, result);                
+            }
+
             // Move storage of last result to actual instance
-            internal ValidationResult CheckValidate(Framework.IBaseObject instance, SerializedProperty property)
+            internal ValidationResult CheckValidate(UnityEngine.Object instance, SerializedProperty property)
             {
                 ValidationResult result = ValidationResult.Ok;
 
                 if (Validator != null)
-                    result = Validator.Invoke();
+                    result = Validator.Invoke(instance);
 
                 else if (RequireValue)
                 {
@@ -60,18 +69,14 @@ namespace Framework.Editor
                         result = new ValidationResult(ValidationStatus.Error, $"{Info.Name} is required!");
                 }
 
-                var previous = instance.PreviousResult(Info.Name);
-                if (previous != null && !previous.Equals(result))
-                    ValidatorWindow.GetInstance().RemoveValidation(previous);
-
-                instance.UpdateValidation(Info.Name, result);
+                UpdateResultCache(instance as IBaseObject, result);
 
                 return result;
             }
 
             internal bool RequireValue = false;
             internal string ValidateMethodName;
-            internal System.Func<ValidationResult> Validator;
+            internal Func<UnityEngine.Object, ValidationResult> Validator;
             internal Type UnderlyingType;
             internal MemberType MemberType;
             internal MemberInfo Info;
@@ -89,6 +94,15 @@ namespace Framework.Editor
 
         private static Dictionary<System.Type, List<ReflectionInfo>> ReflectionCache = new Dictionary<Type, List<ReflectionInfo>>();
         private WeakReference<List<ReflectionInfo>> Cache;
+        
+        public static Func<UnityEngine.Object, ValidationResult> BuildValidationCaller(Type targetType, MethodInfo method)
+        {
+            var obj       = Expression.Parameter(typeof(UnityEngine.Object), "instance");
+            var castParam = Expression.Convert(obj, targetType);
+            var call      = Expression.Call(castParam, method);
+
+            return Expression.Lambda<Func<UnityEngine.Object, ValidationResult>>(call, obj).Compile();
+        }
         
         private void Initialize()
         {
@@ -113,12 +127,18 @@ namespace Framework.Editor
                         {
                             if (!string.IsNullOrEmpty(info.ValidateMethodName))
                             {
-                                info.Validator = Delegate.CreateDelegate(typeof(System.Func<ValidationResult>),
-                                    serializedObject.targetObject,
-                                    info.ValidateMethodName, false) as System.Func<ValidationResult>;
+                                var methodInfo = targetType.GetMethod(info.ValidateMethodName);
+                                if (methodInfo == null)
+                                    Debug.LogErrorFormat
+                                    (
+                                        "Validate: Not method called '{0}' in class '{1}'",
+                                        info.ValidateMethodName, targetType.Name
+                                    );
+                                else
+                                    info.Validator = BuildValidationCaller(targetType, methodInfo);
                             }
 
-                            cache.Add(info);                            
+                            cache.Add(info);
                         }
                     }
 
@@ -189,7 +209,7 @@ namespace Framework.Editor
 
         private void DrawField(ReflectionInfo info, SerializedProperty property)
         {
-            var result = info.CheckValidate(target as IBaseObject, property);
+            var result = info.CheckValidate(target, property);
             if (!result)
             {
                 ValidatorWindow.GetInstance().RegisterValidation(result, target);
