@@ -202,7 +202,7 @@ namespace Framework
             Controller.RegisterCommand(name, help, handler);
         }
 
-        public void RegisterVariableDataSet(DataSet set)
+        public void RegisterVariableDataSet(IDataSet set)
         {
             Controller.RegisterVariableDataSet(set);
         }

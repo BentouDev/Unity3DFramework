@@ -1,8 +1,10 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using Framework.AI;
+using Framework.Editor;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace Framework
 {
@@ -31,6 +33,8 @@ namespace Framework
             SetDrawerForKnownType<Vector2>(DrawAsVec2, LayoutAsVec2);
             SetDrawerForKnownType<Vector3>(DrawAsVec3, LayoutAsVec3);
             SetDrawerForKnownType<GameObject>(DrawAsObject<GameObject>, LayoutAsObject<GameObject>);
+            SetDrawerForKnownType<SerializedType>(DrawAsTypePicker, LayoutAsTypePicker);
+            SetDrawerForKnownType<DerivedType>(DrawAsDerivedTypePicker, LayoutAsDerivedTypePicker);
             SetDrawerForKnownType<Component>(DrawAsObject<Component>, LayoutAsObject<Component>);
             SetDrawerForKnownType<ScriptableObject>(DrawAsObject<ScriptableObject>, LayoutAsObject<ScriptableObject>);
         }
@@ -61,7 +65,83 @@ namespace Framework
             GenericParameter.Layout(parameter, label);
         }
 
+        private static System.Action<SerializedType> BuildSerializedTypeCallback(GenericParameter param)
+        {
+            return type =>
+            {
+                param.SetAs<SerializedType>(type);
+            };
+        }
+
+        private static System.Action<System.Type> BuildDerivedTypeCallback(GenericParameter param, System.Type baseType)
+        {
+            return type =>
+            {
+                param.SetAs<DerivedType>(new DerivedType(baseType, type));
+            };
+        }
+        
         #region Draw
+
+        private static void DrawAsDerivedTypePicker(Rect rect, GenericParameter parameter, bool label)
+        {
+            if (label)
+            {
+                var width = rect.width;
+                rect.width = width*0.45f;
+
+                parameter.Name = EditorGUI.TextField(rect, parameter.Name, SpaceEditorStyles.EditableLabel);
+
+                rect.width = width*0.5f;
+                rect.x += rect.width;
+            }
+
+            var type = parameter.GetAs<DerivedType>();
+            string content = "None";
+
+            if (type.BaseType != null && type.BaseType.Type != null)
+            {
+                if (type.TypeValue != null && type.TypeValue.Type != null)
+                {
+                    content = $"{type.TypeValue.Type.Name} ({type.BaseType.Type.Name})";
+                }
+                else
+                {
+                    content = "None ({type.BaseType.Type.Name})";
+                }
+            }
+
+            if (EditorGUI.DropdownButton(rect, new GUIContent(content), FocusType.Keyboard))
+            {
+                SerializedType sysType = type.BaseType ?? new SerializedType(parameter.HoldType.Metadata);
+
+                ReferenceTypePicker.ShowWindow(sysType.Type,
+                    BuildDerivedTypeCallback(parameter, sysType.Type),
+                    t => t.IsSubclassOf(sysType.Type));
+            }
+        }
+
+        private static void DrawAsTypePicker(Rect rect, GenericParameter parameter, bool label)
+        {
+            if (label)
+            {
+                var width = rect.width;
+                rect.width = width*0.45f;
+
+                parameter.Name = EditorGUI.TextField(rect, parameter.Name, SpaceEditorStyles.EditableLabel);
+
+                rect.width = width*0.5f;
+                rect.x += rect.width;
+            }
+
+            var type = parameter.GetAs<SerializedType>();
+            string content = type.Type != null ? $"{type.Type.Name} (System.Type)" : "None (System.Type)";
+
+            if (EditorGUI.DropdownButton(rect, new GUIContent(content), FocusType.Keyboard))
+            {
+                KnownTypeUtils.ShowAddParameterMenu(BuildSerializedTypeCallback(parameter));
+            }
+        }
 
         private static void DrawAsObject<T>(Rect rect, GenericParameter parameter, bool label) where T : UnityEngine.Object
         {
@@ -253,7 +333,63 @@ namespace Framework
         #endregion
 
         #region Layout
-        
+
+        private static void LayoutAsDerivedTypePicker(GenericParameter parameter, bool label)
+        {
+            EditorGUILayout.BeginHorizontal();
+            {
+                if (label)
+                {
+                    parameter.Name = EditorGUILayout.TextField(parameter.Name, GUILayout.Width(LabelWidth));
+                }
+                
+                var type = parameter.GetAs<DerivedType>();
+                string content = "None";
+
+                if (type.BaseType != null && type.BaseType.Type != null)
+                {
+                    if (type.TypeValue != null && type.TypeValue.Type != null)
+                    {
+                        content = $"{type.TypeValue.Type.Name} ({type.BaseType.Type.Name})";
+                    }
+                    else
+                    {
+                        content = "None ({type.BaseType.Type.Name})";
+                    }
+                }
+
+                if (EditorGUILayout.DropdownButton(new GUIContent(content), FocusType.Keyboard))
+                {
+                    SerializedType sysType = type.BaseType ?? new SerializedType(parameter.HoldType.Metadata);
+
+                    ReferenceTypePicker.ShowWindow(sysType.Type,
+                        BuildDerivedTypeCallback(parameter, sysType.Type),
+                        t => t.IsSubclassOf(sysType.Type));
+                }
+            }
+            EditorGUILayout.EndHorizontal();
+        }
+
+        private static void LayoutAsTypePicker(GenericParameter parameter, bool label)
+        {
+            EditorGUILayout.BeginHorizontal();
+            {
+                if (label)
+                {
+                    parameter.Name = EditorGUILayout.TextField(parameter.Name, GUILayout.Width(LabelWidth));
+                }
+
+                var type = parameter.GetAs<SerializedType>();
+                string content = type.Type != null ? $"{type.Type.Name} (System.Type)" : "None (System.Type)";
+
+                if (EditorGUILayout.DropdownButton(new GUIContent(content), FocusType.Keyboard))
+                {
+                    KnownTypeUtils.ShowAddParameterMenu(BuildSerializedTypeCallback(parameter));
+                }                
+            }
+            EditorGUILayout.EndHorizontal();
+        }
+
         private static void LayoutAsObject<T>(GenericParameter parameter, bool label) where T : UnityEngine.Object
         {
             EditorGUILayout.BeginHorizontal();

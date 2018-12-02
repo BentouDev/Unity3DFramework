@@ -38,8 +38,8 @@ namespace Framework.AI.Editor
         {
             return new Vector2(drawRect.center.x, drawRect.yMin + 2);
         }
-        
-        public override Vector2 GetChildConnectPosition(GraphNode child)
+
+        public override void GetChildConnectPositions(GraphNode child, IList<Vector2> positions)
         {
             if (TreeNode.IsParentNode())
             {
@@ -50,15 +50,14 @@ namespace Framework.AI.Editor
                     var offset = ConnectorSize.x * nodeIndex;
                     if (asParent.HasChildrenSlots())
                         offset -= ConnectorSize.x * asParent.GetChildNodes().Count * 0.5f;
+
+                    positions.Add(new Vector2(drawRect.center.x + offset, drawRect.yMax + ConnectorSize.y * 0.25f));
                     
-                    return new Vector2
-                    (
-                        drawRect.center.x + offset,
-                        drawRect.yMax + ConnectorSize.y * 0.25f
-                    );
+                    return;
                 }
             }
-            return drawRect.center;
+
+            positions.Add(drawRect.center);
         }
 
         protected override bool CanConnectTo(GraphNode child)
@@ -104,19 +103,44 @@ namespace Framework.AI.Editor
 
             GUI.Box(drawRect, GUIContent.none, WindowStyle);
             DrawConnectDots(drawRect);
-
-            if (TreeAsset.RootNode == TreeNode)
-            {
-                GUI.Label(drawRect, new GUIContent("Root"), EditorStyles.whiteBoldLabel);
-            }
         }
 
         protected override void OnDrawContent()
         {
-            var textDimensions = EditorStyles.largeLabel.CalcSize(new GUIContent(Name));
+            // var textDimensions = EditorStyles.largeLabel.CalcSize(new GUIContent(Name));
 
-            TextRect.Set(drawRect.x + 0.5f * (drawRect.width - textDimensions.x), drawRect.y + 0.5f * (drawRect.height - textDimensions.y), textDimensions.x, textDimensions.y);
-            GUI.Label(TextRect, new GUIContent(Name, TreeNode.Description), EditorStyles.whiteLargeLabel);
+            float x_padding = 4;
+            float y_padding = 4;
+
+            TextRect.Set(
+                drawRect.x + x_padding, // + 0.5f * (drawRect.width - textDimensions.x), 
+                drawRect.y + y_padding, // + 0.5f * (drawRect.height - textDimensions.y), 
+                drawRect.width - 2 * x_padding, 20
+            );
+
+            if (TreeAsset.RootNode == TreeNode)
+            {
+                GUI.Label(TextRect, new GUIContent("Root"), EditorStyles.whiteBoldLabel);
+            }
+            else
+            {
+                GUI.Label(TextRect, TreeNode.name, EditorStyles.whiteLargeLabel);
+//                var newName = 
+//                if (newName != TreeNode.name)
+//                {
+//                    Undo.RecordObject(TreeNode, "Rename node");
+//                    TreeNode.name = newName;
+//                }
+            }
+
+            TextRect.Set(
+                TextRect.x,
+                TextRect.y + 16,
+                TextRect.width,
+                TextRect.height
+            );
+            
+            GUI.Label(TextRect, new GUIContent(TreeNode.GetType().Name, TreeNode.Description), EditorStyles.whiteLabel);
         }
 
         void DrawConnectDots(Rect dotRect)

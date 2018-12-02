@@ -14,10 +14,16 @@ using Object = UnityEngine.Object;
 namespace Framework
 {
     [System.Serializable]
-    public class GenericParameter
+    public class GenericParameter : ISerializationCallbackReceiver
     {
         public GenericParameter()
         {
+            _curve   = new AnimationCurve();
+        }
+
+        public GenericParameter(SerializedType type)
+        {
+            HoldType = type;
             _curve   = new AnimationCurve();
         }
         
@@ -47,7 +53,7 @@ namespace Framework
             // By reference
             _object  = other._object;
         }
-        
+
         [SerializeField]
         public string Name;
         
@@ -162,6 +168,24 @@ namespace Framework
 
             KnownType.InsertKnownType
             (
+                new KnownType<SerializedType>("System.Type")
+                {
+                    Getter = parameter => new SerializedType(parameter._string),
+                    Setter = (parameter, type) => { parameter._string = type.SerializedTypeName; }
+                }
+            );
+
+            KnownType.InsertKnownType
+            (
+                new KnownType<DerivedType>("Derivatives of System.Type")
+                {
+                    Getter = parameter => new DerivedType(parameter._string),
+                    Setter = (parameter, type) => { parameter._string = type.ToString(); }
+                }
+            );
+            
+            KnownType.InsertKnownType
+            (
                 new KnownType<Component>("MonoBehaviour...")
                 {
                     Getter = parameter => parameter._object as Component,
@@ -203,8 +227,8 @@ namespace Framework
                 return null;
             }
         }
-        
-        public DataSet.IValue CreateValue()
+
+        public IValue CreateValue()
         {
 #if UNITY_EDITOR
             var knownType = GetKnownType(HoldType.Type);
@@ -222,6 +246,16 @@ namespace Framework
 #endif
         }
 
+        public void OnBeforeSerialize()
+        {
+            
+        }
+
+        public void OnAfterDeserialize()
+        {
+            
+        }
+        
         public void SetAs<T>(T value)
         {
             var type = typeof(T);
@@ -230,7 +264,7 @@ namespace Framework
             ((KnownType<T>)KnownType.Register[type.FullName]).Setter(this, value);
         }
 
-        public T GetAs<T>()
+        public T GetAs<T>(bool ommitCache = false)
         {
             var type = typeof(T);
             TypeGuard(type);

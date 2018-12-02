@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using UnityEditor;
+using UnityEditor.Experimental.UIElements;
 using UnityEngine;
 
 public class ReferenceTypePicker : EditorWindow
@@ -23,31 +24,40 @@ public class ReferenceTypePicker : EditorWindow
     private Action<Type>    OnTypePicked;
     private Predicate<Type> TypePredicate;
 
+    private static readonly string SearchFieldControl = "_SearchField";
+
     private string SearchString = string.Empty;
     private AbstractionLevel Abstraction = AbstractionLevel.All;
 
     private Type BaseType;
     private Type SelectedType;
     private List<Type> AllTypes = new List<Type>();
+    private bool FocusOnBegin = false;
+
+    private float LastClickTime;
+    private static readonly float DoubleClickTime = 0.1f; 
 
     #region Window
 
     public static void ShowWindow(Type baseType, Action<Type> onObjectPicked, Predicate<Type> predicate = null)
     {
-        if (_instance == null)
+        if (_instance)
         {
-            _instance = CreateInstance<ReferenceTypePicker>();
-            _instance.OnInit(baseType, onObjectPicked, predicate);
-            _instance.ShowUtility();
+            DestroyImmediate(_instance);
         }
+        
+        _instance = CreateInstance<ReferenceTypePicker>();
+        _instance.OnInit(baseType, onObjectPicked, predicate);
+        _instance.ShowUtility();
     }
-    
+
     void OnInit(
         Type baseType,
         Action<Type> onTypePicked,
         Predicate<Type> predicate
     )
     {
+        FocusOnBegin = false;
         BaseType = baseType;
         OnTypePicked = onTypePicked;
         TypePredicate = predicate;
@@ -62,6 +72,7 @@ public class ReferenceTypePicker : EditorWindow
     {
         _instance = null;
     }
+
     private void OnLostFocus()
     {
         Close();
@@ -86,7 +97,10 @@ public class ReferenceTypePicker : EditorWindow
                 foreach (Type type in typeList)
                 {
                     var isSelected = type == SelectedType;
-                    if (GUILayout.Toggle(isSelected, new GUIContent(type.FullName), isSelected ? SpaceEditorStyles.SelectedListItem : SpaceEditorStyles.ListItem,
+                    if (GUILayout.Toggle(isSelected, new GUIContent(type.FullName), 
+                        isSelected 
+                            ? SpaceEditorStyles.SelectedListItem 
+                            : SpaceEditorStyles.ListItem,
                         GUILayout.ExpandWidth(true), GUILayout.Height(20)))
                     {
                         SelectedType = type;
@@ -136,6 +150,12 @@ public class ReferenceTypePicker : EditorWindow
         }
     }
 
+    private void PickSelected()
+    {
+        OnTypePicked(SelectedType);
+        Close();
+    }
+
     private int GetScrollPosForIndex(int index)
     {
         return index * 16;
@@ -145,8 +165,15 @@ public class ReferenceTypePicker : EditorWindow
     {
         GUILayout.BeginHorizontal(GUILayout.ExpandWidth(true), GUILayout.Height(20));
         {
+            GUI.SetNextControlName(SearchFieldControl);
             SearchString = GUILayout.TextField(SearchString, (GUIStyle)"SearchTextField", GUILayout.ExpandWidth(true));
             GUILayout.Box(GUIContent.none, (GUIStyle)"SearchCancelButtonEmpty");
+
+//            if (!FocusOnBegin)
+//            {
+//                GUI.FocusControl("_SearchField");
+//                FocusOnBegin = true;
+//            }
         }
         GUILayout.EndHorizontal();
     }
@@ -170,22 +197,22 @@ public class ReferenceTypePicker : EditorWindow
     {
         GUILayout.BeginVertical(GUI.skin.box, GUILayout.ExpandWidth(true), GUILayout.Height(100));
         {
-            EditorStyles.whiteBoldLabel.normal.textColor = Color.white;
-            EditorStyles.whiteBoldLabel.onNormal.textColor = Color.white;
-            
+            // EditorStyles.whiteBoldLabel.normal.textColor = Color.white;
+            // EditorStyles.whiteBoldLabel.onNormal.textColor = Color.white;
+
             if (SelectedType != null)
             {
                 GUILayout.Label(GetInheritanceLine(SelectedType), EditorStyles.wordWrappedMiniLabel);
 
                 GUILayout.FlexibleSpace();
 
-                GUILayout.Label(string.IsNullOrEmpty(SelectedType.Namespace) ? "::global" : SelectedType.Namespace, EditorStyles.whiteLabel);
-                GUILayout.Label(SelectedType.Name, EditorStyles.whiteBoldLabel);
+                GUILayout.Label(string.IsNullOrEmpty(SelectedType.Namespace) ? "::global" : SelectedType.Namespace, EditorStyles.boldLabel);
+                GUILayout.Label(SelectedType.Name, EditorStyles.boldLabel);
             }
             else
             {
                 GUILayout.FlexibleSpace();
-                GUILayout.Label("None", EditorStyles.whiteBoldLabel);
+                GUILayout.Label("None", EditorStyles.boldLabel);
             };
         }
         GUILayout.EndVertical();
@@ -194,8 +221,7 @@ public class ReferenceTypePicker : EditorWindow
         {
             if (GUILayout.Button("Select"))
             {
-                OnTypePicked(SelectedType);
-                Close();
+                PickSelected();
             }
         }
         GUI.enabled = true;
@@ -226,22 +252,22 @@ public class ReferenceTypePicker : EditorWindow
 
     #region TypeList
 
-    IEnumerable<Type> GetTypesFromAssembly(
+    public static IEnumerable<Type> GetTypesFromAssembly(
         Assembly assembly,
         string nameSearch,
         Predicate<Type> predicate)
     {
-        return assembly.GetTypes()
-            .Where(t => t.IsClass
-                        && t.IsSubclassOf(typeof(UnityEngine.Object))
-                        && t.IsPublic
-                        && !t.IsGenericType
-                        && (predicate == null || predicate(t))
-                        && (string.IsNullOrEmpty(nameSearch) || t.FullName.Contains(nameSearch))
-            );
+        return assembly.GetTypes() ?.Where(
+            t => t.IsClass &&
+            t.IsPublic &&
+            !t.IsGenericType &&
+            (predicate == null || predicate(t)) &&
+            (string.IsNullOrEmpty(nameSearch) || t.FullName.Contains(nameSearch))
+        );
+//          && t.IsSubclassOf(typeof(UnityEngine.Object))
     }
 
-    IEnumerable<Type> BuildTypeList(string nameSearch, Predicate<Type> predicate = null)
+    public static IEnumerable<Type> BuildTypeList(string nameSearch, Predicate<Type> predicate = null)
     {
         var executingAssebly = Assembly.GetExecutingAssembly();
         var typeList = new List<Type>();
@@ -274,13 +300,14 @@ public class ReferenceTypePicker : EditorWindow
 
     IEnumerable<Type> FilterTypeList(string nameSearch, AbstractionLevel level, Predicate<Type> predicate = null)
     {
+        var lowerName = nameSearch.ToLower();
         return AllTypes.Where(t => t.IsClass
                                 && t.IsSubclassOf(typeof(UnityEngine.Object))
                                 && t.IsPublic
                                 && !t.IsGenericType
                                 && CheckAbstraction(t, level)
                                 && (predicate == null || predicate(t))
-                                && (string.IsNullOrEmpty(nameSearch) || t.FullName.Contains(nameSearch))
+                                && (string.IsNullOrEmpty(nameSearch) || t.FullName.ToLower().Contains(lowerName))
         );
     }
 

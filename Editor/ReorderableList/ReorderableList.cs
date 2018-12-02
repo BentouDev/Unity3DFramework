@@ -529,7 +529,7 @@ namespace Framework.Editor {
 		{
 			if (getElementHeightCallback != null)return getElementHeightCallback(element) + ELEMENT_HEIGHT_OFFSET;
 	
-			var list = ReorderableDrawer.GetList(element);
+			var list = element.type != "string" ? ReorderableDrawer.GetList(element) : null;
 			if (list != null)
 				return list.GetHeight();
 
@@ -899,7 +899,7 @@ namespace Framework.Editor {
 			}
 			else
 			{
-				var list = ReorderableDrawer.GetList(element);
+				var list = element.type != "string" ? ReorderableDrawer.GetList(element) : null;
 				if (list != null)
 				{
 					list.DoList(renderRect, label);

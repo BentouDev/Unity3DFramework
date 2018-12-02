@@ -418,6 +418,28 @@ public static class SpaceEditorStyles
         }
     }
 
+    private static GUIStyle _parametrizedField;
+    public static GUIStyle ParametrizedField
+    {
+        get
+        {
+            if (_parametrizedField == null)
+                _parametrizedField = (GUIStyle) "ShurikenObjectField";
+            return _parametrizedField;
+        }
+    }
+
+    private static GUIStyle _popupBox;
+    public static GUIStyle PopupBox
+    {
+        get
+        {
+            if (_popupBox == null)
+                _popupBox = (GUIStyle) "CN Box";
+            return _popupBox;
+        }
+    }
+
     private static Texture2D _behaviourTreeIcon;
     public static Texture2D BehaviourTreeIcon
     {
@@ -434,6 +456,10 @@ public static class SpaceEditorStyles
         }
     }
 
+    public static Color ActiveColor => EditorGUIUtility.isProSkin
+        ? new Color(61 / 255.0f, 96 / 255.0f, 145 / 255.0f)
+        : new Color(0.33f, 0.66f, 1f, 0.66f); 
+
     private static Texture2D _activeBackground;
     public static Texture2D ActiveBackground
     {
@@ -441,7 +467,7 @@ public static class SpaceEditorStyles
         {
             if (_activeBackground == null)
             {
-                var color = EditorGUIUtility.isProSkin ? new Color(61 / 255.0f, 96 / 255.0f, 145 / 255.0f) : new Color(0.33f, 0.66f, 1f, 0.66f);
+                var color = ActiveColor;
                 _activeBackground = new Texture2D(1, 1);
                 _activeBackground.SetPixel(0, 0, color);
                 _activeBackground.Apply();

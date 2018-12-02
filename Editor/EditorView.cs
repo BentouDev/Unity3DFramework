@@ -96,7 +96,7 @@ namespace Framework.Editor
                     break;
             }
             
-            EditorSize = new Vector2(position.width, position.height);
+            EditorSize.Set(position.width, position.height);
             Presenter.OnDraw();
         }
 

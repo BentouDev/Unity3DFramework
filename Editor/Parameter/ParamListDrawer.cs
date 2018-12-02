@@ -4,25 +4,30 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEditor;
-using UnityEditorInternal;
 using Framework;
+using Framework.Editor;
+using ReorderableList = UnityEditorInternal.ReorderableList;
 
 public class ParamListDrawer
 {
-    private static readonly int ReorderableListOffset = 14;
+    public static readonly int ReorderableListOffset = 14;
 
     private ReorderableList _drawerList;
     public  ReorderableList DrawerList => _drawerList;
 
+    private float FirstPos;
+    private List<float> Positions = new List<float>();
     private List<GenericParameter> Parameters;
+    private bool CustomAdd;
 
     public List<GenericParameter> GetParameters()
     {
         return Parameters;
     }
 
-    public void Init(List<GenericParameter> paramList)
+    public void Init(List<GenericParameter> paramList, bool customAdd = false)
     {
+        CustomAdd = customAdd;
         Parameters = paramList;
         Recreate();
     }
@@ -53,13 +58,21 @@ public class ParamListDrawer
             GUI.Label(rect, "Default value");
         };
 
-        DrawerList.onAddDropdownCallback += OnAddParameter;
-        DrawerList.drawElementCallback   += OnDrawParameter;
+        if (!CustomAdd)
+            DrawerList.onAddDropdownCallback += OnAddParameter;
+
+        DrawerList.drawElementCallback += OnDrawParameter;
     }
     
     private void OnDrawParameter(Rect rect, int index, bool active, bool focused)
     {
         var parameter = Parameters[index];
+
+        if (index == 0)
+            FirstPos = rect.y;
+
+        Positions.Resize(index + 1);
+        Positions[index] = rect.y - FirstPos;
 
         rect.height = GenericParamUtils.FieldHeight;
         rect.y     += 2;
@@ -69,35 +82,24 @@ public class ParamListDrawer
     
     private void OnAddParameter(Rect buttonrect, ReorderableList list)
     {
-        ShowAddParameterMenu();
+        Positions.Resize(Parameters.Count);
+        KnownTypeUtils.ShowAddParameterMenu(AddNewParam);
     }
 
-    private void ShowAddParameterMenu()
+    public float GetFirstOffset()
     {
-        GenericMenu menu = new GenericMenu();
-
-        var types = KnownType.GetKnownTypes();
-        for (int i = 0; i < types.Count; i++)
-        {
-            var type = types[i];
-            menu.AddItem(new GUIContent(type.GenericName), false, CreateNewParameterCallback(type.HoldType));
-        }
-
-        menu.ShowAsContext();
-    }
-    
-    UnityEditor.GenericMenu.MenuFunction CreateNewParameterCallback(Type type)
-    {
-        return () =>
-        {
-            OnAddNewParameter(type);
-        };
+        return FirstPos;
     }
 
-    private void AddNewParam(Type type)
+    public float GetPos(int index)
     {
-        string typename = GenericParameter.GetDisplayedName(type);
-        string paramName = StringUtils.MakeUnique(string.Format("New {0}", typename), Parameters.Select(p => p.Name));
+        return index >= 0 && index < Positions.Count ? Positions[index] : 0;
+    }
+
+    private void AddNewParam(SerializedType type)
+    {
+        string typename = GenericParameter.GetDisplayedName(type.Type);
+        string paramName = StringUtils.MakeUnique($"New {typename}", Parameters.Select(p => p.Name));
 
         Parameters.Add
         (
@@ -106,22 +108,5 @@ public class ParamListDrawer
                 Name = paramName
             }
         );
-    }
-
-    private void OnObjectReferenceTypeSelected(System.Type type)
-    {
-        AddNewParam(type);
-    }
-
-    private void OnAddNewParameter(Type type)
-    {
-        if (type.IsSubclassOf(typeof(UnityEngine.Object)) && type != typeof(GameObject))
-        {
-            ReferenceTypePicker.ShowWindow(type, OnObjectReferenceTypeSelected, t => t.IsSubclassOf(type));
-        }
-        else
-        {
-            AddNewParam(type);
-        }
     }
 }

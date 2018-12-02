@@ -1,41 +1,12 @@
+using UnityEngine;
 using UnityEditor;
 
-namespace Framework
+namespace Framework.Editor
 {
     [CustomEditor(typeof(DataSet))]
-    public class DataSetEditor : UnityEditor.Editor
+    class DataSetEditor : DataBankEditor
     {
-        private DataSet Target => target as DataSet;
-        
-        private ParamListDrawer _drawer;
-        private ParamListDrawer Drawer
-        {
-            get
-            {
-                if (_drawer == null)
-                {
-                    _drawer = new ParamListDrawer();
-                    _drawer.Init(Target.GetSerialized());
-                    _drawer.Recreate();
-                }
-
-                return _drawer;
-            }
-        }
-        
-        public override void OnInspectorGUI()
-        {
-            EditorGUILayout.LabelField("DataSet");
-            
-            EditorGUI.BeginChangeCheck();
-            {
-                Drawer.DrawerList.DoLayoutList();
-            }
-            if (EditorGUI.EndChangeCheck())
-            {
-                Target.SetValues(Drawer.GetParameters());
-                AssetDatabase.SaveAssets();
-            }
-        }
+        private DataSet DataSet => target as DataSet;
+        protected override DataBank Target => DataSet.Bank;
     }
 }

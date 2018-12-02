@@ -37,7 +37,7 @@ namespace Framework
             [SerializeField]
             public AnimationPlayer FadePlayer;
     
-            [SerializeField]
+            [SerializeField] 
             public AnimationPlayer UnfadePlayer;
         }
     
@@ -293,7 +293,7 @@ namespace Framework
         private static float _FadeValue = 0;
         private static bool _IsFading = false;
 
-        public Color _fadeColor = Color.red;
+        public Color _fadeColor = Color.white;
         public Color FadeColor
         {
             get
@@ -321,10 +321,10 @@ namespace Framework
                 if (!_zaTexture)
                 {
                     _zaTexture = new Texture2D(1, 1);
+                    _zaTexture.SetPixel(0, 0, Color.black);
+                    _zaTexture.Apply();
                 }
                 
-                _zaTexture.SetPixel(0, 0, FadeColor);
-
                 return _zaTexture;
             }
         }
@@ -332,9 +332,12 @@ namespace Framework
         void OnGUI()
         {
             GUI.color = FadeColor;
-            GUI.Label(new Rect(0,0,100,200), "Fading...");
-            GUI.skin.box.normal.background = Texture2D.whiteTexture;
-            GUI.Box(FullscreenRect, GUIContent.none);
+            GUI.DrawTexture(FullscreenRect, TheTexture);
+            
+//            GUI.color = FadeColor;
+//            GUI.Label(new Rect(0,0,100,200), "Fading...");
+//            GUI.skin.box.normal.background = TheTexture;
+//            GUI.Box(FullscreenRect, GUIContent.none);
         }
     }
 }

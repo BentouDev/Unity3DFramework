@@ -28,7 +28,7 @@ namespace Framework
 
         private readonly Dictionary<string, CommandInfo> Commands = new Dictionary<string, CommandInfo>();
 
-        private DataSet Variables;
+        private IDataSet Variables;
 
 //        private readonly Dictionary<string, VariableInfo> Variables = new Dictionary<string, VariableInfo>();
 
@@ -122,7 +122,7 @@ namespace Framework
             RegisterCommand("set", "set various game related variables", CmdSetVar);
         }
 
-        public void RegisterVariableDataSet(DataSet set)
+        public void RegisterVariableDataSet(IDataSet set)
         {
             Variables = set;
         }
@@ -346,29 +346,30 @@ namespace Framework
 
         private bool CmdSetVar(params string[] param)
         {
-            if (param.Length == 0)
-            {
-                Print("Registred variables:");
-                if (Variables)
-                {
-                    foreach (var variable in Variables.GetPairs())
-                    {
-                        Print($"{variable.First} = {variable.Second}");
-                    }                    
-                }
-
-                return true;
-            }
-            else if (param.Length == 2)
-            {
-                Print(string.Format("Variable '{0}' is now '{}'", param[0], param[1]));
-                return true;
-            }
-            else
-            {
-                Error("Invalid argument count, expected 0 or 2, got " + param.Length);
-                return false;
-            }
+            return false;
+//            if (param.Length == 0)
+//            {
+//                Print("Registred variables:");
+//                if (Variables)
+//                {
+//                    foreach (var variable in Variables.GetPairs())
+//                    {
+//                        Print($"{variable.First} = {variable.Second}");
+//                    }                    
+//                }
+//
+//                return true;
+//            }
+//            else if (param.Length == 2)
+//            {
+//                Print(string.Format("Variable '{0}' is now '{}'", param[0], param[1]));
+//                return true;
+//            }
+//            else
+//            {
+//                Error("Invalid argument count, expected 0 or 2, got " + param.Length);
+//                return false;
+//            }
         }
 
         private bool CmdInfo(params string[] param)

@@ -21,6 +21,7 @@ namespace Framework
 
         ControllSystem GetControllers();
         GUIController  GetGUI();
+        SceneLoader    GetLoader();
 
         bool IsPlaying();
         void QuitGame();
@@ -35,7 +36,7 @@ namespace Framework
         public bool LoadOnStart;
 
         [RequireValue]
-        public DataSet GlobalVars;
+        public DataSetInstance GlobalVars;
 
         public SceneLoader Loader;
 
@@ -60,6 +61,8 @@ namespace Framework
         public ControllSystem GetControllers() => Controllers;
 
         public GUIController GetGUI() => GUI;
+
+        public SceneLoader GetLoader() => Loader;
 
         public void OnSetInstance()
         {
@@ -99,13 +102,13 @@ namespace Framework
             Instance.OnSetInstance();
             
             RegisterConsoleCommands();
-            
+
             if (AllStates != null)
                 AllStates.Clear();
             else
                 AllStates = new List<GameState>();
 
-            AllStates.AddRange(GetComponentsInChildren<GameState>());
+            AllStates.AddRange(FindObjectsOfType<GameState>());
 
             if (Loader)
             {
@@ -130,7 +133,22 @@ namespace Framework
 
         private void SceneLoaded()
         {
-            SwitchState(StartState);
+            var levelState = AllStates.FirstOrDefault(s => s.gameObject.scene.path != Loader.BaseScene
+                                                           && s.CompareTag("MainState"));
+
+            if (NextState)
+            {
+                SwitchState(NextState);
+            }
+            else if (levelState)
+            {                
+                SwitchState(levelState);
+            }
+            else
+            {
+                SwitchState(StartState);
+            }
+
             OnSceneLoad();
             
             gameObject.BroadcastToAll("OnLevelLoaded");

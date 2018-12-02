@@ -35,16 +35,17 @@ namespace Framework
         private void EndLoadScene(bool already_loaded = false)
         {
             CurrentScene = _nextScene;
-            _isLoading = false;
-            
+
             if (!already_loaded)
                 Debug.Log("Loaded scene " + SceneManager.GetActiveScene().buildIndex + "!");
 
             if (OnSceneLoad != null)
                 OnSceneLoad();
+
+            _isLoading = false;
         }
 
-        private void PrintScenes()
+        public void PrintScenes()
         {
             string output = "Scenes:\n";
             for (int i = 0; i < SceneManager.sceneCount; i++)
@@ -272,6 +273,8 @@ namespace Framework
         {
             if (_isLoading)
                 return;
+
+            BaseGame.Instance.SwitchStateImmediate<GameLoadingScreenState>();
 
             _nextScene = desiredScene;
             

@@ -2,6 +2,16 @@
 
 public static class RectExtensions
 {
+    public static Vector2 CenterLeft(this Rect rect)
+    {
+        return new Vector2(rect.xMin, rect.center.y);
+    }
+
+    public static Vector2 CenterRight(this Rect rect)
+    {
+        return new Vector2(rect.xMax, rect.center.y);
+    }
+    
     public static Vector2 TopLeft(this Rect rect)
     {
         return new Vector2(rect.xMin, rect.yMin);

@@ -223,7 +223,12 @@ namespace Framework.AI.Editor
         {
             EditorGUILayout.BeginHorizontal(GUILayout.ExpandWidth(true)); // GUI.skin.box, 
             {
-                GUILayout.Label(model.AssetPath);
+                if (GUILayout.Button(model.AssetPath, EditorStyles.label))
+                {
+                    Selection.activeObject = model.TreeAsset;
+                    EditorGUIUtility.PingObject(model.TreeAsset);
+                }
+
                 GUILayout.FlexibleSpace();
                 GUILayout.Label($"<<{(Nodes.CurrentMouseMode != null ? Nodes.CurrentMouseMode.GetType().Name : "null")}>>");
                 //GUILayout.Label($"{Nodes.ScrollPos} :: {Event.current.mousePosition} :: ");

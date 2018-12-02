@@ -12,7 +12,7 @@ namespace Framework.AI
 #if UNITY_EDITOR
     [CreateAssetMenu(menuName = "Data/Behaviour Tree", fileName = "New Behaviour Tree")]
 #endif
-    public class BehaviourTree : ScriptableObject
+    public class BehaviourTree : BaseScriptableObject
     {
 #if UNITY_EDITOR
         [SerializeField] public Vector2 EditorPos = Vector2.zero;

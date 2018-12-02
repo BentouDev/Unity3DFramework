@@ -19,17 +19,11 @@ namespace Framework
         public TypeLayoutFunc LayoutFunc;
 #endif
 
-        public abstract DataSet.IValue CreateValue(GenericParameter param);
+        public abstract IValue CreateValue(GenericParameter param);
         public abstract PropertyReference CreateProperty<T>(T instance, string name);
 
         private static readonly Dictionary<string, KnownType> _knownTypes = new Dictionary<string, KnownType>();
-        public static Dictionary<string, KnownType> Register
-        {
-            get
-            {
-                return _knownTypes;
-            }
-        }
+        public static Dictionary<string, KnownType> Register => _knownTypes;
 
         private static System.Type _scriptableObjectType;
         public static System.Type ScriptableObjectType
@@ -51,6 +45,18 @@ namespace Framework
                 if (_componentType == null)
                     _componentType = typeof(Component);
                 return _componentType;
+            }
+        }
+
+        private static System.Type _objectType;
+
+        public static System.Type ObjectType
+        {
+            get
+            {
+                if (_objectType == null)
+                    _objectType = typeof(UnityEngine.Object);
+                return _objectType;
             }
         }
         
@@ -76,9 +82,9 @@ namespace Framework
             HoldType = typeof(T);
         }
 
-        public override DataSet.IValue CreateValue(GenericParameter param)
+        public override IValue CreateValue(GenericParameter param)
         {
-            return new DataSet.Value<T>(param.HoldType.Type);
+            return new Value<T>(param.HoldType.Type, param.GetAs<T>());
         }
 
         public override PropertyReference CreateProperty<U>(U instance, string name)

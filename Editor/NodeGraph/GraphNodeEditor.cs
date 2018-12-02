@@ -68,7 +68,8 @@ namespace Framework.Editor
             get { return zoom; }
             set { zoom = Mathf.Clamp(value, 0.25f, 1); }
         }
-        
+
+        public Rect MouseRect => new Rect(0, DrawRect.y, DrawRect.width, DrawRect.height - DrawRect.y);
         public Rect PhysicalRect => new Rect(0, 0, DrawRect.width / ZoomLevel, DrawRect.height / ZoomLevel);
         public Rect BoundsRect => new Rect(-PannedOffset.x, -PannedOffset.y, DrawRect.width / ZoomLevel, DrawRect.height / ZoomLevel);
 
@@ -85,7 +86,8 @@ namespace Framework.Editor
         {
             Line,
             BezierHorizontal,
-            BezierVertical
+            BezierVertical,
+            Smooth
         }
         
         public ConnectionStyle ConnectionLineStyle { get; private set; }
@@ -211,7 +213,7 @@ namespace Framework.Editor
 
         public void Draw (
             EditorWindow editor, Rect viewRect, 
-            ConnectionStyle style = ConnectionStyle.BezierVertical
+            ConnectionStyle style = ConnectionStyle.Smooth
         )
         {
             DrawRect = viewRect;
@@ -224,80 +226,49 @@ namespace Framework.Editor
             }
             EditorAreaUtils.EndZoomArea();
         }
-        
+
+        public class ConnectionDrawData
+        {
+            public Vector2 fromOrigin;
+            public Vector2 from;
+            public Vector2 toOrigin;
+            public Vector2 to;
+            public Color   color;
+        }
+
+        private readonly List<Vector2> ChildNodePositionsBuffer = new List<Vector2>();
+        private readonly ConnectionDrawData LastConnectionData = new ConnectionDrawData();
+
+        private static readonly Dictionary<ConnectionStyle, System.Action<ConnectionDrawData>> ConnectionStyleDrawers 
+        = new Dictionary<ConnectionStyle, Action<ConnectionDrawData>>()
+        {
+            {ConnectionStyle.Line, ((data) => DrawNodeConnectionLine(data.from, data.to, data.color))},
+            {ConnectionStyle.BezierHorizontal, ((data) => DrawNodeConnectionBezierHorizontal(data.from, data.to, data.color))},
+            {ConnectionStyle.BezierVertical, ((data) => DrawNodeConnectionBezierVertical(data.from, data.to, data.color))},
+            {ConnectionStyle.Smooth, (DrawNodeConnectionSmooth)},
+        }; 
+
         void DrawConnections(ConnectionStyle style)
         {
-            switch (style)
+            var drawer = ConnectionStyleDrawers[style];
+            foreach (GraphNode parent in AllNodes)
             {
-                case ConnectionStyle.Line:
-                    foreach (GraphNode parent in AllNodes)
-                    {
-                        foreach (GraphNode.ConnectionInfo child in parent.connectedTo)
-                        {
-                            DrawNodeConnectionLine (
-                                parent.GetChildConnectPosition(child.Node), 
-                                child.Node.GetParentConnectPosition(parent),
-                                child.Node.GetParentConnectColor(parent)
-                            );
-                        }
-                    }
-                    break;
-
-                case ConnectionStyle.BezierHorizontal:
-                    foreach (GraphNode parent in AllNodes)
-                    {
-                        foreach (GraphNode.ConnectionInfo child in parent.connectedTo)
-                        {
-                            DrawNodeConnectionBezierHorizontal (
-                                parent.GetChildConnectPosition(child.Node),
-                                child.Node.GetParentConnectPosition(child.Node),
-                                child.Node.GetParentConnectColor(parent)
-                            );
-                        }
-                    }    
-                    break;
-                    
-                case ConnectionStyle.BezierVertical:
-                    foreach (GraphNode parent in AllNodes)
-                    {
-                        foreach (GraphNode.ConnectionInfo child in parent.connectedTo)
-                        {
-                            DrawNodeConnectionBezierVertical (
-                                parent.GetChildConnectPosition(child.Node) + PannedOffset,
-                                child.Node.GetParentConnectPosition(child.Node) + PannedOffset,
-                                child.Node.GetParentConnectColor(parent)
-                            );
-                        }
-                    }
-                    break;
-            }
-
-            /*
-            
-            bool goodEvent = Event.current.type == EventType.Repaint || Event.current.type == EventType.MouseMove || Event.current.type == EventType.MouseDrag;
-
-            if (goodEvent && IsConnecting && SelectedNode != null)
-            {
-                switch (style)
+                foreach (GraphNode.ConnectionInfo child in parent.connectedTo)
                 {
-                    case ConnectionStyle.Line:
-                        DrawNodeConnectionLine(CurrentConnectionStart, Event.current.mousePosition, Color.cyan);
-                        break;
-                    case ConnectionStyle.BezierHorizontal:
-                        DrawNodeConnectionBezierHorizontal(CurrentConnectionStart, Event.current.mousePosition, Color.cyan);
-                        break;
-                    case ConnectionStyle.BezierVertical:
-                        DrawNodeConnectionBezierVertical(CurrentConnectionStart, Event.current.mousePosition, Color.cyan);
-                        break;
-                }
+                    ChildNodePositionsBuffer.Clear();
+                    parent.GetChildConnectPositions(child.Node, ChildNodePositionsBuffer);
+                    foreach (Vector2 position in ChildNodePositionsBuffer)
+                    {
+                        LastConnectionData.fromOrigin = parent.Position + PannedOffset;
+                        LastConnectionData.from = position + PannedOffset;
+                        LastConnectionData.toOrigin = child.Node.Position + PannedOffset;
+                        LastConnectionData.to = child.Node.GetParentConnectPosition(child.Node) + PannedOffset;
+                        LastConnectionData.color = child.Node.GetParentConnectColor(parent);
 
-                if(Event.current.type != EventType.Repaint)
-                    Event.current.Use();
-                
-                GUI.color = Color.white;
-            } 
-            
-             */
+                        drawer(LastConnectionData);
+                    }
+                }
+            }
         }
 
         public void StartConnection(GraphNode node, Vector2 position)
@@ -453,7 +424,7 @@ namespace Framework.Editor
             if (!left && !right)
                 return false;
 
-            if (PhysicalRect.Contains(Event.current.mousePosition))
+            if (MouseRect.Contains(Event.current.mousePosition))
             {
                 var newNodes = new List<GraphNode>();
                 newNodes.AddRange(AllNodes
@@ -465,7 +436,7 @@ namespace Framework.Editor
                     DeselectNodes(SelectedNodes);
                     GUI.FocusControl(string.Empty);
                 }
-                else
+                else if (!(CurrentMouseMode is ConnectMode))
                 {
                     if (!SelectedNodes.Contains(newNodes.First()))
                     {
@@ -602,22 +573,54 @@ namespace Framework.Editor
             }
         }*/
 
-        public void DrawNodeConnectionStyled(Vector2 from, Vector2 to, Color color)
+        public void DrawNodeConnectionStyled(ConnectionDrawData data)
         {
             switch (ConnectionLineStyle)
-            {
-                case ConnectionStyle.Line:
-                    DrawNodeConnectionLine(from, to, color);
-                    break;
-                
+            {                
                 case ConnectionStyle.BezierVertical:
-                    DrawNodeConnectionBezierVertical(from, to, color);
+                    DrawNodeConnectionBezierVertical(data.from, data.to, data.color);
                     break;
                     
                 case ConnectionStyle.BezierHorizontal:
-                    DrawNodeConnectionBezierHorizontal(from, to, color);
+                    DrawNodeConnectionBezierHorizontal(data.from, data.to, data.color);
+                    break;
+                
+                case ConnectionStyle.Smooth:
+                    DrawNodeConnectionSmooth(data);
+                    break;
+                
+                default:
+                    DrawNodeConnectionLine(data.from, data.to, data.color);
                     break;
             }
+        }
+
+        public static void DrawNodeConnectionSmooth(ConnectionDrawData data)
+        {
+            Handles.BeginGUI();
+            Color shadowCol = new Color(0.2f, 0.2f, 0.2f, 0.06f) * Color.black;
+
+            var from_diff = (data.from - data.fromOrigin).normalized;
+            var to_diff = (data.to - data.toOrigin).normalized;
+            
+            var from_dir = new Vector3(from_diff.x, from_diff.y, 0);
+            var to_dir = new Vector3(to_diff.x, to_diff.y, 0);
+
+            Vector3 startPos = new Vector3(data.from.x, data.from.y, 0.0f);
+            Vector3 endPos = new Vector3(data.to.x, data.to.y, 0.0f);
+
+            var angle = Mathf.Lerp(10, 90, Vector2.Distance(startPos, endPos) / 300);
+
+            Vector3 startTan = startPos + from_dir * angle;
+            Vector3 endTan = endPos + to_dir * angle;
+            
+            for (int i = 0; i < 3; i++)
+            {
+                Handles.DrawBezier(startPos, endPos, startTan, endTan, shadowCol, null, (i + 1) * 5);
+            }
+            
+            Handles.DrawBezier(startPos, endPos, startTan, endTan, data.color, null, 2.0f);
+            Handles.EndGUI();
         }
 
         public static void DrawNodeConnectionLine(Vector2 from, Vector2 to, Color color)

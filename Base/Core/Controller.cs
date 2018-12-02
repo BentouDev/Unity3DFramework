@@ -1,14 +1,14 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+using UnityEngine.Serialization;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
 
 namespace Framework
 {
-    public abstract class Controller : MonoBehaviour
+    public abstract class Controller : BaseBehaviour
     {
         private readonly List<string> DebugTxt = new List<string>();
 
@@ -23,16 +23,25 @@ namespace Framework
 
         [Header("Debug")]
         public DebugMode DrawDebug;
-        public bool InitOnStart;
+        [Tooltip("Should init Controller on Start? Uncheck, if pawn spawning is more complex and defined in eg. GameState")]
+        public bool InitOnStart = true;
+
+        [Tooltip("Use common static ControlSystem. Useful when no main Game and System instance is not set")]
         public bool UseCachedControllSystem = true;
         public ControllSystem System;
 
         [Header("Gameplay")]
+        [Tooltip("Stops controller processing on game state change")]
         public bool StopOnStateChange = true;
 
         [Header("Pawn")]
-        public bool FindByTag;
+        [Tooltip("Looks for Pawn by tag if not present")]
+        [FormerlySerializedAs("FindByTag")]
+        public bool FindPawnByTag;
+
+        [Validate("ValidateFindByTag")]
         public string PawnTag;
+        [Validate("ValidatePawn")]
         public BasePawn Pawn;
 
         protected bool Enabled { get; private set; }
@@ -84,7 +93,7 @@ namespace Framework
 
         public void Init()
         {
-            if (FindByTag && Pawn == null)
+            if (FindPawnByTag && Pawn == null)
             {
                 var go = GameObject.FindGameObjectWithTag(PawnTag);
                 Pawn = go ? go.GetComponentInChildren<BasePawn>() : null;
@@ -182,5 +191,28 @@ namespace Framework
         {
             DebugTxt.Add(str);
         }
+        
+#if UNITY_EDITOR
+        public ValidationResult ValidatePawn()
+        {
+            if (!Pawn && !FindPawnByTag)
+                return new ValidationResult(ValidationStatus.Warning, "Pawn is not set and finding by tag is disabled.");
+            return ValidationResult.Ok;
+        }
+
+        public ValidationResult ValidateFindByTag()
+        {
+            bool noTag = FindPawnByTag && string.IsNullOrWhiteSpace(PawnTag);
+            if (noTag)
+            {
+                if (Pawn)
+                    return new ValidationResult(ValidationStatus.Warning, "Pawn is present, but Tag shouldn't be empty if FindByTag is enabled");
+
+                return new ValidationResult(ValidationStatus.Error, "Tag cannot be empty if FindByTag is enabled");
+            }
+
+            return ValidationResult.Ok;
+        }
+#endif
     }
 }

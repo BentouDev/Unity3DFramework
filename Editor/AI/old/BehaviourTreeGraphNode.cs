@@ -18,7 +18,7 @@ namespace Framework.AI
         private Color TargetColor;
         private Color CurrentColor;
         
-        public override Vector2 GetChildConnectPosition(GraphNode child)
+        public override void GetChildConnectPositions(GraphNode child, IList<Vector2> positions)
         {
             float offset = 0;
 
@@ -34,11 +34,11 @@ namespace Framework.AI
 
                 offset += ConnectorSize.x * childNodes.IndexOf(childGUINode.TreeNode);
             }
-            
-            return new Vector2 (
+
+            positions.Add(new Vector2 (
                 drawRect.center.x + offset,
                 drawRect.yMax  + ConnectorSize.y * 0.1f
-            ) - Editor.ScrollPos;
+            ) - Editor.ScrollPos);
         }
 
         public override Vector2 GetParentConnectPosition(GraphNode parent)

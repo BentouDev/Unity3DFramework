@@ -1,6 +1,9 @@
+using System;
+
 namespace Framework
 {
-    public class VisibleInInspector : BaseEditorAttribute
+    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
+    public class VisibleInInspector : Attribute
     {
         
     }

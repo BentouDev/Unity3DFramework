@@ -11,9 +11,23 @@ public class MenuController : GUIBase
 {
     [Header("Debug")] 
     public bool Verbose;
+
+    public enum InitMode
+    {
+        Code,
+        OnStart,
+        OnLevelLoaded
+    }
+
+    public enum InitState
+    {
+        Visible,
+        Hidden
+    }
     
     [Header("Misc")]
-    public bool Autostart = true;
+    public InitMode Autostart;
+    public InitState InitVisibility;
     public string BackButton = "Back";
     
     [Header("Main Menu References")]
@@ -237,32 +251,42 @@ public class MenuController : GUIBase
         allMenus.Clear();
     }
 
-    public void OnLevelLoaded()
+    public void Init()
     {
-        var menus = GetComponentsInChildren<MenuBase>();
-        foreach (MenuBase menu in menus)
+        if (allMenus != null)
+            allMenus.Clear();
+        else
+            allMenus = new List<MenuBase>();
+
+        allMenus.AddRange(GetComponentsInChildren<MenuBase>());
+
+        foreach (MenuBase menu in allMenus)
         {
             menu.Init(this);
             menu.Hide();
-            allMenus.Add(menu);
         }
 
-        Hide();
+        if (InitVisibility == InitState.Visible)
+        {
+            StartCoroutine(DoShowAnim());
+        }
+        else
+        {
+            Hide();
+        }
+    }
+
+    public void OnLevelLoaded()
+    {
+        if (Autostart == InitMode.OnLevelLoaded)
+            Init();
     }
 
     void Start()
     {
-        if (Autostart)
+        if (Autostart == InitMode.OnStart)
         {
-            var menus = FindObjectsOfType<MenuBase>();
-            foreach (MenuBase menu in menus)
-            {
-                menu.Init(this);
-                menu.Hide();
-                allMenus.Add(menu);
-            }
-
-            StartCoroutine(DoShowAnim());
+            Init();
         }
     }
 

@@ -3,8 +3,8 @@
     HLSLINCLUDE
 
         #pragma multi_compile __ FOG_LINEAR FOG_EXP FOG_EXP2
-        #include "PostProcessing/Shaders/StdLib.hlsl"
-        #include "PostProcessing/Shaders/Builtins/Fog.hlsl"
+        #include "Packages/com.unity.postprocessing/PostProcessing/Shaders/StdLib.hlsl"
+        #include "Packages/com.unity.postprocessing/PostProcessing/Shaders/Builtins/Fog.hlsl"
 
         TEXTURE2D_SAMPLER2D(_MainTex, sampler_MainTex);
         TEXTURE2D_SAMPLER2D(_CameraDepthTexture, sampler_CameraDepthTexture);

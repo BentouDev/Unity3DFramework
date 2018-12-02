@@ -53,13 +53,21 @@ namespace Framework.Editor
                 }
             }
 
-            internal void UpdateResultCache(Framework.IBaseObject instance, ValidationResult result)
+            private void UpdateResultCache(Framework.IBaseObject instance, ValidationResult result)
             {
                 var previous = instance.PreviousResult(Info.Name);
                 if (previous != null && !previous.Equals(result))
                     ValidatorWindow.GetInstance().RemoveValidation(previous);
 
                 instance.UpdateValidation(Info.Name, result);                
+            }
+
+            public static bool HasPropertyValue(SerializedProperty property)
+            {
+                if (property.isArray)
+                    return property.arraySize > 0;
+
+                return !(property.objectReferenceValue == null && !property.hasVisibleChildren);
             }
 
             // Move storage of last result to actual instance
@@ -72,7 +80,7 @@ namespace Framework.Editor
 
                 else if (RequireValue)
                 {
-                    if (property.objectReferenceValue == null && !property.hasVisibleChildren)
+                    if (!HasPropertyValue(property))
                         result = new ValidationResult(ValidationStatus.Error, $"{Info.Name} is required!");
                 }
 
@@ -97,6 +105,7 @@ namespace Framework.Editor
             typeof(HeaderAttribute),
             typeof(SpaceAttribute),
             typeof(HideInInspector),
+            typeof(VisibleInInspector),
             typeof(BaseEditorAttribute)
         };
 
@@ -105,11 +114,39 @@ namespace Framework.Editor
         
         public static Func<UnityEngine.Object, ValidationResult> BuildValidationCaller(Type targetType, MethodInfo method)
         {
-            var obj       = Expression.Parameter(typeof(UnityEngine.Object), "instance");
-            var castParam = Expression.Convert(obj, targetType);
-            var call      = Expression.Call(castParam, method);
+            var obj  = Expression.Parameter(typeof(UnityEngine.Object), "instance");
+            var cast = Expression.Convert(obj, targetType);
+            var call = Expression.Call(cast, method);
 
             return Expression.Lambda<Func<UnityEngine.Object, ValidationResult>>(call, obj).Compile();
+        }
+
+        private void ProcessClassMember(List<ReflectionInfo> cache, System.Type targetType, MemberInfo member)
+        {
+            ReflectionInfo info = null;
+
+            if (member is FieldInfo)
+                info = new ReflectionInfo(member, MemberType.Field, ((FieldInfo)member).IsPublic);
+            else if (member is PropertyInfo)
+                info = new ReflectionInfo(member, MemberType.Property, false);
+
+            if (info != null)
+            {
+                if (!string.IsNullOrEmpty(info.ValidateMethodName))
+                {
+                    var methodInfo = targetType.GetMethod(info.ValidateMethodName);
+                    if (methodInfo == null)
+                        Debug.LogErrorFormat
+                        (
+                            "Validate: Not method called '{0}' in class '{1}'",
+                            info.ValidateMethodName, targetType.Name
+                        );
+                    else
+                        info.Validator = BuildValidationCaller(targetType, methodInfo);
+                }
+
+                cache.Add(info);
+            }            
         }
 
         private void Initialize()
@@ -124,30 +161,7 @@ namespace Framework.Editor
 
                     foreach (var member in targetType.GetMembers())
                     {
-                        ReflectionInfo info = null;
-
-                        if (member is FieldInfo)
-                            info = new ReflectionInfo(member, MemberType.Field, ((FieldInfo)member).IsPublic);
-                        else if (member is PropertyInfo)
-                            info = new ReflectionInfo(member, MemberType.Property, false);
-
-                        if (info != null)
-                        {
-                            if (!string.IsNullOrEmpty(info.ValidateMethodName))
-                            {
-                                var methodInfo = targetType.GetMethod(info.ValidateMethodName);
-                                if (methodInfo == null)
-                                    Debug.LogErrorFormat
-                                    (
-                                        "Validate: Not method called '{0}' in class '{1}'",
-                                        info.ValidateMethodName, targetType.Name
-                                    );
-                                else
-                                    info.Validator = BuildValidationCaller(targetType, methodInfo);
-                            }
-
-                            cache.Add(info);
-                        }
+                        ProcessClassMember(cache, targetType, member);
                     }
 
                     ReflectionCache[serializedObject.targetObject.GetType()] = cache;

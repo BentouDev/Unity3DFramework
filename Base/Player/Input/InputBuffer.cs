@@ -2,8 +2,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
+using Framework;
 
-public class InputBuffer<EnumType> : MonoBehaviour where EnumType : struct, IConvertible
+public class InputBuffer<TKeyType> : BaseBehaviour
 {
     public bool DrawDebug;
 
@@ -26,10 +27,10 @@ public class InputBuffer<EnumType> : MonoBehaviour where EnumType : struct, ICon
     {
         public ButtonState State;
 
-        public bool IsHold { get { return State == ButtonState.Hold; } }
-        public bool IsRapid { get { return State == ButtonState.Rapid; } }
-        public bool IsPressed { get { return State == ButtonState.Pressed; } }
-        
+        public bool IsHold => State == ButtonState.Hold;
+        public bool IsRapid => State == ButtonState.Rapid;
+        public bool IsPressed => State == ButtonState.Pressed;
+
         public ButtonInput(bool val) : this()
         {
             State = ButtonState.Pressed;
@@ -51,11 +52,10 @@ public class InputBuffer<EnumType> : MonoBehaviour where EnumType : struct, ICon
         }
     }
 
-    private Dictionary<EnumType, ButtonInput> buffer = new Dictionary<EnumType, ButtonInput>();
-    private Dictionary<EnumType, ButtonInfo> buttons = new Dictionary<EnumType, ButtonInfo>();
+    private Dictionary<TKeyType, ButtonInput> Buffer = new Dictionary<TKeyType, ButtonInput>();
+    private Dictionary<TKeyType, ButtonInfo> Buttons = new Dictionary<TKeyType, ButtonInfo>();
+    private IList<TKeyType> Definitions;
 
-    //private ButtonInput[] buffer;
-    //private ButtonInfo[] buttons;
     private int buttonCount;
 
     struct ButtonInfo
@@ -66,38 +66,31 @@ public class InputBuffer<EnumType> : MonoBehaviour where EnumType : struct, ICon
         public bool Value;
     }
 
-    void Start()
+    public void DefineButtons(IList<TKeyType> buttons)
     {
-        buttonCount = Enum.GetValues(typeof(InputButtonEnum)).Cast<InputButtonEnum>().Distinct().Count();
+        Definitions = buttons;
+
         Clear();
     }
 
     public void Clear()
     {
-        buttons.Clear();
-        buffer.Clear();
+        Buttons.Clear();
+        Buffer.Clear();
         
-        //buttons = new ButtonInfo[buttonCount];
-        //buffer = new ButtonInput[buttonCount];
-
-        foreach (EnumType enumValue in Enum.GetValues(typeof(EnumType)))
+        foreach (TKeyType key in Definitions)
         {
-            buttons[enumValue] = new ButtonInfo() { Frames = FramesInBuffer };
-            buffer[enumValue] = new ButtonInput();
+            Buttons[key] = new ButtonInfo() { Frames = FramesInBuffer};
+            Buffer[key] = new ButtonInput();
         }
-
-        //for(int i = 0; i < buttonCount; i++)
-        //{
-        //    buttons[i].Frames = FramesInBuffer;
-        //}
     }
     
-    public ButtonInput HandleButton(bool button, EnumType which)
+    public ButtonInput HandleButton(bool button, TKeyType which)
     {
         ButtonInput result;
-        ButtonInfo info = buttons[which];
+        ButtonInfo info = Buttons[which];
 
-        bool clean = buffer[which].State == ButtonState.None;
+        bool clean = Buffer[which].State == ButtonState.None;
         bool changed = info.Value != button;
         bool buffered = info.Frames < FramesInBuffer;
 
@@ -138,8 +131,8 @@ public class InputBuffer<EnumType> : MonoBehaviour where EnumType : struct, ICon
 
         result.State = button && info.Elapsed > HoldTimeRequirement ? ButtonState.Hold : result.State;
 
-        buttons[which] = info;
-        buffer[which] = result;
+        Buttons[which] = info;
+        Buffer[which] = result;
 
         return result;
     }
@@ -150,18 +143,11 @@ public class InputBuffer<EnumType> : MonoBehaviour where EnumType : struct, ICon
             return;
 
         int i = 10;
-        foreach (EnumType enumValue in Enum.GetValues(typeof(EnumType)))
+        foreach (TKeyType key in Definitions)
         {
-            GUI.Label(new Rect(10, i, 500, 30), string.Format("{0} : {1}, state {2}, pot {3}", enumValue, (bool)buffer[enumValue], buffer[enumValue].State, buttons[enumValue].RapidPotential));
+            GUI.Label(new Rect(10, i, 500, 30),
+                $"{key} : {(bool) Buffer[key]}, state {Buffer[key].State}, pot {Buttons[key].RapidPotential}");
             i += 20;
         }
-        
-        /*GUI.Label(new Rect(10,10,500,30), "Dash " + (bool)buffer[0] + " state " + buffer[0].State + " pot " + buttons[0].RapidPotential);
-        GUI.Label(new Rect(10,30,500,30), "Jump " + (bool)buffer[1] + " state " + buffer[1].State + " pot " + buttons[1].RapidPotential);
-        GUI.Label(new Rect(10,50,500,30), "Block " + (bool)buffer[2] + " state " + buffer[2].State + " pot " + buttons[2].RapidPotential);
-        GUI.Label(new Rect(10,70,500,30), "Burst " + (bool)buffer[3] + " state " + buffer[3].State + " pot " + buttons[3].RapidPotential);
-        GUI.Label(new Rect(10,90,500,30), "Slash " + (bool)buffer[4] + " state " + buffer[4].State + " pot " + buttons[4].RapidPotential);
-        GUI.Label(new Rect(10,110,500,30), "Kick " + (bool)buffer[5] + " state " + buffer[5].State + " pot " + buttons[5].RapidPotential);
-        GUI.Label(new Rect(10,130,500,30), "Special " + (bool)buffer[6] + " state " + buffer[6].State + " pot " + buttons[6].RapidPotential);*/
     }
 }

@@ -4,12 +4,8 @@ using UnityEngine;
 
 namespace Framework
 {
-    public class SimplePlayerController : Controller
+    public class SimplePlayerController : BasePlayerController
     {
-        [Header("Camera")]
-        public string CameraTag;
-        public ActionCamera PawnCamera;
-
         [Header("Input")]
         public string MoveX = "Move X";
         public string MoveY = "Move Y";
@@ -17,17 +13,6 @@ namespace Framework
         private Vector2 CurrentInput = Vector2.zero;
 
         public Transform CurrentTarget;
-
-        protected override void OnInit()
-        {
-            if (!PawnCamera)
-            {
-                var go = GameObject.FindGameObjectWithTag(CameraTag);
-                PawnCamera = go ? go.GetComponent<ActionCamera>() : null;
-            }
-
-            if (PawnCamera != null) PawnCamera.Init();
-        }
 
         protected override void OnProcessControll()
         {

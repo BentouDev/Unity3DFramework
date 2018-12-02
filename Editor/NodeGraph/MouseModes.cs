@@ -222,7 +222,7 @@ namespace Framework.Editor.MouseModes
         GraphNodeEditor Editor;
         GraphNode       ConnectionSource;
         Vector2         StartPos;
-        
+
         public ConnectMode(GraphNodeEditor editor, GraphNode node, Vector2 position)
         {
             Editor = editor;
@@ -242,14 +242,23 @@ namespace Framework.Editor.MouseModes
                 data.MousePos = pos;
                 data.Source   = ConnectionSource;
                 data.Target   = Editor.AllNodes
-                    .Where(n => n.PhysicalRect.Contains(physicalPos))
+                    .Where(n => n.IsAcceptingConnection(ConnectionSource, physicalPos))
                     .OrderByDescending(n => n.Position.y)
                     .FirstOrDefault();
         }
 
         public void Update(Vector2 pos)
         {
-            Editor.DrawNodeConnectionStyled(StartPos, pos, Color.cyan);
+            GraphNodeEditor.ConnectionDrawData data = new GraphNodeEditor.ConnectionDrawData
+            {
+                fromOrigin = ConnectionSource.Position,
+                @from = StartPos,
+                toOrigin = pos,
+                to = pos,
+                color = Color.cyan
+            };
+
+            Editor.DrawNodeConnectionStyled(data);
             Editor.WantsRepaint = true;
         }
     }

@@ -112,7 +112,14 @@ public class BlackboardRequiredDrawer : PropertyDrawer
                 var objectFieldRect = position;
                     objectFieldRect.y += BoxBackgroundMargin;
 
-                int result = EditorGUI.Popup(objectFieldRect, GUIContent.none, index + 1, ParameterListContent.ToArray(), (GUIStyle)"ShurikenObjectField");
+                int result = EditorGUI.Popup
+                (
+                    objectFieldRect, 
+                    GUIContent.none, 
+                    index + 1, 
+                    ParameterListContent.ToArray(), 
+                    SpaceEditorStyles.ParametrizedField
+                );
 
                 if (!Editor.ExecuteInRuntime())
                 {

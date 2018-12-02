@@ -11,6 +11,7 @@ namespace Framework.Editor
     {
         internal GraphNodeEditor Editor;
 
+        public static readonly double DoubleClickTime = 0.25f;
         public static readonly int PositionSnap = 5;
 
         public static Vector2 ConnectorSize = new Vector2(16, 16);
@@ -23,6 +24,8 @@ namespace Framework.Editor
         protected Vector2 position;
         protected Vector2 size;
         protected Rect drawRect;
+        private double LastLabelClickTime;
+        private string IntermediateName;
 
         public List<ConnectionInfo> connectedTo = new List<ConnectionInfo>();
         
@@ -31,14 +34,6 @@ namespace Framework.Editor
         {
             [SerializeField]
             public GraphNode Node;
-
-//            [SerializeField]
-//            [System.Obsolete("Deprecated")]
-//            public int IndexTo;
-//
-//            [SerializeField]
-//            [System.Obsolete("Deprecated")]
-//            public int IndexFrom;
             
             public bool Equals(ConnectionInfo other)
             {
@@ -64,6 +59,8 @@ namespace Framework.Editor
         public virtual string Name { get; set; }
 
         public bool Selected { get; private set; }
+
+        public bool IsBeingRenamed { get; private set; }
 
         public Rect DrawRect => drawRect;
 
@@ -132,9 +129,17 @@ namespace Framework.Editor
             || Editor.BoundsRect.Overlaps(BoundsRect))
             {
                 drawRect.center += Editor.PannedOffset;
-                
-                OnGUI();
-                DrawContent();
+
+                var savedRect = drawRect;
+                {
+                    OnGUI();
+                    DrawContent();
+                }
+                drawRect = savedRect;
+
+                GUI.color = Color.white;
+
+                PostGUI();
                 SnapToGrid();
             }
         }
@@ -150,20 +155,69 @@ namespace Framework.Editor
             RecalculateDrawRect();
         }
 
+        protected virtual void OnRenamed(string newName)
+        {
+            
+        }
+
+        protected void HandleLabel(Rect rect, string text, GUIStyle style, GUIStyle editStyle = null)
+        {
+            if (editStyle == null)
+                editStyle = EditorStyles.textField;
+
+            if (Event.current.type == EventType.MouseDown)
+            {
+                if (rect.Contains(Event.current.mousePosition))
+                {
+                    if (EditorApplication.timeSinceStartup - LastLabelClickTime < DoubleClickTime)
+                    {
+                        IsBeingRenamed = true;
+                        IntermediateName = text;
+
+                        Event.current.Use();
+                    }
+                    
+                    LastLabelClickTime = EditorApplication.timeSinceStartup;
+                }
+                else if (IsBeingRenamed)
+                {
+                    IsBeingRenamed = false;
+                    OnRenamed(IntermediateName);
+                }
+            }
+
+            if (IsBeingRenamed)
+            {
+                GUI.SetNextControlName("_NodeRenameField");
+                IntermediateName = GUI.TextField(rect, IntermediateName, editStyle);
+
+                GUI.FocusControl("_NodeRenameField");
+            }
+            else
+            {
+                GUI.Label(rect, text, style);
+            }
+        }
+
         protected virtual void OnGUI()
         {
             if (Selected)
-                GUI.color = Color.cyan;
+                GUI.color = SpaceEditorStyles.ActiveColor;
             GUI.Box(drawRect, GUIContent.none, WindowStyle);
                 
             GUI.color = Color.white;
 
-            GUI.Label(drawRect, UniqueName, EditorStyles.whiteLargeLabel);
+            HandleLabel(drawRect, UniqueName, EditorStyles.whiteLargeLabel);
         }
 
         protected virtual void DrawContent()
         {
             OnDrawContent();
+        }
+
+        protected virtual void PostGUI()
+        {
+            
         }
 
         protected abstract void OnDrawContent();
@@ -178,9 +232,9 @@ namespace Framework.Editor
             return drawRect.min - ConnectorSize;
         }
 
-        public virtual Color GetParentConnectColor(GraphNode childNode)
+        public virtual Color GetParentConnectColor(GraphNode parent)
         {
-            return Color.white;
+            return parent != null && parent.Selected ? SpaceEditorStyles.ActiveColor : Color.white;
         }
 
         public virtual Vector2 GetParentConnectPosition(GraphNode parent)
@@ -188,31 +242,9 @@ namespace Framework.Editor
             return drawRect.center;
         }
 
-        public virtual Vector2 GetChildConnectPosition(GraphNode child)
+        public virtual void GetChildConnectPositions(GraphNode child, IList<Vector2> positions)
         {
-            return drawRect.center;
-        }
-
-        [System.Obsolete("Deprecated, use GetParentConnectPosition and GetChildConnectPosition")]
-        public virtual Vector2 GetConnectPosition(int connectIndex)
-        {
-            if (connectIndex == 0)
-                throw new System.InvalidOperationException();
-
-            var xHalf = ConnectorSize.x * 0.5f;
-            var yHalf = ConnectorSize.y * 0.5f;
-
-            return connectIndex > 0
-                ? new Vector2
-                (
-                    drawRect.xMax + xHalf,
-                    position.y + yHalf
-                )
-                : new Vector2
-                (
-                    drawRect.xMin - xHalf,
-                    position.y + yHalf
-                );
+            positions.Add(drawRect.center);
         }
 
         protected virtual bool CanConnectTo(GraphNode child)
@@ -221,6 +253,11 @@ namespace Framework.Editor
             {
                 Node = child
             });
+        }
+
+        public virtual bool IsAcceptingConnection(GraphNode parent, Vector2 physicalPos)
+        {
+            return CanMakeConnection(parent, this) && PhysicalRect.Contains(physicalPos);
         }
 
         public static bool CanMakeConnection(GraphNode parent, GraphNode child)
@@ -252,43 +289,6 @@ namespace Framework.Editor
 
         }
 
-        [System.Obsolete("Deprecated, use CanMakeConnection(BaseNode parent, BaseNode child) instead")]
-        public static bool CanMakeConnection(GraphNode left, int leftIndex, GraphNode right, int rightIndex)
-        {
-            return false;//leftIndex != 0 && rightIndex != 0 && left != right && !left.connectedTo.Contains(new ConnectionInfo() { Node = right, IndexTo = rightIndex, IndexFrom = leftIndex });
-        }
-
-        [System.Obsolete("Deprecated, use MakeConnection(BaseNode parent, BaseNode child) instead")]
-        public static void MakeConnection(GraphNode left, int leftIndex, GraphNode right, int rightIndex)
-        {
-//            left.connectedTo.Add(new ConnectionInfo() { Node = right, IndexTo = rightIndex, IndexFrom = leftIndex });
-//            left.OnConnectToRight(right, leftIndex, rightIndex);
-//            right.OnConnectToLeft(left, rightIndex, leftIndex);
-        }
-
-        [System.Obsolete("Deprecated, use OnConnectToChild(BaseNode child)")]
-        public virtual void OnConnectToRight(GraphNode node, int from, int to)
-        {
-
-        }
-
-        [System.Obsolete("Deprecated, use OnConnectToParent(BaseNode parent) instead")]
-        public virtual void OnConnectToLeft(GraphNode node, int from, int to)
-        {
-
-        }
-
-        /*public virtual bool CanMakeConnection(BaseNode other, int connectIndex)
-        {
-            return connectIndex != 0 && this != other && !connectedTo.Contains(new ConnectionInfo() {Node = other, IndexTo = connectIndex});
-        }*/
-
-        /*public virtual void MakeConnection(BaseNode baseNode, int connectIndex, int currentIndex)
-        {
-            connectedTo.Add(new ConnectionInfo() { IndexTo = connectIndex, Node = baseNode });
-            baseNode.OnBeingConnected(this, currentIndex);
-        }*/
-
         public void RemoveConnection(GraphNode node)
         {
             if (connectedTo.Any(c => c.Node == node))
@@ -316,11 +316,6 @@ namespace Framework.Editor
         {
             
         }
-
-        /*public virtual void OnBeingConnected(BaseNode node, int index)
-        {
-
-        }*/
 
         public virtual void OnDelete()
         {

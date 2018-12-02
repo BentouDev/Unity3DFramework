@@ -31,6 +31,9 @@ namespace Framework
 
         public void Init()
         {
+            if (IsInitialized)
+                return;
+
             if (AllControllers == null)
                 AllControllers = new List<Controller>();
             else
