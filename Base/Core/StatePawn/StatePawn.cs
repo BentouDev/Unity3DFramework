@@ -188,7 +188,7 @@ namespace Framework
                     break;
             }
             
-            float movementFactor = target.magnitude / MaxSpeed;
+            float movementFactor = target.magnitude / Movement.MaxSpeed;
 
             if (!string.IsNullOrEmpty(Animation.MovementBlend))
                 Anim.SetFloat(Animation.MovementBlend, movementFactor);
