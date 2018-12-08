@@ -168,7 +168,7 @@ namespace Framework
             
             OnDrawDebug();
 
-            var  debugPos  = (Camera.main ?? Camera.current).WorldToScreenPoint(Pawn.transform.position);
+            var  debugPos = (Camera.main ? Camera.main : Camera.current).WorldToScreenPoint(Pawn ? Pawn.transform.position : transform.position);
 
             if (debugPos.z > 0)
             {

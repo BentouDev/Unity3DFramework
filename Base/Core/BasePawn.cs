@@ -294,7 +294,7 @@ namespace Framework
         protected virtual void OnTick()
         { }
 
-        void ResetBody()
+        public void ResetBody()
         {
             Velocity = Vector3.zero;
             ForceSum = Vector3.zero;

@@ -17,6 +17,7 @@ namespace Framework
         private bool IsInitialized;
      
         public List<Controller> AllControllers;
+        public List<Controller> ToDisable = new List<Controller>();
    
         void Start()
         {
@@ -57,7 +58,7 @@ namespace Framework
 
         public void Unregister(Controller controller)
         {
-            AllControllers.Remove(controller);
+            ToDisable.Add(controller);
         }
 
         public void Enable()
@@ -91,6 +92,13 @@ namespace Framework
             {
                 controller.Tick();
             }
+
+            foreach (var controller in ToDisable)
+            {
+                AllControllers.Remove(controller);
+            }
+            
+            ToDisable.Clear();
         }
 
         public void FixedTick()
