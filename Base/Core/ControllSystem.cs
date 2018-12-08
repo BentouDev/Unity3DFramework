@@ -90,6 +90,12 @@ namespace Framework
             
             foreach (Controller controller in AllControllers)
             {
+                if (!controller)
+                {
+                    ToDisable.Add(controller);
+                    continue;
+                }
+                
                 controller.Tick();
             }
 
