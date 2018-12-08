@@ -294,6 +294,13 @@ namespace Framework
         protected virtual void OnTick()
         { }
 
+        void ResetBody()
+        {
+            Velocity = Vector3.zero;
+            ForceSum = Vector3.zero;
+            Body.Sleep();
+        }
+
         protected virtual void OnFixedTick()
         {
             Velocity = CurrentDirection * Movement.MaxSpeed;
