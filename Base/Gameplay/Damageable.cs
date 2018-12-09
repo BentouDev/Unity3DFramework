@@ -73,7 +73,7 @@ public class Damageable : MonoBehaviour
 
     void Update()
     {
-        if (Anim)
+        if (Anim && string.IsNullOrEmpty(OnDed))
         {
             Anim.SetBool(OnDed, !IsAlive);
         }
