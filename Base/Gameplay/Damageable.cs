@@ -22,6 +22,8 @@ public class Damageable : MonoBehaviour
     public Animator Anim;
     public string OnHit;
     public string OnDed;
+    public UnityEvent OnDeath;
+    public UnityEvent OnGotHit;
     public AnimationPlayer DeathAnim;
 
     void Start()
@@ -55,6 +57,8 @@ public class Damageable : MonoBehaviour
         if (Anim)
             Anim.SetTrigger(OnHit);
         
+        OnGotHit.Invoke();
+        
         LastHurt = Time.time;
         CurrentHealth -= amount;
         CurrentHealth  = Mathf.Clamp(CurrentHealth, 0, MaxHealth);
@@ -69,6 +73,7 @@ public class Damageable : MonoBehaviour
             Anim.SetTrigger(OnDed);
         
         DeathAnim.Play();
+        OnDeath.Invoke();
     }
 
     void Update()
