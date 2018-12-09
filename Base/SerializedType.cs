@@ -149,7 +149,8 @@ public class SerializedType : IEquatable<SerializedType>
     public bool Equals(SerializedType other)
     {
         return other != null && string.Equals(_serializedTypeName, other._serializedTypeName) 
-                             && string.Equals(_serializedMetadata, other._serializedMetadata);
+                             && ((string.IsNullOrEmpty(_serializedMetadata) && string.IsNullOrEmpty(other._serializedMetadata))
+                                 || string.Equals(_serializedMetadata, other._serializedMetadata));
     }
 
     public override string ToString()

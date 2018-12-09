@@ -69,6 +69,7 @@ namespace Framework
             if (layer == null)
                 return;
 
+            layer.Init();
             Runtime.Insert(0, layer);
         }
 

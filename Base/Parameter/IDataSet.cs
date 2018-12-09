@@ -2,6 +2,8 @@ namespace Framework
 {
     public interface IDataSet
     {
+        void Init();
+        
         void InsertFromParameter(GenericParameter parameter);
 
         bool GetFromParameter(GenericParameter parameter);

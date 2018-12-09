@@ -16,6 +16,11 @@ namespace Framework.AI
 
         public DataSet Data;
 
+        public void Init()
+        {
+            Data.Init();
+        }
+
         public void InsertFromParameter(GenericParameter parameter)
         {
             Data.InsertFromParameter(parameter);

@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.Events;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -22,6 +19,9 @@ public class Damageable : MonoBehaviour
 
     public bool IsAlive { get { return CurrentHealth > 0; } }
 
+    public Animator Anim;
+    public string OnHit;
+    public string OnDed;
     public AnimationPlayer DeathAnim;
 
     void Start()
@@ -35,6 +35,7 @@ public class Damageable : MonoBehaviour
     public void Init()
     {
         CurrentHealth = StartingHealth;
+        Anim = GetComponentInChildren<Animator>();
     }
 
     public void Heal(int amount)
@@ -50,7 +51,10 @@ public class Damageable : MonoBehaviour
 
         if (Time.time - LastHurt < Delay)
             return;
-
+        
+        if (Anim)
+            Anim.SetTrigger(OnHit);
+        
         LastHurt = Time.time;
         CurrentHealth -= amount;
         CurrentHealth  = Mathf.Clamp(CurrentHealth, 0, MaxHealth);
@@ -61,11 +65,19 @@ public class Damageable : MonoBehaviour
 
     public void Dead()
     {
+        if (Anim)
+            Anim.SetBool(OnDed, true);
+        
         DeathAnim.Play();
     }
 
     void Update()
     {
+        if (Anim)
+        {
+            Anim.SetBool(OnDed, !IsAlive);
+        }
+        
         DeathAnim.Update();
     }
 

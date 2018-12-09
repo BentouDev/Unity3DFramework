@@ -154,7 +154,12 @@ namespace Framework
                 Index[Serialized[i].Name] = i;
             }
         }
-        
+
+        public void Init()
+        {
+            RebuildIndex();
+        }
+
         public void InsertFromParameter(GenericParameter parameter)
         {
             int index = GetIndexOf(parameter.Name);

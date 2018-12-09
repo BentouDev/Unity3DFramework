@@ -9,6 +9,11 @@ namespace Framework
         [HideInInspector]
         public DataBank Bank = new DataBank();
 
+        public void Init()
+        {
+            Bank.Init();
+        }
+
         public void InsertFromParameter(GenericParameter parameter)
         {
             Bank.InsertFromParameter(parameter);
