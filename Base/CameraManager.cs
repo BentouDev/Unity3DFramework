@@ -88,12 +88,18 @@ namespace Framework
         private void SwitchCameras(Camera toDisable, Camera toEnable)
         {
             if (toDisable)
+            {
                 toDisable.enabled = false;
+                toDisable.GetComponent<AudioListener>().enabled = false;
+            }
 
             MainCamera = toEnable;
 
             if (toEnable)
+            {
                 toEnable.enabled = true;
+                toEnable.GetComponent<AudioListener>().enabled = true;
+            }
         }
     }
 }
