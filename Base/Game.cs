@@ -97,18 +97,21 @@ namespace Framework
             });
         }
 
-        public void Init()
+        void ObtainStates()
         {
-            Instance.OnSetInstance();
-            
-            RegisterConsoleCommands();
-
             if (AllStates != null)
                 AllStates.Clear();
             else
                 AllStates = new List<GameState>();
 
-            AllStates.AddRange(FindObjectsOfType<GameState>());
+            AllStates.AddRange(FindObjectsOfType<GameState>());            
+        }
+
+        public void Init()
+        {
+            Instance.OnSetInstance();
+            
+            RegisterConsoleCommands();
 
             if (Loader)
             {
@@ -133,8 +136,12 @@ namespace Framework
 
         private void SceneLoaded()
         {
+            ObtainStates();
+            
+            //var go = GameObject.FindWithTag("MainState");
+            //var levelState = go ? go.GetComponent<GameState>() : null;
             var levelState = AllStates.FirstOrDefault(s => s.gameObject.scene.path != Loader.BaseScene
-                                                           && s.CompareTag("MainState"));
+                                                          && s.CompareTag("MainState"));
 
             if (NextState)
             {

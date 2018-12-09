@@ -66,17 +66,17 @@ public class Damageable : MonoBehaviour
     public void Dead()
     {
         if (Anim)
-            Anim.SetBool(OnDed, true);
+            Anim.SetTrigger(OnDed);
         
         DeathAnim.Play();
     }
 
     void Update()
     {
-        if (Anim && string.IsNullOrEmpty(OnDed))
-        {
-            Anim.SetBool(OnDed, !IsAlive);
-        }
+//        if (Anim && !string.IsNullOrEmpty(OnDed))
+//        {
+//            Anim.SetBool(OnDed, !IsAlive);
+//        }
         
         DeathAnim.Update();
     }
