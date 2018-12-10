@@ -25,6 +25,7 @@ namespace Framework
 
         [Header("Collision")]
         public LayerMask Mask;
+        public float Margin = 0.15f;
 
         [Header("Offset")]
         [FormerlySerializedAs("Offset")]
@@ -129,7 +130,7 @@ namespace Framework
             if (DrawDebug)
                 Debug.DrawRay(Target.position + offset, -transform.forward * hit.distance, Color.red, 5.0f);
 
-            return -hit.distance;
+            return -Mathf.Max(0, hit.distance - Margin);
         }
     }
 }

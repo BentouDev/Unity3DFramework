@@ -26,6 +26,8 @@ public class Damageable : MonoBehaviour
     public UnityEvent OnGotHit;
     public AnimationPlayer DeathAnim;
 
+    private bool PlayedDead;
+
     void Start()
     {
         if (!InitOnStart)
@@ -54,36 +56,44 @@ public class Damageable : MonoBehaviour
         if (Time.time - LastHurt < Delay)
             return;
         
-        if (Anim)
-            Anim.SetTrigger(OnHit);
-        
-        OnGotHit.Invoke();
-        
         LastHurt = Time.time;
         CurrentHealth -= amount;
         CurrentHealth  = Mathf.Clamp(CurrentHealth, 0, MaxHealth);
-        
+
         if (!IsAlive)
+        {
             Dead();
+        }
+        else
+        {
+            if (Anim&& !string.IsNullOrEmpty(OnHit))
+                Anim.SetTrigger(OnHit);    
+        }
+
+        OnGotHit.Invoke();
     }
 
     public void Dead()
     {
-        if (Anim)
+        PlayedDead = true;
+
+        if (Anim && !string.IsNullOrEmpty(OnDed))
             Anim.SetTrigger(OnDed);
-        
+
         DeathAnim.Play();
         OnDeath.Invoke();
     }
 
     void Update()
     {
-//        if (Anim && !string.IsNullOrEmpty(OnDed))
-//        {
-//            Anim.SetBool(OnDed, !IsAlive);
-//        }
-        
-        DeathAnim.Update();
+        if (!PlayedDead && !IsAlive)
+        {
+            Dead();
+        }
+        else
+        {
+            DeathAnim.Update();
+        }
     }
 
 #if UNITY_EDITOR

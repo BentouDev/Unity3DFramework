@@ -124,6 +124,9 @@ namespace Framework
 
         public Vector3 DesiredForward { get; set; }
 
+        private Vector3 OverridenDirection;
+        private bool IsFaceOverriden;
+
         [Header("Animation")]
         public AnimationInfo Animation;
         
@@ -215,11 +218,21 @@ namespace Framework
                 ForceSum = Vector3.zero;
             }
         }
-        
-        public void FaceMovementDirection(float speed)
+
+        public void LockFaceDirection(Vector3 dir)
+        {
+            OverridenDirection = dir;
+            IsFaceOverriden = true;
+        }
+
+        public void UnlockFaceDirection()
+        {
+            IsFaceOverriden = false;
+        }
+
+        public Vector3 GetDesiredFaceDir()
         {
             Vector3 target = Vector3.zero;
-
             switch (Face)
             {
                 case FaceMode.Direction:
@@ -230,14 +243,30 @@ namespace Framework
                     break;
                 case FaceMode.MovementPhysics:
                     target = Body.velocity.magnitude < Velocity.magnitude 
-                           ? Body.velocity : Velocity;
+                        ? Body.velocity : Velocity;
 //                    target = Vector3.Lerp(Body.velocity, Velocity, 0.5f);
                     break;
                 case FaceMode.Physics:
                     target = Body.velocity;
                     break;
             }
-            
+
+            return target;
+        }
+        
+        public void FaceMovementDirection(float speed)
+        {
+            Vector3 target = Vector3.zero;
+
+            if (IsFaceOverriden)
+            {
+                target = OverridenDirection;
+            }
+            else
+            {
+                target = GetDesiredFaceDir();
+            }
+
             if (target.magnitude > FaceTreshold 
             && Vector3.Distance(transform.forward, target) > FaceTreshold)
             {

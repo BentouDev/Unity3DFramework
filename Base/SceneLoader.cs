@@ -269,7 +269,7 @@ namespace Framework
             return loadedScenes;
         }
 
-        public void StartLoadScene(SceneReference desiredScene)
+        public void StartLoadScene(SceneReference desiredScene, bool force = false)
         {
             if (_isLoading)
                 return;
@@ -278,7 +278,7 @@ namespace Framework
 
             _nextScene = desiredScene;
             
-            if (_isLoading || SceneManager.GetActiveScene().path == desiredScene)
+            if (_isLoading || (!force && SceneManager.GetActiveScene().path == desiredScene))
             {
                 Debug.LogFormat("Scene '{0}' already loaded!", desiredScene);
                 EndLoadScene(already_loaded: true);
