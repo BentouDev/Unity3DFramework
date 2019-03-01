@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Framework.AI;
 using Framework.Editor;
 using UnityEditor;
+using UnityEditor.Animations;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -27,15 +28,16 @@ namespace Framework
             SetDrawerForKnownType<int>(DrawAsInt, LayoutAsInt);
             SetDrawerForKnownType<bool>(DrawAsBool, LayoutAsBool);
             SetDrawerForKnownType<float>(DrawAsFloat, LayoutAsFloat);
-            SetDrawerForKnownType<string>(DrawAsString, LayoutAsString);
             SetDrawerForKnownType<Color>(DrawAsColor, LayoutAsColor);
-            SetDrawerForKnownType<AnimationCurve>(DrawAsCurve, LayoutAsCurve);
             SetDrawerForKnownType<Vector2>(DrawAsVec2, LayoutAsVec2);
             SetDrawerForKnownType<Vector3>(DrawAsVec3, LayoutAsVec3);
-            SetDrawerForKnownType<GameObject>(DrawAsObject<GameObject>, LayoutAsObject<GameObject>);
+            SetDrawerForKnownType<string>(DrawAsString, LayoutAsString);
+            SetDrawerForKnownType<AnimationCurve>(DrawAsCurve, LayoutAsCurve);
+            SetDrawerForKnownType<RuntimeAnimatorController>(DrawAsObject<RuntimeAnimatorController>, LayoutAsObject<RuntimeAnimatorController>);
             SetDrawerForKnownType<SerializedType>(DrawAsTypePicker, LayoutAsTypePicker);
-            SetDrawerForKnownType<DerivedType>(DrawAsDerivedTypePicker, LayoutAsDerivedTypePicker);
             SetDrawerForKnownType<Component>(DrawAsObject<Component>, LayoutAsObject<Component>);
+            SetDrawerForKnownType<DerivedType>(DrawAsDerivedTypePicker, LayoutAsDerivedTypePicker);
+            SetDrawerForKnownType<GameObject>(DrawAsObject<GameObject>, LayoutAsObject<GameObject>);
             SetDrawerForKnownType<ScriptableObject>(DrawAsObject<ScriptableObject>, LayoutAsObject<ScriptableObject>);
         }
 
@@ -97,19 +99,7 @@ namespace Framework
             }
 
             var type = parameter.GetAs<DerivedType>();
-            string content = "None";
-
-            if (type.BaseType != null && type.BaseType.Type != null)
-            {
-                if (type.TypeValue != null && type.TypeValue.Type != null)
-                {
-                    content = $"{type.TypeValue.Type.Name} ({type.BaseType.Type.Name})";
-                }
-                else
-                {
-                    content = "None ({type.BaseType.Type.Name})";
-                }
-            }
+            string content = type.DisplayedName;
 
             if (EditorGUI.DropdownButton(rect, new GUIContent(content), FocusType.Keyboard))
             {

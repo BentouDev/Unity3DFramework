@@ -32,7 +32,7 @@ namespace Framework.AI
         
         #region Window
 
-        [MenuItem("Gameplay/old Behaviour Tree")]
+        [MenuItem("Gameplay/Deprecated/old Behaviour Tree")]
         public static void ShowEditor()
         {
             instance = EditorWindow.GetWindow<BehaviourTreeEditor>();
@@ -124,7 +124,8 @@ namespace Framework.AI
 
         void OnGraphNodeEmptyTarget(BehaviourTreeGraphNode node, Vector2 offset)
         {
-            Nodes.StartConnection(node, offset);
+            // Nodes.StartConnection(node, offset);
+            throw new NotImplementedException("TODO!");
         }
 
         #endregion
@@ -537,7 +538,7 @@ namespace Framework.AI
 
         private void AddNewParam(Type type)
         {
-            string typename  = GenericParameter.GetDisplayedName(type);
+            string typename  = KnownType.GetDisplayedName(type);
             string paramName = StringUtils.MakeUnique(string.Format("New {0}", typename), TreeAsset.Parameters.Select(p => p.Name));
 
             TreeAsset.Parameters.Add (
@@ -590,9 +591,10 @@ namespace Framework.AI
                 {
                     foreach (BehaviourTreeNode childNode in childNodes)
                     {
-                        var newNode = new BehaviourTreeGraphNode(childNode);
-                        GraphNode.MakeConnection(graphNode, newNode);
-                        CreateNodesRecursive(newNode);
+//                        var newNode = new BehaviourTreeGraphNode(childNode);
+//                        GraphNode.MakeConnection(graphNode, newNode);
+//                        CreateNodesRecursive(newNode);
+                        throw new NotImplementedException("TODO!");
                     }
                 }
             }

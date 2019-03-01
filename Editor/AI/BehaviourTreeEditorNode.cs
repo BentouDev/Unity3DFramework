@@ -44,7 +44,7 @@ namespace Framework.AI.Editor
             if (TreeNode.IsParentNode())
             {
                 var asParent  = TreeNode.AsParentNode();
-                var nodeIndex = connectedTo.FindIndex(x => x.Node == child);
+                var nodeIndex = connectedTo.FindIndex(x => x.Target.Owner == child);
                 if (nodeIndex != -1)
                 {
                     var offset = ConnectorSize.x * nodeIndex;
@@ -60,30 +60,28 @@ namespace Framework.AI.Editor
             positions.Add(drawRect.center);
         }
 
-        protected override bool CanConnectTo(GraphNode child)
+        protected override bool CanConnectTo(Slot targetSlot, Slot childSlot)
         {
-            var asBehaviour = child as BehaviourTreeEditorNode;
-            if (asBehaviour == null)
+            if (!(childSlot.Owner is BehaviourTreeEditorNode asBehaviour))
                 return false;
             
-            return !asBehaviour.HasParent && base.CanConnectTo(child);
+            return !asBehaviour.HasParent && base.CanConnectTo(targetSlot, childSlot);
         }
 
-        protected override void OnConnectToParent(GraphNode parent)
+        protected override void OnConnectToParent(Connection eventSource)
         {
             HasParent = true;
         }
 
-        protected override void OnConnectToChild(GraphNode node)
+        protected override void OnConnectToChild(Connection connection)
         {
-            var asBehaviour = node as BehaviourTreeEditorNode;
-            if (asBehaviour != null)
+            if (connection.Target.Owner is BehaviourTreeEditorNode asBehaviour)
             {
                 Presenter.OnConnectNodes(TreeNode, asBehaviour.TreeNode);
             }
         }
 
-        protected override void OnParentDisconnected(GraphNode node)
+        protected override void OnParentDisconnected(Connection node)
         {
             HasParent = false;
         }

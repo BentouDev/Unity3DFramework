@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Linq;
+using Framework.Utils;
 using UnityEditor;
 using UnityEngine;
 
@@ -83,6 +84,8 @@ namespace Framework.Editor {
 		}
 
 		internal readonly int id;
+
+		public SerializedProperty ListUnsafe => list;
 
 		private SerializedProperty list;
 		private int controlID = -1;
@@ -529,9 +532,9 @@ namespace Framework.Editor {
 		{
 			if (getElementHeightCallback != null)return getElementHeightCallback(element) + ELEMENT_HEIGHT_OFFSET;
 	
-			var list = element.type != "string" ? ReorderableDrawer.GetList(element) : null;
-			if (list != null)
-				return list.GetHeight();
+			var list = element.type != "string" ? ReorderableDrawer.GetList(element) : default(Pair<bool,ReorderableList>);
+			if (list.Second != null)
+				return list.Second.GetHeight();
 
 			return EditorGUI.GetPropertyHeight(element, GetElementLabel(element), IsElementExpandable(element)) + ELEMENT_HEIGHT_OFFSET;
 		}
@@ -899,10 +902,10 @@ namespace Framework.Editor {
 			}
 			else
 			{
-				var list = element.type != "string" ? ReorderableDrawer.GetList(element) : null;
-				if (list != null)
+				var list = element.type != "string" ? ReorderableDrawer.GetList(element) : default(Pair<bool, ReorderableList>);
+				if (list.Second != null)
 				{
-					list.DoList(renderRect, label);
+					list.Second.DoList(renderRect, label);
 				}
 				else
 				{
@@ -1081,21 +1084,45 @@ namespace Framework.Editor {
 
 					AddItem();
 				}
+
+				var asIObject = list.serializedObject.targetObject as IBaseObject;
+				if (asIObject != null)
+				{
+					// Add feature to filter out properties by "something"
+					// Can we get reflection info for serializedProperty?
+					asIObject.GetNotify<IReorderableNotify>(list.GetPath())?.OnAdded();
+				}
 			}
 
 			EditorGUI.EndDisabledGroup();
 
 			EditorGUI.BeginDisabledGroup(!CanSelect(selection) || !canRemove || (onCanRemoveCallback != null && !onCanRemoveCallback(this)));
 
-			if (GUI.Button(subRect, Style.iconToolbarMinus, Style.preButton)) {
-
-				if (onRemoveCallback != null) {
-
+			if (GUI.Button(subRect, Style.iconToolbarMinus, Style.preButton)) 
+			{
+				if (onRemoveCallback != null) 
+				{
 					onRemoveCallback(this);
 				}
-				else {
-
+				else 
+				{
 					Remove(selection.ToArray());
+				}
+				
+				var asIObject = list.serializedObject.targetObject as IBaseObject;
+				if (asIObject != null)
+				{
+					if (selection.Any())
+					{
+						foreach (var index in selection.ToArray())
+						{
+							asIObject.GetNotify<IReorderableNotify>(list.GetPath())?.OnRemoved(index);
+						}	
+					}
+					else
+					{
+						asIObject.GetNotify<IReorderableNotify>(list.GetPath())?.OnRemoved(0);
+					}
 				}
 			}
 
@@ -1210,10 +1237,12 @@ namespace Framework.Editor {
 			pagination.page = (int)userData;
 		}
 
-		private void DispatchChange() {
+		private void DispatchChange()
+		{
+			GUI.changed = true;
 
-			if (onChangedCallback != null) {
-
+			if (onChangedCallback != null) 
+			{
 				onChangedCallback(this);
 			}
 		}
@@ -1698,8 +1727,13 @@ namespace Framework.Editor {
 
 			//swap the selected elements in the List
 
-			int s = selection.Length;
+			IReorderableNotify notify = null;
+			if (list.serializedObject.targetObject is IBaseObject asIObject)
+			{
+				notify = asIObject.GetNotify<IReorderableNotify>(list.GetPath());
+			}
 
+			int s = selection.Length;			
 			while (--s > -1) { 
 
 				int newIndex = dragList.GetIndexFromSelection(selection[s]);
@@ -1708,6 +1742,7 @@ namespace Framework.Editor {
 				selection[s] = listIndex;
 
 				list.MoveArrayElement(dragList[newIndex].startIndex, listIndex);
+				notify?.OnReordered(dragList[newIndex].startIndex, listIndex);
 			}
 
 			//restore expanded states on items
@@ -1842,7 +1877,7 @@ namespace Framework.Editor {
 				iconToolbarMinus = EditorGUIUtility.IconContent("Toolbar Minus", "Remove selection from list");
 				iconPagePrev = EditorGUIUtility.IconContent("Animation.PrevKey", "Previous page");
 				iconPageNext = EditorGUIUtility.IconContent("Animation.NextKey", "Next page");
-				iconPagePopup = EditorGUIUtility.IconContent("MiniPopupNoBg", "Select page");
+				iconPagePopup = EditorGUIUtility.IconContent("ShurikenPopup", "Select page");
 
 				paginationText = new GUIStyle();
 				paginationText.margin = new RectOffset(2, 2, 0, 0);

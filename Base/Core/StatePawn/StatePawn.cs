@@ -193,8 +193,8 @@ namespace Framework
             if (!string.IsNullOrEmpty(Animation.MovementBlend))
                 Anim.SetFloat(Animation.MovementBlend, movementFactor);
 
-            if (!string.IsNullOrEmpty(Animation.AirBoolean))
-                Anim.SetBool(Animation.AirBoolean, !IsGrounded);
+            if (!string.IsNullOrEmpty(Animation.GroundedBoolean))
+                Anim.SetBool(Animation.GroundedBoolean, !IsGrounded);
 
             if (!string.IsNullOrEmpty(Animation.MoveBoolean))
                 Anim.SetBool(Animation.MoveBoolean, Mathf.Abs(movementFactor) > 0.1f);

@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -72,14 +73,23 @@ namespace Framework
         [SerializeField]
         private float[] _floats = new float[4];
 
+        bool HasSameValue(GenericParameter other)
+        {
+            if (!HoldType.Equals(other.HoldType))
+                return false;
+
+            // TODO implement GenericParam comparison properly
+            return true;
+        }
+
         private static KnownType CreateKnownType<T>(string name, string propertyName)
         {
             PropertyInfo propertyInfo = typeof(T).GetProperty(propertyName);
             
             return new KnownType<T>(name)
             {
-                Getter = PropertyReference<GenericParameter, T>.BuildGetter(propertyInfo),
-                Setter = PropertyReference<GenericParameter, T>.BuildSetter(propertyInfo),
+                Getter = PropertyReference<GenericParameter, T>.BuildPropertyGetter(propertyInfo),
+                Setter = PropertyReference<GenericParameter, T>.BuildPropertySetter(propertyInfo),
             };
         }
 
@@ -129,7 +139,16 @@ namespace Framework
                     Setter = (parameter, curve) => { parameter._curve = curve; }
                 }
             );
-
+            
+            KnownType.InsertKnownType
+            (
+                new KnownType<RuntimeAnimatorController>("Animator Controller")
+                {
+                    Getter = parameter => parameter._object as RuntimeAnimatorController,
+                    Setter = (parameter, controller) => { parameter._object = controller; }
+                }
+            );
+            
             KnownType.InsertKnownType
             (
                 new KnownType<Color>("Color")
@@ -214,24 +233,10 @@ namespace Framework
             }
         }
 
-        public PropertyReference CreatePropertyReference<T>(T instance, string name)
-        {
-            var knownType = GetKnownType(HoldType.Type);
-            if (knownType != null)
-            {
-                return knownType.CreateProperty(instance, name);
-            }
-            else
-            {
-                Debug.LogErrorFormat("Known type for {0} not found! Unable to crate IValue.", HoldType.Type);
-                return null;
-            }
-        }
-
         public IValue CreateValue()
         {
 #if UNITY_EDITOR
-            var knownType = GetKnownType(HoldType.Type);
+            var knownType = KnownType.GetKnownType(HoldType.Type);
             if (knownType != null)
             {
                 return knownType.CreateValue(this);
@@ -283,6 +288,13 @@ namespace Framework
                 info.LayoutFunc(parameter, label);
             }
 
+            if (parameter.HoldType.Type.IsSubclassOf(KnownType.AnimControllerType)
+            && KnownType.Register.TryGetValue(KnownType.AnimControllerType.FullName, out info)
+            && info.LayoutFunc != null)
+            {
+                info.LayoutFunc(parameter, label);
+            }
+            
             if (parameter.HoldType.Type.IsSubclassOf(KnownType.ComponentType)
             && KnownType.Register.TryGetValue(KnownType.ComponentType.FullName, out info)
             && info.LayoutFunc != null)
@@ -311,6 +323,14 @@ namespace Framework
                     return;
                 }
 
+                if (parameter.HoldType.Type.IsSubclassOf(KnownType.AnimControllerType)
+                    && KnownType.Register.TryGetValue(KnownType.AnimControllerType.FullName, out info)
+                    && info.DrawFunc != null)
+                {
+                    info.DrawFunc(drawRect, parameter, label);
+                    return;
+                }
+                
                 if (parameter.HoldType.Type.IsSubclassOf(KnownType.ComponentType)
                     && KnownType.Register.TryGetValue(KnownType.ComponentType.FullName, out info)
                     && info.DrawFunc != null)
@@ -330,64 +350,20 @@ namespace Framework
             
             EditorGUI.LabelField(drawRect, new GUIContent(parameter.Name));
         }
-
-        public static string GetDisplayedName(System.Type type)
-        {
-            var typename = type.FullName;
-
-            KnownType info;
-            if (KnownType.Register.TryGetValue(typename, out info))
-            {
-                return info.GenericName;
-            }
-
-            if (type.IsSubclassOf(KnownType.ComponentType)
-            && KnownType.Register.ContainsKey(KnownType.ComponentType.FullName))
-            {   
-                return type.Name;
-            }
-
-            if (type.IsSubclassOf(KnownType.ScriptableObjectType)
-            && KnownType.Register.ContainsKey(KnownType.ScriptableObjectType.FullName))
-            {
-                return type.Name;
-            }
-
-            return null;
-        }
 #endif
 
-        public static KnownType GetKnownType(System.Type type)
+        public override int GetHashCode()
         {
-            var typename = type.FullName;
-
-            KnownType info;
-            if (KnownType.Register.TryGetValue(typename, out info))
+            unchecked
             {
-                return info;
+                var hashCode = (Name != null ? Name.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ (HoldType != null ? HoldType.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ (_string != null ? _string.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ (_curve != null ? _curve.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ (_object != null ? _object.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ (_floats != null ? _floats.GetHashCode() : 0);
+                return hashCode;
             }
-
-            if (type.IsSubclassOf(KnownType.ComponentType))
-            {
-                typename = KnownType.ComponentType.FullName;
-
-                if (KnownType.Register.TryGetValue(typename, out info))
-                {
-                    return info;
-                }
-            }
-
-            if (type.IsSubclassOf(KnownType.ScriptableObjectType))
-            {
-                typename = KnownType.ScriptableObjectType.FullName;
-
-                if (KnownType.Register.TryGetValue(typename, out info))
-                {
-                    return info;
-                }
-            }
-
-            return null;
         }
     }
 }

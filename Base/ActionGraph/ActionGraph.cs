@@ -15,24 +15,14 @@ namespace Framework
         public List<ActionGraphNode> Nodes = new List<ActionGraphNode>();
 
         [SerializeField]
+        [Validate("OnValidateParameters")]
         public List<GenericParameter> Parameters = new List<GenericParameter>();
 
         [HideInInspector]
-        [SerializeField]
-        public SerializedType InputType;
+        public AnyEntry AnyEntryNode;
 
-        [System.Serializable]
-        public class EntryPoint
-        {
-            [SerializeField]
-            public GenericParameter Input;
-
-            [SerializeField]
-            public List<ActionGraphNode> Nodes = new List<ActionGraphNode>();
-        }
-
-        [SerializeField]
-        public List<EntryPoint> Inputs = new List<EntryPoint>();
+        [HideInInspector]
+        public List<EventEntry> NamedEventEntries = new List<EventEntry>();
 
 #if UNITY_EDITOR
         [HideInInspector]
@@ -72,5 +62,46 @@ namespace Framework
 
             return false;            
         }
+
+        public void SetToParameter(GenericParameter parameter)
+        {
+            
+        }
+
+        public void GetFromParameter(GenericParameter parameter)
+        {
+            
+        }
+
+        public void UpdateFromDataset()
+        {
+            foreach (var node in Nodes)
+            {
+                node.UpdateFromParameters();
+            }
+        }
+
+        public void UploadToDataset()
+        {
+            foreach (var node in Nodes)
+            {
+                node.UploadToParameters();
+            }
+        }
+
+#if UNITY_EDITOR
+        public ValidationResult OnValidateParameters()
+        {
+            HashSet<string> _cache = new HashSet<string>();
+            foreach (var parameter in Parameters)
+            {
+                if (_cache.Contains(parameter.Name))
+                    return new ValidationResult(ValidationStatus.Error,
+                        $"All parameters name must be unique! Repeated '{parameter.Name}'");
+            }
+            
+            return ValidationResult.Ok;
+        }
+#endif
     }
 }

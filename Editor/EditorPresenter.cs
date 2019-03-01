@@ -23,6 +23,9 @@ namespace Framework.Editor
 
         internal virtual void OnSelectionChange()
         { }
+        
+        internal virtual void OnUpdate()
+        { }
 
         internal abstract void OnDraw();
     }

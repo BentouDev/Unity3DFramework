@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Framework
 {
@@ -78,12 +79,16 @@ namespace Framework
         public struct AnimationInfo
         {
             [SerializeField]
+            [AnimatorParam(AnimatorControllerParameterType.Float)]
             public string MovementBlend;
 
+            [FormerlySerializedAs("AirBoolean")]
             [SerializeField]
-            public string AirBoolean;
+            [AnimatorParam(AnimatorControllerParameterType.Bool)]
+            public string GroundedBoolean;
 
             [SerializeField]
+            [AnimatorParam(AnimatorControllerParameterType.Bool)]
             public string MoveBoolean;
         }
 
@@ -359,7 +364,7 @@ namespace Framework
             Animation = new AnimationInfo()
             {
                 MovementBlend = "Forward",
-                AirBoolean = "InAir"
+                GroundedBoolean = "InAir"
             };
         }
         

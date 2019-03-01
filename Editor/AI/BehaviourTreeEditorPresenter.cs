@@ -317,9 +317,9 @@ namespace Framework.AI.Editor
                 {
                     menu.AddItem
                     (
-                        new GUIContent($"Disconnect.../{info.Node.Name}"), 
+                        new GUIContent($"Disconnect.../{info.Target.Owner.Name}"), 
                         false, 
-                        () => View.DisconnectNodes(node, info.Node as BehaviourTreeEditorNode)
+                        () => View.DisconnectNodes(node, info.Target.Owner as BehaviourTreeEditorNode)
                     );
                 }
             }
@@ -374,7 +374,7 @@ namespace Framework.AI.Editor
             _doRepair = true;
         }
 
-        public void OnDropFailed(GraphNode node, Vector2 mousePos)
+        public void OnDropFailed(Slot node, Vector2 mousePos)
         {
             ShowMainContextMenu((type) =>
             {
@@ -385,12 +385,12 @@ namespace Framework.AI.Editor
                     obj.name = obj.Name;
 
                     string undoName = $"Created {obj.name} node";
-                    
+
                     Undo.SetCurrentGroupName(undoName);
                     Undo.RecordObject(TreeAsset, undoName);
 
-                    GraphNode.MakeConnection(node, AddNewNode(obj));
-                    
+                    GraphNode.ConnectNodes(node, AddNewNode(obj));
+
                     View.Repaint();
                 }
                 else

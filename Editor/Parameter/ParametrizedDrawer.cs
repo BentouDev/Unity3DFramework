@@ -7,6 +7,7 @@ namespace Framework.Editor
     [CustomPropertyDrawer(typeof(Parametrized))]
     public class ParametrizedDrawer : PropertyDrawer
     {
+        private static readonly int LockSize = 16;
         private static readonly int BoxBackgroundHeight = 4;
         private static readonly int BoxBackgroundMargin = 2;
         private static readonly int FieldHeight = 22;
@@ -70,9 +71,9 @@ namespace Framework.Editor
                 return false;
             }
 
-            Parameters = DataProvider.GetParameters(p => p.HoldType.Type == fieldInfo.FieldType);
+            Parameters = DataProvider.GetParameters(p => p.HoldType.Type.IsSubclassOf(fieldInfo.FieldType));
 
-            Typename = GenericParameter.GetDisplayedName(fieldInfo.FieldType);
+            Typename = KnownType.GetDisplayedName(fieldInfo.FieldType);
             if (Typename == null)
             {
                 EditorGUI.HelpBox(position, string.Format("Type {0} is not a known type!", fieldInfo.FieldType), MessageType.Error);
@@ -101,11 +102,18 @@ namespace Framework.Editor
             if (!Initialize(ref position, property, label))
                 return;
 
-//            Parameters.FindIndex(p => p.Name.Equals(property.name)
-//                                      && p.HoldType.Equals(value.Parameter.HoldType)
-//                                      && p.HoldType.Type == type);
+            var type = new SerializedType(fieldInfo.FieldType);
 
-            DrawBackground(position, DarkRed); // ? Color.white : DarkRed
+            int index = -1;
+            bool wasConstant = false;
+            var setParam = AsParametrized.GetParameter(property.name, type);
+            if (setParam != null)
+            {
+                index = Parameters.FindIndex(p => p.Name.Equals(setParam.Name) && p.HoldType.Equals(setParam.HoldType));
+                wasConstant = AsParametrized.IsParameterConstant(property.name);
+            }
+
+            DrawBackground(position, index != -1 || wasConstant ? Color.white : DarkRed);
 
             label = EditorGUI.BeginProperty(position, label, property);
             {
@@ -115,29 +123,49 @@ namespace Framework.Editor
                 EditorGUI.indentLevel = 0;
                 EditorGUI.BeginChangeCheck();
                 {
-                    var objectFieldRect = position;
-                    objectFieldRect.y += BoxBackgroundMargin;
+                    //var objectFieldRect = position;
 
-                    int result = EditorGUI.Popup
-                    (
-                        objectFieldRect,
-                        GUIContent.none,
-                        0,//index + 1,
-                        ParameterListContent.ToArray(), 
-                        SpaceEditorStyles.ParametrizedField
-                    );
+                    var fieldRect = position;//EditorGUILayout.GetControlRect(true, LockSize, SpaceEditorStyles.LightObjectField);
+                    var lockRect  = new Rect(fieldRect.x + fieldRect.width - LockSize, fieldRect.y + 2, LockSize, fieldRect.height);
 
-                    if (!DataProvider.CanEditObject(Target))
+                    bool isConstant = EditorGUI.Toggle(lockRect, wasConstant, SpaceEditorStyles.LockButton);
+
+                    fieldRect.width -= LockSize;
+
+                    if (isConstant)
                     {
-                        if (result > 0 && result <= Parameters.Count)
-                        {
-                            var parameter = Parameters[result - 1];
+                        GenericParameter parameter = wasConstant
+                            ? AsParametrized.GetParameter(property.name, type)
+                            : new GenericParameter(type);
 
-                            AsParametrized.SetParameter(property.name, parameter);
-                        }
-                        else
+                        GenericParamUtils.DrawParameter(fieldRect, parameter, false);
+
+                        AsParametrized.SetParameter(property.name, parameter, true);
+                    }
+                    else
+                    {
+                        fieldRect.y += BoxBackgroundMargin;
+                        int result = EditorGUI.Popup
+                        (
+                            fieldRect,
+                            GUIContent.none,
+                            index + 1,
+                            ParameterListContent.ToArray(), 
+                            SpaceEditorStyles.ParametrizedField
+                        );
+
+                        if ((result - 1) != index && DataProvider.CanEditObject(Target))
                         {
-                            AsParametrized.ClearParameter(property.name);
+                            if (result > 0 && result <= Parameters.Count)
+                            {
+                                var parameter = Parameters[result - 1];
+
+                                AsParametrized.SetParameter(property.name, parameter);
+                            }
+                            else
+                            {
+                                AsParametrized.ClearParameter(property.name);
+                            }                            
                         }
                     }
                 }

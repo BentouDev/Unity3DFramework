@@ -98,7 +98,7 @@ public class ParamListDrawer
 
     private void AddNewParam(SerializedType type)
     {
-        string typename = GenericParameter.GetDisplayedName(type.Type);
+        string typename = KnownType.GetDisplayedName(type.Type);
         string paramName = StringUtils.MakeUnique($"New {typename}", Parameters.Select(p => p.Name));
 
         Parameters.Add

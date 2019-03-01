@@ -1,10 +1,15 @@
 namespace Framework.Utils
 {
-    public class Pair<T, U>
+    public static class PairUtils
     {
-        public Pair() 
-        { }
-
+        public static Pair<T, U> MakePair<T, U>(T first, U second)
+        {
+            return new Pair<T, U>(first, second);
+        }
+    }
+    
+    public struct Pair<T, U>
+    {
         public Pair(T first, U second) 
         {
             this.First = first;
@@ -13,5 +18,11 @@ namespace Framework.Utils
 
         public T First { get; set; }
         public U Second { get; set; }
+
+        public void Deconstruct(out T first, out U second)
+        {
+            first = First;
+            second = Second;
+        }
     };
 }

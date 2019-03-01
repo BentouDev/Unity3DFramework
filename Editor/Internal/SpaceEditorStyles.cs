@@ -17,6 +17,21 @@ public static class SpaceEditorStyles
             return _skin;
         }
     }
+
+    private static GUIStyle _alignedRight;
+
+    public static GUIStyle AlignedRigthWhiteBoldText
+    {
+        get
+        {
+            if (_alignedRight == null)
+            {
+                _alignedRight = new GUIStyle(EditorStyles.whiteBoldLabel) {alignment = TextAnchor.UpperRight};
+            }
+
+            return _alignedRight;
+        }
+    }
  
     public static Texture2D GetValidationIcon(ValidationStatus status)
     {

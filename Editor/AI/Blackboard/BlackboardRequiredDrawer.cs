@@ -68,7 +68,7 @@ public class BlackboardRequiredDrawer : PropertyDrawer
 
         AsNode = (BehaviourTreeNode) property.serializedObject.targetObject;
 
-        Typename = GenericParameter.GetDisplayedName(fieldInfo.FieldType);
+        Typename = KnownType.GetDisplayedName(fieldInfo.FieldType);
         if (Typename == null)
         {
             EditorGUI.HelpBox(position, string.Format("Type {0} is not a known type!", fieldInfo.FieldType), MessageType.Error);

@@ -143,6 +143,8 @@ namespace Framework
             var levelState = AllStates.FirstOrDefault(s => s.gameObject.scene.path != Loader.BaseScene
                                                           && s.CompareTag("MainState"));
 
+            gameObject.BroadcastToAll("OnPreLevelLoaded");
+            
             if (NextState)
             {
                 SwitchState(NextState);

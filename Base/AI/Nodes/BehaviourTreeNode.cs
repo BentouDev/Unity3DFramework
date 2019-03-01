@@ -40,14 +40,14 @@ namespace Framework.AI
             foreach (var key in ParametrizedProperties.Keys.ToList())
             {
                 var paramProp = ParametrizedProperties[key];
-                    paramProp.CreateProperty<T>(instance, key);
+                    paramProp.Initialize<T>(this as T, key);
 
-                if (paramProp.Constant)
-                {
-                    paramProp.Property.GetFromParameter(paramProp.Parameter);
-                }
-
-                ParametrizedProperties[key] = paramProp;
+//                if (paramProp.Constant)
+//                {
+//                    paramProp.Property.GetFromParameter(instance, paramProp.Parameter);
+//                }
+//
+//                ParametrizedProperties[key] = paramProp;
             }
         }
 
@@ -150,8 +150,8 @@ namespace Framework.AI
         {
             foreach (var pair in ParametrizedProperties.Where(p => !p.Value.Constant))
             {
-                blackboard.SetToParameter(pair.Value.Parameter);
-                pair.Value.Property.GetFromParameter(pair.Value.Parameter);
+                // blackboard.SetToParameter(pair.Value.Parameter);
+                // pair.Value.Property.GetFromParameter(pair.Value.Parameter);
             }
         }
         
@@ -159,8 +159,9 @@ namespace Framework.AI
         {
             foreach (var pair in ParametrizedProperties.Where(p => !p.Value.Constant))
             {
-                pair.Value.Property.SetToParameter(pair.Value.Parameter);
-                blackboard.GetFromParameter(pair.Value.Parameter);
+                // pair.Value.Property.SetToParameter(pair.Value.Parameter);
+                // pair.Value.SetToProvider(blackboard);
+                // blackboard.GetFromParameter(pair.Value.Parameter);
             }
         }
 

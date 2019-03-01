@@ -1,18 +1,21 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using System.Xml.Xsl;
-using UnityEditor.Animations;
 using UnityEngine;
 
 namespace Framework
 {
-    public class CharacterMesh : MonoBehaviour
+    public class CharacterMesh : BaseBehaviour
     {
         [Header("Pawn")]
+        [RequireValue]
         public Framework.BasePawn Pawn;
         
         [Header("Animation")]
-        public AnimatorController AnimGraph;
+        [RequireValue]
+        public RuntimeAnimatorController AnimGraph;
+        
+        [RequireValue]
         public Avatar Skeleton;
         
         [Header("Slots")]
@@ -24,7 +27,7 @@ namespace Framework
         [HideInInspector]
         public List<SlotInfo> Slots;
     
-        private Transform RootInstance;
+        private Transform _rootInstance;
     
         [System.Serializable]
         public struct SlotInfo
@@ -34,14 +37,6 @@ namespace Framework
     
             [SerializeField]
             public string Name;
-    
-            [HideInInspector]
-            internal GameObject Instance;
-            
-            internal void SetInstance(GameObject obj)
-            {
-                Instance = obj;
-            }
         }
     
         private void UpdateSlots()
@@ -68,7 +63,7 @@ namespace Framework
         {
             var go = Instantiate(RootMesh, transform);
     
-            RootInstance = go.transform;
+            _rootInstance = go.transform;
             
             var anim = go.GetOrAddComponent<Animator>();
             
@@ -80,48 +75,48 @@ namespace Framework
             foreach (var child in Slots)
             {
                 if (child.Mesh == null) continue;
-    
-                child.SetInstance(Instantiate(child.Mesh));
-                AddLimb(child.Instance.transform, RootInstance);
-                Destroy(child.Instance.gameObject);
+
+                // Create temporary instance to copy data from
+                GameObject tempObject = Instantiate(child.Mesh);
+                AddLimb(tempObject, _rootInstance);
+                Destroy(tempObject);
             }
         }
         
-        void AddLimb(Transform limb, Transform root)
+        void AddLimb(GameObject limb, Transform root)
         {
-            var BonedObjects = limb.gameObject.GetComponentsInChildren<SkinnedMeshRenderer>();
-            foreach (var SkinnedRenderer in BonedObjects)
-                ProcessBonedObject(SkinnedRenderer, root);
+            var bonedObjects = limb.GetComponentsInChildren<SkinnedMeshRenderer>();
+            foreach (var skinnedRenderer in bonedObjects)
+                ProcessBonedObject(skinnedRenderer, root);
         }
         
         private void ProcessBonedObject(SkinnedMeshRenderer thisRenderer, Transform root)
         {
-            var NewObj = new GameObject( thisRenderer.gameObject.name );
-            NewObj.transform.parent = root.transform;
-            NewObj.AddComponent<SkinnedMeshRenderer>();
-            
-            var NewRenderer = NewObj.GetComponent<SkinnedMeshRenderer>();
-            var MyBones = new Transform[thisRenderer.bones.Length];
+            var newObj = new GameObject(thisRenderer.gameObject.name);
+            newObj.transform.SetParent(root.transform);
+            newObj.AddComponent<SkinnedMeshRenderer>();
+
+            var newRenderer = newObj.GetComponent<SkinnedMeshRenderer>();
+            var newBones = new Transform[thisRenderer.bones.Length];
             
             for (var i = 0; i < thisRenderer.bones.Length; i++)
-                MyBones[i] = FindChildByName(thisRenderer.bones[i].name, root.transform );
+                newBones[i] = FindChildByName(thisRenderer.bones[i].name, root.transform);
             
-            NewRenderer.bones      = MyBones;
-            NewRenderer.sharedMesh = thisRenderer.sharedMesh;
-            NewRenderer.materials  = thisRenderer.materials;
+            newRenderer.bones      = newBones;
+            newRenderer.sharedMesh = thisRenderer.sharedMesh;
+            newRenderer.materials  = thisRenderer.materials;
         }
      
         private Transform FindChildByName(string thisName, Transform thisObj)
         {
-            Transform ReturnObj;
             if (thisObj.name == thisName)
                 return thisObj.transform;
     
             for (var i = 0; i < thisObj.childCount; i++)
             {
-                ReturnObj = FindChildByName(thisName, thisObj.GetChild(i));
-                if (ReturnObj)
-                    return ReturnObj;
+                var returnObj = FindChildByName(thisName, thisObj.GetChild(i));
+                if (returnObj)
+                    return returnObj;
             }
             
             return null;

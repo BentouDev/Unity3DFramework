@@ -83,6 +83,11 @@ namespace Framework.Editor
             Presenter.OnSelectionChange();
         }
 
+        protected void Update()
+        {
+            Presenter.OnUpdate();
+        }
+
         protected void OnGUI()
         {
             switch (Event.current.type)

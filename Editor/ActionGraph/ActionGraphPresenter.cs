@@ -4,6 +4,7 @@ using Framework.AI.Editor;
 using Framework.Editor.Base;
 using UnityEngine;
 using UnityEditor;
+using UnityEditor.PackageManager;
 
 namespace Framework.Editor
 {
@@ -13,44 +14,38 @@ namespace Framework.Editor
         private ActionGraph Asset;
         private string AssetPath;
         private bool _duringRecreate;
-        private int CurrentInputTarget;
         
         public class ConnectEvent
         {
-            public ActionGraphNode Parent;
-            public ActionGraphNode Child;
-            public int InputIndex;
+            public Connection Connection;
         }
-        
+
         public readonly EventQueue<ConnectEvent> OnConnectNodesQueue = new EventQueue<ConnectEvent>();
         
         public ActionGraphPresenter(ActionGraphView view)
         {
             View = view;
-            
+
             OnConnectNodesQueue.Reassign((data =>
             {
-                if (!data.Child || (!data.Parent && data.InputIndex == -1))
-                    return false;
+                // if (!data.Connection.From.Owner.connectedTo.Any(c => c.Target.Equals(data.Connection.Target)))
+                {
+                    var asParent = data.Connection.From.Owner as ActionGraphEditorNode;
+                    var asChild = data.Connection.Target.Owner as ActionGraphEditorNode;
 
-                if (data.InputIndex == -1)
-                {
-                    if (!data.Parent.Connections.Contains(data.Child))
+                    if (asParent != null 
+                    &&  asChild != null 
+                    &&  asChild.ActionNode is ActionGraphNode asActionNode)
                     {
-                        Undo.RecordObject(data.Parent, $"Connect nodes {data.Child.name} to {data.Parent.name}");
-                        data.Parent.Connections.Add(data.Child);                        
-                    }
-                }
-                else
-                {
-                    if (!Asset.Inputs[data.InputIndex].Nodes.Contains(data.Child))
-                    {
-                        Undo.RecordObject(Asset, $"Connect node {data.Child.name} to input {data.InputIndex}");
-                        Asset.Inputs[data.InputIndex].Nodes.Add(data.Child);                        
+                        Undo.RecordObject(asParent.ActionNode,
+                            $"Connect nodes {asActionNode.name} to {asParent.ActionNode.name}");
+                        
+                        GraphNode.FinishConnection(data.Connection);
+                        return true;                        
                     }
                 }
 
-                return true;
+                return false;
             }));
         }
         
@@ -83,8 +78,15 @@ namespace Framework.Editor
 
         internal override void OnSelectionChange()
         {
-            var asAct = Selection.activeObject as ActionGraphNode;
-            if (Selection.activeObject != Asset && (asAct == null || !Asset.Nodes.Contains(asAct)))
+            bool isFromAsset(ActionGraphNodeBase node)
+            {
+                return Asset.AnyEntryNode == node 
+                    || Asset.Nodes.Contains(node)
+                    || Asset.NamedEventEntries.Contains(node);
+            }
+
+            var asAct = Selection.activeObject as ActionGraphNodeBase;
+            if (Selection.activeObject != Asset && (asAct == null || !isFromAsset(asAct)))
                 ReloadAssetFromSelection();
         }
 
@@ -111,27 +113,63 @@ namespace Framework.Editor
 
             OnLoadAsset(asset);
         }
-        
+
         private void DeleteFromAsset(ActionGraphEditorNode node)
         {
             Undo.RecordObject(Asset, $"Removed {node.ActionNode.name}");
-            
-            foreach (ActionGraphNode graphNode in Asset.Nodes)
-            {
-                graphNode.Connections.Remove(node.ActionNode);
-            }
 
-            foreach (ActionGraph.EntryPoint input in Asset.Inputs)
+            switch (node.ActionNode)
+            {
+                case ActionGraphNode asAction:
+                {
+                    foreach (ActionGraphNode graphNode in Asset.Nodes)
+                    {
+                        graphNode.Connections.Remove(asAction);
+                    }
+
+                    foreach (var entry in Asset.NamedEventEntries)
+                    {
+                        if (entry.Child == asAction)
+                            entry.Child = null;
+                    }
+
+                    if (Asset.AnyEntryNode)
+                    {
+                        for (int i = 0; i < Asset.AnyEntryNode.Entries.Count; i++)
+                        {
+                            var entry = Asset.AnyEntryNode.Entries[i];
+                            if (entry.Child == asAction)
+                            {
+                                entry.Child = null;
+                                Asset.AnyEntryNode.Entries[i] = entry;
+                            }
+                        }
+                    }
+
+                    Asset.Nodes.Remove(asAction);
+                    break;
+                }
+                case AnyEntry asAny:
+                {
+                    Asset.AnyEntryNode = null;
+                    break;
+                }
+                case EventEntry asEvent:
+                {
+                    Asset.NamedEventEntries.Remove(asEvent);
+                    break;
+                }
+            }
+            
+            /*foreach (ActionGraph.EntryPoint input in Asset.Inputs)
             {
                 input.Nodes.Remove(node.ActionNode);
-            }
-
-            Asset.Nodes.Remove(node.ActionNode);
+            }*/
         }
 
         private void AddToAsset(UnityEngine.Object asset)
         {
-//            asset.hideFlags |= HideFlags.HideInHierarchy;
+            asset.hideFlags |= HideFlags.HideInHierarchy;
             AssetDatabase.AddObjectToAsset(asset, Asset);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -144,6 +182,9 @@ namespace Framework.Editor
         
         internal void OnLoadAsset(ActionGraph treeAsset)
         {
+            if (Asset == treeAsset)
+                return;
+
             if (Asset)
                 OnLostAsset();
 
@@ -163,11 +204,33 @@ namespace Framework.Editor
             RecreateNodes();
         }
         
-        private GraphNode AddNewNode(ActionGraphNode node)
+        private GraphNode AddNewNode(ActionGraphNodeBase node)
         {
             AddToAsset(node);
-            
-            Asset.Nodes.Add(node);
+
+            switch (node)
+            {
+                case ActionGraphNode asAction:
+                {
+                    Asset.Nodes.Add(asAction);
+                    break;
+                }
+                case AnyEntry asAnyEntry:
+                {
+                    Asset.AnyEntryNode = asAnyEntry;
+                    break;
+                }
+                case EventEntry asEntry:
+                {
+                    Asset.NamedEventEntries.Add(asEntry);
+                    break;
+                }
+                default:
+                {
+                    Debug.LogError($"Unknown node {node}!");
+                    break;
+                }
+            }
 
             return View.OnNodeAdded(Asset, node);
         }
@@ -176,15 +239,17 @@ namespace Framework.Editor
         {
             GenericMenu menu = new GenericMenu();
 
+            // ToDo: disconnection per row
+            // ToDo: special entries
             if (node.connectedTo.Any())
             {
                 foreach (var info in node.connectedTo)
                 {
                     menu.AddItem
                     (
-                        new GUIContent($"Disconnect.../{info.Node.UniqueName}"), 
+                        new GUIContent($"Disconnect.../{info.Target.Owner.UniqueName}"), 
                         false, 
-                        () => View.DisconnectNodes(node, info.Node as ActionGraphEditorNode)
+                        () => View.DisconnectNodes(info)
                     );
                 }
             }
@@ -198,21 +263,34 @@ namespace Framework.Editor
             menu.ShowAsContext();
         }
         
-        private void ShowMainContextMenu(Vector2 mousePos, System.Action<Type> callback)
+        private void ShowMainContextMenu(Vector2 mousePos, System.Action<Type> createByType)
         {
             GenericMenu menu = new GenericMenu();
 
             menu.AddItem(new GUIContent("New..."), false, () =>
             {
-                ShowNodeCreationPopup(mousePos, callback);
+                ShowNodeCreationPopup(mousePos, createByType);
             });
+            
+            if (Asset.AnyEntryNode == null)
+            {
+                menu.AddItem(new GUIContent("Add 'Any' Entry"),false, 
+                    () => { createByType(typeof(AnyEntry)); });
+            }
+            else
+            {
+                menu.AddDisabledItem(new GUIContent("Add 'Any' Entry"));
+            }
+            
+            menu.AddItem(new GUIContent("Add Named Event Entry"), false, 
+                () => { createByType(typeof(EventEntry)); });
 
             menu.AddSeparator(string.Empty);
             menu.AddItem(new GUIContent("Refresh"), false, RecreateNodes);
 
             menu.ShowAsContext();
         }
-        
+
         class ActionNodePicker : PickerWindow<System.Type>
         { }
 
@@ -222,7 +300,9 @@ namespace Framework.Editor
             var size = new Vector2(300, 400);
             var rect = new Rect(mousePos.x, mousePos.y, 100, 100);
 
-            picker.Data = ReferenceTypePicker.BuildTypeList(string.Empty, type => type.IsSubclassOf(typeof(ActionGraphNode))).ToList();
+            picker.Data = ReferenceTypePicker.BuildTypeList(string.Empty,
+                type => type.IsSubclassOf(typeof(ActionGraphNode))).ToList();
+
             // picker.position = rect;
             picker.OnElementPicked = callback;
             // picker.CloseOnLostFocus = false;
@@ -233,15 +313,31 @@ namespace Framework.Editor
         {
             if (Asset)
             {
-                View.OnDraw(Asset, AssetPath);
-                OnConnectNodesQueue.Process();
+                try
+                {
+                    Asset.UpdateFromDataset();
+
+                    View.OnDraw(Asset, AssetPath);
+                    OnConnectNodesQueue.Process();
+
+                    Asset.UploadToDataset();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
+                }
             }
             else
             {
                 View.DrawCreationButton();
             }
         }
-        
+
+        internal override void OnUpdate()
+        {
+            View.OnUpdate();
+        }
+
         public void OnNodeRightClick(ActionGraphEditorNode node, Vector2 eventMousePos)
         {
             ShowNodeContextMenu(node);
@@ -251,7 +347,7 @@ namespace Framework.Editor
         {
             ShowMainContextMenu(mousePos, (type) =>
             {
-                var obj = ScriptableObject.CreateInstance(type) as ActionGraphNode;
+                var obj = ScriptableObject.CreateInstance(type) as ActionGraphNodeBase;
                 if (obj)
                 {
                     obj.EditorPosition = View.GetScrollPos();
@@ -264,7 +360,7 @@ namespace Framework.Editor
                     Undo.RecordObject(Asset, undoName);
 
                     AddNewNode(obj);
-                    
+
                     View.Repaint();
                 }
                 else
@@ -274,7 +370,7 @@ namespace Framework.Editor
             });
         }
 
-        public void OnDropFailed(GraphNode eventSource, Vector2 mousePos)
+        public void OnDropFailed(Slot eventSource, Vector2 mousePos)
         {
             ShowNodeCreationPopup(mousePos, (type) =>
             {
@@ -290,7 +386,7 @@ namespace Framework.Editor
                     Undo.SetCurrentGroupName(undoName);
                     Undo.RecordObject(Asset, undoName);
 
-                    GraphNode.MakeConnection(eventSource, AddNewNode(obj));
+                    GraphNode.ConnectNodes(eventSource, AddNewNode(obj));
 
                     View.Repaint();
                 }
@@ -306,18 +402,17 @@ namespace Framework.Editor
             DeleteFromAsset(editorNode);
         }
 
-        public void OnInputDotClicked(GraphNode node, int index, Vector2 pos)
+        /*public void OnInputDotClicked(Slot slot, Vector2 pos)
         {
-            CurrentInputTarget = index;
-            View.TryBeginConnection(node, pos);
+            View.TryBeginConnection(slot, pos);
+        }*/
+
+        public void OnNodeConnectorClicked(Slot slot, Vector2 center)
+        {
+            View.TryBeginConnection(slot, center);
         }
 
-        public void OnNodeConnectorClicked(ActionGraphEditorNode node, Vector2 center)
-        {
-            View.TryBeginConnection(node, center);
-        }
-
-        public void OnConnectInputNode(ActionGraphEditorNode node)
+        /*public void OnConnectInputNode(ActionGraphEditorNode node)
         {
             if (_duringRecreate)
                 return;
@@ -328,22 +423,20 @@ namespace Framework.Editor
             data.InputIndex = CurrentInputTarget;
 
             CurrentInputTarget = -1;
-        }
+        }*/
 
-        public void OnConnectChildNode(ActionGraphEditorNode parent, ActionGraphEditorNode child)
+        public void OnConnectChildNode(Connection connection)
         {
             if (_duringRecreate)
                 return;
 
             var data = OnConnectNodesQueue.Post();
-            data.Parent = parent.ActionNode;
-            data.Child  = child.ActionNode;
-            data.InputIndex = -1;            
+            data.Connection = connection;     
         }
         
         public void OnRemoveInputAtIndex(int index)
         {
-            var input = Asset.Inputs[index];
+            /*var input = Asset.Inputs[index];
             if (input.Nodes.Any())
             {
                 if (!EditorUtility.DisplayDialog("Warning!", 
@@ -359,19 +452,19 @@ namespace Framework.Editor
 
             Undo.RecordObject(Asset, "Input removed");
 
-            Asset.Inputs.RemoveAt(index);
+            Asset.Inputs.RemoveAt(index);*/
         }
 
         public void OnReorderInputAtIndex(int oldIndex, int newIndex)
         {
             Undo.RecordObject(Asset, "Input reordered");
 
-            var oldInput = Asset.Inputs[oldIndex];
+            //var oldInput = Asset.Inputs[oldIndex];
             
-            Asset.Inputs.RemoveAt(oldIndex);
+            //Asset.Inputs.RemoveAt(oldIndex);
             // Asset._inputNodes.RemoveAt(oldIndex);
 
-            Asset.Inputs.Insert(newIndex, oldInput);
+            //Asset.Inputs.Insert(newIndex, oldInput);
             // Asset._inputNodes.Insert(newIndex, oldNode);
         }
 
@@ -396,14 +489,14 @@ namespace Framework.Editor
             }
         }
 
-        public void OnNodeDisconnected(ActionGraphEditorNode parent, ActionGraphEditorNode toRemove)
+        /*public void OnNodeDisconnected(ActionGraphEditorNode parent, ActionGraphEditorNode toRemove)
         {
             parent.ActionNode.Connections.Remove(toRemove.ActionNode);
-        }
+        }*/
 
         public void OnInputDisconnected(ActionGraphEditorNode child)
         {
-            Undo.RecordObject(Asset, "Disconnect from input");
+            /*Undo.RecordObject(Asset, "Disconnect from input");
             for (int i = 0; i < Asset.Inputs.Count; i++)
             {
                 int index = Asset.Inputs[i].Nodes.IndexOf(child.ActionNode);
@@ -411,7 +504,12 @@ namespace Framework.Editor
                 {
                     Asset.Inputs[i].Nodes.RemoveAt(index);
                 }
-            }
+            }*/
+        }
+
+        public void DisconnectNodes(ActionGraphNode parent, ActionGraphNode node)
+        {
+            View.DisconnectNodes(parent, node);
         }
     }
 }

@@ -73,7 +73,7 @@ public class BehaviourNodeDrawer : Editor
                 continue;
             }
 
-            var typename = GenericParameter.GetDisplayedName(propertyInfo.PropertyType);
+            var typename = KnownType.GetDisplayedName(propertyInfo.PropertyType);
             if (typename == null)
             {
                 EditorGUILayout.HelpBox(string.Format("Type {0} is not a known type!", propertyInfo.PropertyType), MessageType.Error);

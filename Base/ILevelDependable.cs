@@ -6,4 +6,5 @@ public interface ILevelDependable
 {
     void OnLevelCleanUp();
     void OnLevelLoaded();
+    void OnPreLevelLoaded();
 }

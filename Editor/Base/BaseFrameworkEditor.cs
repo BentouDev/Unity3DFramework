@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using Framework.Utils;
 using UnityEditor;
 using UnityEditor.VersionControl;
 using UnityEngine;
@@ -199,18 +200,25 @@ namespace Framework.Editor
             Cache.TryGetTarget(out cache);
             
             InspectorUtils.DrawDefaultScriptField(serializedObject);
-
-            foreach (ReflectionInfo info in cache)
+            
+            EditorGUI.BeginChangeCheck();
             {
-                var property = serializedObject.FindProperty(info.Info.Name);                
-                if (property != null)
+                foreach (ReflectionInfo info in cache)
                 {
-                    DrawField(info, property);
-                }
-                else
-                {
-                    DrawProperty(info);
-                }
+                    var property = serializedObject.FindProperty(info.Info.Name);                
+                    if (property != null)
+                    {
+                        DrawField(info, property);
+                    }
+                    else
+                    {
+                        DrawProperty(info);
+                    }
+                }                
+            }
+            if (EditorGUI.EndChangeCheck())
+            {
+                (target as IBaseObject)?.OnPostValidate();                
             }
         }
 
@@ -249,8 +257,17 @@ namespace Framework.Editor
             }
             else
             {
-                ReorderableList list = ReorderableDrawer.GetList(property);
-                list.DoLayoutList();
+                Pair<bool, ReorderableList> list = ReorderableDrawer.GetList(property);
+
+                if (property.arrayElementType.Equals(typeof(GenericParameter).Name)
+                && list.First)
+                {
+                    list.Second.drawElementCallback += GenericParameterDrawer;
+                    list.Second.onAddDropdownCallback += GenericParameterAdd;
+                    list.Second.getElementHeightCallback += e => 16;
+                }
+
+                list.Second.DoLayoutList();
             }
 
             if (!result)
@@ -271,7 +288,43 @@ namespace Framework.Editor
             if (!info.IsVisible)
                 return;
 
-            EditorGUILayout.HelpBox($"{info.MemberType.ToString()} : {info.Info.Name}", MessageType.Info);
+            // EditorGUILayout.HelpBox($"{info.MemberType.ToString()} : {info.Info.Name}", MessageType.Info);
+        }
+
+        private void GenericParameterAdd(Rect buttonrect, ReorderableList list)
+        {
+            var generic_list = list.ListUnsafe.GetAs<List<GenericParameter>>();
+            if (generic_list == null)
+                Debug.LogError("Unable to get GenericList!");
+            else
+                KnownTypeUtils.ShowAddParameterMenu((t) => { AddNewParam(t, generic_list); });
+        }
+
+        private void AddNewParam(SerializedType type, List<GenericParameter> list)
+        {
+            string typename = KnownType.GetDisplayedName(type.Type);
+            string paramName = StringUtils.MakeUnique($"New {typename}", list.Select(p => p.Name));
+
+            list.Add
+            (
+                new GenericParameter(type)
+                {
+                    Name = paramName
+                }
+            );
+        }
+        
+        private void GenericParameterDrawer(Rect rect, SerializedProperty element, GUIContent label, bool selected, bool focused)
+        {
+            var param = element.GetAs<GenericParameter>();
+            if (param != null)
+            {
+                GenericParamUtils.DrawParameter(rect, param);
+            }
+            else
+            {
+                GUI.Label(rect, "Unable to render as GenericParameter!");
+            }
         }
     }
 }

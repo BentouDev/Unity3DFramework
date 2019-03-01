@@ -7,6 +7,7 @@ using UnityEngine.Assertions;
 
 namespace Framework.Editor
 {
+    #region SYF
     public class BeginNode : GraphNode
     {
         private UnityEditorInternal.ReorderableList DrawerList;
@@ -20,7 +21,7 @@ namespace Framework.Editor
         {
             get
             {
-                _positions.Resize(Graph.Inputs.Count + 1);
+                //_positions.Resize(Graph.Inputs.Count + 1);
                 return _positions;
             }
         }
@@ -31,7 +32,7 @@ namespace Framework.Editor
         {
             GenericParamUtils.SetDrawersForKnownTypes();
 
-            ProxyList = new List<int>(Graph.Inputs.Count);
+            /*ProxyList = new List<int>(Graph.Inputs.Count);
 
             DrawerList = new UnityEditorInternal.ReorderableList
             (
@@ -73,7 +74,7 @@ namespace Framework.Editor
                 _positions.Insert(newIndex, pos);
 
                 Presenter.OnReorderInputAtIndex(index, newIndex);
-            };
+            };*/
         }
 
         public BeginNode(ActionGraph graph, ActionGraphPresenter presenter)
@@ -96,7 +97,7 @@ namespace Framework.Editor
 
         private void OnAddInput(UnityEditorInternal.ReorderableList list)
         {
-            string typename = GenericParameter.GetDisplayedName(Graph.InputType.Type);
+            /*string typename = GenericParameter.GetDisplayedName(Graph.InputType.Type);
             string paramName = StringUtils.MakeUnique($"New {typename}", Graph.Inputs.Select(p => p.Input.Name));
 
             ProxyList.Add(1);
@@ -109,12 +110,12 @@ namespace Framework.Editor
                         Name = paramName
                     } 
                 }
-            );
+            );*/
         }
 
         private void OnDrawParameter(Rect rect, int index, bool active, bool focused)
         {
-            var parameter = Graph.Inputs[index];
+            /*var parameter = Graph.Inputs[index];
 
             if (index == 0)
                 FirstPos = rect.y;
@@ -124,7 +125,7 @@ namespace Framework.Editor
             rect.height = GenericParamUtils.FieldHeight;
             rect.y     += 2;
 
-            GenericParamUtils.DrawParameter(rect, parameter.Input);
+            GenericParamUtils.DrawParameter(rect, parameter.Input);*/
         }
 
         protected override void OnSelected(bool value)
@@ -135,7 +136,7 @@ namespace Framework.Editor
         private void OnTypeChanged(SerializedType type)
         {
             // ToDo: Move to presenter
-            if (Graph.InputType != null && Graph.InputType == type)
+            /*if (Graph.InputType != null && Graph.InputType == type)
                 return;
 
             if (Graph.Inputs != null && Graph.Inputs.Any() 
@@ -148,7 +149,7 @@ namespace Framework.Editor
             }
 
             Graph.Inputs?.Clear();
-            Graph.InputType = type;
+            Graph.InputType = type;*/
         }
 
         protected override void OnGUI()
@@ -192,7 +193,7 @@ namespace Framework.Editor
 
         public override void GetChildConnectPositions(GraphNode child, IList<Vector2> pos)
         {
-            float yPos = drawRect.yMin + ConnectorSize.y + 74;
+            /*float yPos = drawRect.yMin + ConnectorSize.y + 74;
 
             var node = child as ActionGraphEditorNode;
             if (node != null)
@@ -205,36 +206,35 @@ namespace Framework.Editor
                         pos.Add(new Vector2(drawRect.xMax, yPos + Positions[i]));
                     }
                 }
-            }
+            }*/
         }
 
-        protected override bool CanConnectTo(GraphNode child)
+        protected override bool CanConnectTo(Slot targetSlot, Slot childSlot)
         {
-            return base.CanConnectTo(child);
+            return base.CanConnectTo(targetSlot, childSlot);
         }
 
-        protected override void OnConnectToParent(GraphNode parent)
+        protected override void OnConnectToParent(Connection eventSource)
         {
             Assert.IsTrue(false, "Not supported!");
         }
 
-        protected override void OnConnectToChild(GraphNode node)
+        protected override void OnConnectToChild(Connection eventTarget)
         {
-            var asGraph = node as ActionGraphEditorNode;
-            if (asGraph != null)
+            /*if (eventTarget.From.Owner is ActionGraphEditorNode asGraph)
             {
                 Presenter.OnConnectInputNode(asGraph);
-            }
+            }*/
         }
 
-        protected override void OnParentDisconnected(GraphNode node)
+        protected override void OnParentDisconnected(Connection node)
         {
 
         }
 
         void DrawConnectDots(Rect dotRect)
         {
-            var inputsCount = Graph.Inputs.Count;
+            /*var inputsCount = Graph.Inputs.Count;
             var yPos = FirstPos;
             var xPos = drawRect.xMax - ConnectorSize.x * 0.5f;
 
@@ -266,15 +266,16 @@ namespace Framework.Editor
                         && Event.current.type == EventType.MouseDown 
                         && Event.current.button == 0)
                     {
-                        Presenter.OnInputDotClicked(this, i, rect.center);
+                        // TODO pass actual slot
+                        Presenter.OnInputDotClicked(null, i, rect.center);
                     }
                 }
-            }
+            }*/
         }
         
         protected override void OnDrawContent()
         {
-            ProxyList.Resize(Graph.Inputs.Count);
+            /*ProxyList.Resize(Graph.Inputs.Count);
 
             EditorGUI.BeginChangeCheck();
             {
@@ -307,20 +308,19 @@ namespace Framework.Editor
             if (EditorGUI.EndChangeCheck())
             {
                 AssetDatabase.SaveAssets();
-            }
+            }*/
         }
     }
-
+    #endregion SYF
+    
     public class ActionGraphView : EditorView<ActionGraphView, ActionGraphPresenter>
     {
         private readonly GraphNodeEditor Nodes = new GraphNodeEditor();
 
-        private Dictionary<ActionGraphNode, ActionGraphEditorNode> NodeLookup;
+        private Dictionary<ActionGraphNodeBase, ActionGraphEditorNode> NodeLookup;
 
         private List<System.Type> NodeEditors = new List<System.Type>();
 
-        private BeginNode Begin;
-        
         [MenuItem("Gameplay/Action Graph Editor")]
         public static void MenuShowEditor()
         {
@@ -345,7 +345,21 @@ namespace Framework.Editor
                 
                 return true;
             });
-            
+
+            Nodes.OnConnection.Reassign((data =>
+            {
+                if (data.Target != null)
+                {
+                    if (GraphNode.CanMakeConnection(data.Source, data.Target))
+                    {
+                        Presenter.OnConnectChildNode(GraphNode.MakeConnection(data.Source, data.Target));
+                        return true;
+                    }
+                }
+
+                return false;
+            }));
+
             Nodes.OnConnection.AddPost(data =>
             {
                 if (data.Target == null)
@@ -358,6 +372,12 @@ namespace Framework.Editor
             {
                 Presenter.OnNodeDeleted(data.Node as ActionGraphEditorNode);
                 Nodes.AllNodes.Remove(data.Node);
+            });
+            
+            Nodes.OnSlotClicked.Reassign(data =>
+            {
+                Presenter.OnNodeConnectorClicked(data.Source, data.Source.Owner.GetSlotPosition(data.Source));
+                return true;
             });
         }
 
@@ -375,7 +395,7 @@ namespace Framework.Editor
             Presenter.OnEnable();
         }
 
-        private System.Type FindNodeEditor(ActionGraphNode node)
+        private System.Type FindNodeEditor(ActionGraphNodeBase node)
         {
             return NodeEditors.FirstOrDefault(t => t.CustomAttributes.Any(
                 a =>
@@ -390,7 +410,7 @@ namespace Framework.Editor
                 }));
         }
 
-        private ActionGraphEditorNode CreateNodeEditor(ActionGraphNode node, ActionGraph graph)
+        private ActionGraphEditorNode CreateNodeEditor(ActionGraphNodeBase node, ActionGraph graph)
         {
             var editorNodeType = FindNodeEditor(node);
 
@@ -411,63 +431,62 @@ namespace Framework.Editor
             return editorNode;
         }
 
-        private void ConnectNodeEditor(GraphNode parent, ActionGraphNode child)
-        {
-            ActionGraphEditorNode foundNode;
-            if (NodeLookup.TryGetValue(child, out foundNode))
-            {
-                if (GraphNode.CanMakeConnection(parent, foundNode))
-                    GraphNode.MakeConnection(parent, foundNode);
-            }
-            else
-            {
-                Debug.LogError($"Couldn't find editor node for {child.name}", child);
-            }
-        }
+//        private void ConnectNodeEditor(GraphNode parent, ActionGraphNode child)
+//        {
+//            if (NodeLookup.TryGetValue(child, out var foundNode))
+//            {
+//                if (GraphNode.CanMakeConnection(parent, foundNode))
+//                    GraphNode.MakeConnection(parent, foundNode);
+//            }
+//            else
+//            {
+//                Debug.LogError($"Couldn't find editor node for {child.name}", child);
+//            }
+//        }
 
         public void RecreateNodes(ActionGraph asset)
         {
-            if (NodeLookup != null)
-                NodeLookup.Clear();
-            else
-                NodeLookup = new Dictionary<ActionGraphNode, ActionGraphEditorNode>();
-
-            Begin = null;
-            Nodes.ClearNodes();
-
-            if (asset)
+            using (new GraphNode.NodeRecreationContext())
             {
-                Nodes.ScrollPos = asset.EditorPos;
+                if (NodeLookup != null)
+                    NodeLookup.Clear();
+                else
+                    NodeLookup = new Dictionary<ActionGraphNodeBase, ActionGraphEditorNode>();
 
-                Begin = new BeginNode(asset, Presenter);
+                ActionGraphEditorNode.WindowStyle = SpaceEditorStyles.GraphNodeBackground;
 
-                Nodes.AddNode(Begin);
+                Nodes.ClearNodes();
 
-                NodeEditors = ReferenceTypePicker.BuildTypeList(string.Empty, 
-                    t => t.IsSubclassOf(typeof(ActionGraphEditorNode))
-                ).ToList();
-
-                foreach (ActionGraphNode node in asset.Nodes)
+                if (asset)
                 {
-                    CreateNodeEditor(node, asset);
-                }
+                    Nodes.ScrollPos = asset.EditorPos;
 
-                foreach (GraphNode graphNode in Nodes.AllNodes.Where(t => t is ActionGraphEditorNode))
-                {
-                    var asGraph = (ActionGraphEditorNode) graphNode;
-                    foreach (var childNode in asGraph.ActionNode.Connections)
+                    NodeEditors = ReferenceTypePicker.BuildTypeList(string.Empty, 
+                        t => t.IsSubclassOf(typeof(ActionGraphEditorNode))
+                    ).ToList();
+
+                    if (asset.AnyEntryNode)
                     {
-                        ConnectNodeEditor(asGraph, childNode);
+                        CreateNodeEditor(asset.AnyEntryNode, asset);
                     }
-                }
 
-                foreach (ActionGraphNode graphNode in asset.Inputs.SelectMany(i => i.Nodes))
-                {
-                    if (!graphNode)
-                        continue;
+                    foreach (var entry in asset.NamedEventEntries)
+                    {
+                        CreateNodeEditor(entry, asset);
+                    }
 
-                    ConnectNodeEditor(Begin, graphNode);
-                }
+                    foreach (ActionGraphNode node in asset.Nodes)
+                    {
+                        CreateNodeEditor(node, asset);
+                    }
+
+                    foreach (GraphNode graphNode in Nodes.AllNodes.Where(t => t is ActionGraphEditorNode))
+                    {
+                        var asGraph = (ActionGraphEditorNode) graphNode;
+
+                        asGraph.RebuildConnections(LookupEditorNode);
+                    }
+                }   
             }
         }
         
@@ -481,11 +500,14 @@ namespace Framework.Editor
                 Nodes.HandleEvents(this);
             }
             GUILayout.EndVertical();
+        }
 
+        public void OnUpdate()
+        {
             if (Nodes.WantsRepaint)
                 Repaint();
         }
-
+        
         private Rect NodeGraphRect = new Rect();
 
         private void DrawNodeGraph()
@@ -535,27 +557,55 @@ namespace Framework.Editor
             return Nodes.ScrollPos;
         }
 
-        public GraphNode OnNodeAdded(ActionGraph asset, ActionGraphNode node)
+        ActionGraphEditorNode LookupEditorNode(object obj)
         {
-            return CreateNodeEditor(node, asset);
+            return NodeLookup[obj as ActionGraphNodeBase 
+                ?? throw new Exception($"Cannot cast {obj} to ActionGraphNode!")];
         }
 
-        public void TryBeginConnection(GraphNode node, Vector2 pos)
+        public GraphNode OnNodeAdded(ActionGraph asset, ActionGraphNodeBase node)
         {
-            Nodes.StartConnection(node, pos);
+            var editorNode = CreateNodeEditor(node, asset);
+            editorNode.RebuildConnections(LookupEditorNode);
+            return editorNode;
         }
 
-        public void OnRemoveInput(ActionGraph.EntryPoint input)
+        public void TryBeginConnection(Slot slot, Vector2 pos)
         {
-            foreach (var node in input.Nodes)
-            {
-                Begin.RemoveConnection(NodeLookup[node]);   
-            }
+            Nodes.StartConnection(slot, pos);
         }
 
+//        public void OnRemoveInput(ActionGraph.EntryPoint input)
+//        {
+//            foreach (var node in input.Nodes)
+//            {
+//                Begin.RemoveConnection(NodeLookup[node]);   
+//            }
+//        }
+
+        public void DisconnectNodes(Connection connection)
+        {
+            connection.From.Owner.RemoveConnection(connection);
+        }
+
+        [Obsolete("Do not use this! Remove nodes by connection!")]
+        public void DisconnectNodes(ActionGraphNode parent, ActionGraphNode node)
+        {
+            throw new Exception("Removing connection by node itself is no longer supported!");
+
+            var editorParent = NodeLookup[parent];
+            var editorNode = NodeLookup[node];
+            
+            //editorParent.RemoveConnection(editorNode);
+            // Presenter.OnNodeDisconnected(editorParent, editorNode);
+        }
+
+        [Obsolete("Do not use this! Remove nodes by connection!")]
         public void DisconnectNodes(GraphNode node, ActionGraphEditorNode child)
         {
-            node.RemoveConnection(child);
+            throw new Exception("Removing connection by node itself is no longer supported!");
+            
+            /*node.RemoveConnection(child);
             if (node == Begin)
             {
                 Presenter.OnInputDisconnected(child);
@@ -563,7 +613,7 @@ namespace Framework.Editor
             else
             {
                 Presenter.OnNodeDisconnected(node as ActionGraphEditorNode, child);
-            }
+            }*/
         }
 
         public void DeleteNode(ActionGraphEditorNode node)

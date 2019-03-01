@@ -6,7 +6,7 @@ using System.Collections.Generic;
 namespace Malee {
 
 	[Serializable]
-	public abstract class ReorderableArray<T> : ICloneable, IList<T>, ICollection<T>, IEnumerable<T> {
+	public abstract class ReorderableArray<T> : ICloneable, IList<T>, ICollection<T>, IEnumerable<T>, IList, ICollection, IEnumerable {
 
 		[SerializeField]
 		private List<T> array = new List<T>();
@@ -36,10 +36,24 @@ namespace Malee {
 			get { return false; }
 		}
 
+		object IList.this[int index]
+		{
+			get => this[index];
+			set => this[index] = (T) value;
+		}
+
+		public void CopyTo(Array array, int index)
+		{
+			CopyTo((T[]) array, index);
+		}
+
 		public int Count {
 
 			get { return array.Count; }
 		}
+
+		public bool IsSynchronized { get; }
+		public object SyncRoot { get; }
 
 		public object Clone() {
 
@@ -67,19 +81,47 @@ namespace Malee {
 			array.Insert(index, item);
 		}
 
+		public void Remove(object value)
+		{
+			Remove((T) value);
+		}
+
 		public void RemoveAt(int index) {
 
 			array.RemoveAt(index);
 		}
+
+		public bool IsFixedSize { get; }
 
 		public void Add(T item) {
 
 			array.Add(item);
 		}
 
+		public int Add(object value)
+		{
+			Add((T) value);
+			return Count - 1;
+		}
+
 		public void Clear() {
 
 			array.Clear();
+		}
+
+		public bool Contains(object value)
+		{
+			return Contains((T) value);
+		}
+
+		public int IndexOf(object value)
+		{
+			return IndexOf((T) value);
+		}
+
+		public void Insert(int index, object value)
+		{
+			Insert(index, (T) value);
 		}
 
 		public void CopyTo(T[] array, int arrayIndex) {

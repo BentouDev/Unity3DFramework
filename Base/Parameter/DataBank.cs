@@ -64,7 +64,7 @@ namespace Framework
     }
 
     [Serializable]
-    public class DataBank : IDataSet
+    public class DataBank : IDataSet, ISerializationCallbackReceiver
     {
         [SerializeField]
         [HideInInspector]

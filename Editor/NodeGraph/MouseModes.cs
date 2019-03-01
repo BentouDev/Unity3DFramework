@@ -177,7 +177,8 @@ namespace Framework.Editor.MouseModes
 
         public void End(Vector2 pos)
         {
-         
+            int a = 0;
+            a += 2;
         }
 
         public void Update(Vector2 pos)
@@ -220,14 +221,14 @@ namespace Framework.Editor.MouseModes
     class ConnectMode : IMouseMode
     {
         GraphNodeEditor Editor;
-        GraphNode       ConnectionSource;
+        Slot            ConnectionSource;
         Vector2         StartPos;
 
-        public ConnectMode(GraphNodeEditor editor, GraphNode node, Vector2 position)
+        public ConnectMode(GraphNodeEditor editor, Slot slot, Vector2 position)
         {
             Editor = editor;
             StartPos = position;
-            ConnectionSource = node;
+            ConnectionSource = slot;
         }
 
         public void Start(Vector2 pos)
@@ -242,16 +243,17 @@ namespace Framework.Editor.MouseModes
                 data.MousePos = pos;
                 data.Source   = ConnectionSource;
                 data.Target   = Editor.AllNodes
-                    .Where(n => n.IsAcceptingConnection(ConnectionSource, physicalPos))
-                    .OrderByDescending(n => n.Position.y)
-                    .FirstOrDefault();
+                    .Select(n => n.IsAcceptingConnection(ConnectionSource, physicalPos))
+                    .Where(s => s.First)
+                    .OrderByDescending(s => s.Second.Owner.Position.y)
+                    .FirstOrDefault().Second;
         }
 
         public void Update(Vector2 pos)
         {
             GraphNodeEditor.ConnectionDrawData data = new GraphNodeEditor.ConnectionDrawData
             {
-                fromOrigin = ConnectionSource.Position,
+                fromOrigin = ConnectionSource.Owner.Position,
                 @from = StartPos,
                 toOrigin = pos,
                 to = pos,

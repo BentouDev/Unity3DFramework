@@ -85,6 +85,9 @@ namespace Framework
                 Init();
         }
 
+        public void OnPreLevelLoaded()
+        { }
+
         private void SwitchCameras(Camera toDisable, Camera toEnable)
         {
             if (toDisable)

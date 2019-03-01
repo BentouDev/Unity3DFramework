@@ -1,5 +1,6 @@
 using System.Linq;
 using UnityEditor;
+using UnityEditor.Animations;
 using UnityEngine;
 
 namespace Framework.Editor
@@ -60,8 +61,15 @@ namespace Framework.Editor
             {
                 GUI.Box(drawRect, GUIContent.none, EditorStyles.helpBox);
 
+                var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(AssetDatabase.GetAssetPath(Node.Anim));
+                if (controller == null)
+                {
+                    Debug.LogErrorFormat("AnimatorController must not be null.");
+                    return;
+                }
+
                 int index = -1;
-                var paramList = Node.Anim.parameters.ToList();
+                var paramList = controller.parameters.ToList();
                 var param = paramList.FirstOrDefault(p => p.name == Node.AnimParam.Name);
                 if (param != null)
                 {

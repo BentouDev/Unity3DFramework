@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using Framework.Editor.Base;
+using Framework.Utils;
 using Malee;
 using UnityEditor;
 using UnityEngine;
@@ -6,27 +8,31 @@ using UnityEngine;
 namespace Framework.Editor {
 
 	[CustomPropertyDrawer(typeof(ReorderableAttribute))]
-	public class ReorderableDrawer : PropertyDrawer {
-
+	public class ReorderableDrawer : PropertyDrawer 
+	{
 		private static Dictionary<int, ReorderableList> lists = new Dictionary<int, ReorderableList>();
 
+		public override bool CanCacheInspectorGUI(SerializedProperty property) {
+			return false;
+		}
+		
 		public override float GetPropertyHeight(SerializedProperty property, GUIContent label) {
 
-			ReorderableList list = GetList(property, attribute as ReorderableAttribute);
+			Pair<bool, ReorderableList> list = GetList(property, attribute as ReorderableAttribute);
 
-			return list != null ? list.GetHeight() : EditorGUIUtility.singleLineHeight;
-		}		
+			return list.Second?.GetHeight() ?? EditorGUIUtility.singleLineHeight;
+		}
 
 		public override void OnGUI(Rect position, SerializedProperty property, GUIContent label) {
 
-			ReorderableList list = GetList(property, attribute as ReorderableAttribute);
+			Pair<bool, ReorderableList> list = GetList(property, attribute as ReorderableAttribute);
 
-			if (list != null) {
-
-				list.DoList(EditorGUI.IndentedRect(position), label);
+			if (list.Second != null) 
+			{
+				list.Second.DoList(EditorGUI.IndentedRect(position), label);
 			}
-			else {
-
+			else 
+			{
 				GUI.Label(position, "Array must extend from ReorderableArray", EditorStyles.label);
 			}
 		}
@@ -44,31 +50,32 @@ namespace Framework.Editor {
 			return 0;
 		}
 
-		public static ReorderableList GetList(SerializedProperty property) {
+		public static Pair<bool, ReorderableList> GetList(SerializedProperty property) {
 
 			return GetList(property, null, GetListId(property));
 		}
 
-		public static ReorderableList GetList(SerializedProperty property, ReorderableAttribute attrib) {
+		public static Pair<bool, ReorderableList> GetList(SerializedProperty property, ReorderableAttribute attrib) {
 
 			return GetList(property, attrib, GetListId(property));
 		}
 
-		public static ReorderableList GetList(SerializedProperty property, int id) {
+		public static Pair<bool, ReorderableList> GetList(SerializedProperty property, int id) {
 
 			return GetList(property, null, id);
 		}
 
-		public static ReorderableList GetList(SerializedProperty property, ReorderableAttribute attrib, int id)
+		public static Pair<bool, ReorderableList> GetList(SerializedProperty property, ReorderableAttribute attrib, int id)
 		{
 			if (property == null)
 			{
-				return null;
+				return new Pair<bool, ReorderableList>(false, null);
 			}
 
 			ReorderableList list = null;
 			SerializedProperty array = property.isArray ? property : property.FindPropertyRelative("array");
 
+			bool justCreated = false;
 			if (array != null && array.isArray)
 			{
 				if (!lists.TryGetValue(id, out list))
@@ -88,6 +95,7 @@ namespace Framework.Editor {
 						list = new ReorderableList(array, true, true, true);
 					}
 
+					justCreated = true;
 					lists.Add(id, list);
 				}
 				else
@@ -96,7 +104,7 @@ namespace Framework.Editor {
 				}
 			}
 
-			return list;
+			return new Pair<bool, ReorderableList>(justCreated, list);
 		}
 	}
 }

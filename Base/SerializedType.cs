@@ -21,7 +21,12 @@ public class DerivedType : IEquatable<DerivedType>
                 || !_typeValue.Type.IsSubclassOf(_baseType.Type))
                 _typeValue = value;
             else
-                Debug.LogErrorFormat("Unable to set type {0} as derivative of {1}", value.Type, _baseType.Type);
+            {
+                if (value.Type.IsSubclassOf(_baseType.Type))
+                    _typeValue = value;
+                else
+                    Debug.LogErrorFormat("Unable to set type {0} as derivative of {1}", value.Type, _baseType.Type);
+            }
         }
     }
 
@@ -61,6 +66,12 @@ public class DerivedType : IEquatable<DerivedType>
             }
         }
     }
+    
+    public DerivedType(string baseType, string derivedType)
+    {
+        _baseType = new SerializedType(baseType);
+        _typeValue = new SerializedType(derivedType);
+    }
 
     public DerivedType(System.Type baseType, System.Type derivedType)
     {
@@ -69,6 +80,28 @@ public class DerivedType : IEquatable<DerivedType>
             _baseType = new SerializedType(baseType);
             _typeValue = new SerializedType(derivedType);
         }
+    }
+    
+    public string DisplayedName
+    {
+        get
+        {
+            string content = "None";
+    
+            if (BaseType != null && BaseType.Type != null)
+            {
+                if (TypeValue != null && TypeValue.Type != null)
+                {
+                    content = $"{TypeValue.Type.Name} ({BaseType.Type.Name})";
+                }
+                else
+                {
+                    content = $"None ({BaseType.Type.Name})";
+                }
+            }
+
+            return content;
+        }  
     }
 
     public override string ToString()
@@ -88,7 +121,7 @@ public class DerivedType : IEquatable<DerivedType>
 }
 
 [System.Serializable]
-public class SerializedType : IEquatable<SerializedType>
+public class SerializedType : IEquatable<SerializedType>, ISerializationCallbackReceiver
 {
     [SerializeField]
     private string _serializedTypeName;
@@ -158,5 +191,15 @@ public class SerializedType : IEquatable<SerializedType>
         string meta = String.IsNullOrWhiteSpace(_serializedMetadata) ? "System.Type" : _serializedMetadata;
         string type = Type?.Name ?? "None";
         return $"{type} ({meta})";
+    }
+
+    public void OnBeforeSerialize()
+    { }
+
+    public void OnAfterDeserialize()
+    {
+        // Fix: due to how 'move' when reordering elements in egx. List<GenericParameter> works,
+        // _type field is left with inappropriate value. We shall reset it, and automated property will do the rest :)
+        _type = null;
     }
 }

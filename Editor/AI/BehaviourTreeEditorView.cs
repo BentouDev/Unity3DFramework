@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Framework.Editor;
@@ -17,7 +18,7 @@ namespace Framework.AI.Editor
 
         #region Creation
 
-        [MenuItem("Gameplay/Behaviour Tree Editor")]
+        [MenuItem("Gameplay/Deprecated/Behaviour Tree Editor")]
         public static void MenuShowEditor()
         {
             FocusOrCreate();
@@ -93,7 +94,7 @@ namespace Framework.AI.Editor
 
             foreach (var node in Nodes.AllNodes.Select(n => n as BehaviourTreeEditorNode))
             {
-                if (node != null && node.TreeNode.IsParentNode())
+                /*if (node != null && node.TreeNode.IsParentNode())
                 {
                     var childNodes = node.TreeNode.AsParentNode().GetChildNodes();
                     if (childNodes != null)
@@ -105,7 +106,8 @@ namespace Framework.AI.Editor
                                 GraphNode.MakeConnection(node, foundNode);
                         }
                     }
-                }
+                }*/
+                throw new NotImplementedException("TODO!");
             }
         }
 
@@ -251,8 +253,9 @@ namespace Framework.AI.Editor
 
         public void TryBeginConnection(BehaviourTreeEditorNode source, Vector2 position)
         {
-            if (source.TreeNode.IsParentNode())
-                Nodes.StartConnection(source, position);
+//            if (source.TreeNode.IsParentNode())
+//                Nodes.StartConnection(source, position);
+            throw new NotImplementedException("TODO!");
         }
 
         public void DeleteNode(BehaviourTreeEditorNode node)
@@ -262,7 +265,7 @@ namespace Framework.AI.Editor
 
         public void DisconnectNodes(BehaviourTreeEditorNode parent, BehaviourTreeEditorNode toRemove)
         {
-            parent.RemoveConnection(toRemove);
+//            parent.RemoveConnection(toRemove);
             Presenter.OnNodeDisconnected(parent, toRemove);
         }
     }

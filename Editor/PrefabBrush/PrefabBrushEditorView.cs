@@ -13,7 +13,7 @@ namespace Framework.Editor
         private GameObject Prefab;
         private Transform Parent;
 
-        [MenuItem("Gameplay/Prefab Brush")]
+        [MenuItem("Prefabs/Prefab Brush", false, 0)]
         public static void MenuShowEditor()
         {
             FocusOrCreate();

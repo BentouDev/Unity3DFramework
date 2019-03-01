@@ -26,6 +26,8 @@ namespace Framework
         [Header("Collision")]
         public LayerMask Mask;
         public float Margin = 0.15f;
+        public float MinDist = 0.1f;
+        public float MinHeight = 1.25f;
 
         [Header("Offset")]
         [FormerlySerializedAs("Offset")]
@@ -98,11 +100,11 @@ namespace Framework
 
                 rot = Quaternion.Euler(AngleY, AngleX, 0);
             }
-
+            
             var offset    = rot * RotatedOffset + FlatOffset;
             var basePos   = (Target ? Target.position : Vector3.zero);
             var collision = CalcCameraDistance(basePos, offset);
-            
+
             Debug.DrawRay(basePos, offset, Color.yellow);
             
             if (Mathf.Abs(collision) < offset.magnitude)
@@ -110,7 +112,7 @@ namespace Framework
             
             Debug.DrawRay(basePos, offset, Color.red);
 
-            var pos       = basePos + offset;
+            var pos = basePos + offset;
                 
             transform.position = pos;
             transform.rotation = rot; //Quaternion.RotateTowards(transform.rotation, rot, 360 * Time.deltaTime);
@@ -130,7 +132,7 @@ namespace Framework
             if (DrawDebug)
                 Debug.DrawRay(Target.position + offset, -transform.forward * hit.distance, Color.red, 5.0f);
 
-            return -Mathf.Max(0, hit.distance - Margin);
+            return -Mathf.Max(MinDist, hit.distance - Margin);
         }
     }
 }

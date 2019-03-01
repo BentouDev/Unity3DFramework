@@ -19,7 +19,7 @@ namespace Framework.Editor
         private Vector2 scrollPos = Vector2.zero;
         public Rect DrawRect;
 
-        public float ZoomSpeed = 0.05f;
+        public float ZoomSpeed = 0.025f;
 
         public List<GraphNode> AllNodes { get; private set; }
 
@@ -40,12 +40,19 @@ namespace Framework.Editor
         }
         
         public class NodeConnectionEvent
-        { 
-            public GraphNode Source;
-            public GraphNode Target;
-            public Vector2   MousePos;
+        {
+            public Slot Source;
+            public Slot Target;
+            public Vector2 MousePos;
         }
 
+        public class SlotEvent
+        {
+            public Slot Source;
+            public Vector2 MousePos;
+        }
+
+        public readonly EventQueue<SlotEvent>  OnSlotClicked  = new EventQueue<SlotEvent>();
         public readonly EventQueue<NodeEvent>  OnDeleteNode   = new EventQueue<NodeEvent>();
         public readonly EventQueue<NodeEvent>  OnSelectNode   = new EventQueue<NodeEvent>();
         public readonly EventQueue<NodeEvent>  OnDeselectNode = new EventQueue<NodeEvent>();
@@ -53,7 +60,7 @@ namespace Framework.Editor
         public readonly EventQueue<MouseEvent> OnDoubleClick  = new EventQueue<MouseEvent>();
         
         public readonly EventQueue<NodeConnectionEvent> OnConnection = new EventQueue<NodeConnectionEvent>();
-       
+
         private bool CtrlPressed;
         private bool SelectionOverride;
 
@@ -66,7 +73,7 @@ namespace Framework.Editor
         public float ZoomLevel
         {
             get { return zoom; }
-            set { zoom = Mathf.Clamp(value, 0.25f, 1); }
+            set { zoom = Mathf.Clamp(value, 0.25f, 1.25f); }
         }
 
         public Rect MouseRect => new Rect(0, DrawRect.y, DrawRect.width, DrawRect.height - DrawRect.y);
@@ -99,7 +106,7 @@ namespace Framework.Editor
             {
                 foreach (GraphNode baseNode in AllNodes)
                 {
-                    baseNode.RemoveConnection(data.Node);
+                    baseNode.RemoveAllConnectionFrom(data.Node);
                 }
 
                 AllNodes.Remove(data.Node);
@@ -132,8 +139,6 @@ namespace Framework.Editor
                         GraphNode.MakeConnection(data.Source, data.Target);
                         return true;
                     }
-                    
-                    return false;
                 }
 
                 return false;
@@ -152,6 +157,12 @@ namespace Framework.Editor
             OnDeleteNode.Clear();
             
             SelectedNodes.Clear();
+
+            foreach (var node in AllNodes)
+            {
+                node.OnDestroy();
+            }
+            
             AllNodes.Clear();
         }
         
@@ -221,8 +232,15 @@ namespace Framework.Editor
             
             EditorAreaUtils.BeginZoomArea(ZoomLevel, viewRect);
             {
-                DrawWindows(editor);
-                DrawConnections(style);
+                try
+                {
+                    DrawWindows(editor);
+                    DrawConnections(style);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
+                }
             }
             EditorAreaUtils.EndZoomArea();
         }
@@ -236,8 +254,15 @@ namespace Framework.Editor
             public Color   color;
         }
 
-        private readonly List<Vector2> ChildNodePositionsBuffer = new List<Vector2>();
-        private readonly ConnectionDrawData LastConnectionData = new ConnectionDrawData();
+        public struct ConnectionDrawInfo
+        {
+            public Vector2 from;            
+            public Vector2 to;
+            public Color   color;
+        }
+
+        // private readonly List<ConnectionDrawInfo> ChildNodePositionsBuffer = new List<ConnectionDrawInfo>();
+        private readonly ConnectionDrawData       LastConnectionData = new ConnectionDrawData();
 
         private static readonly Dictionary<ConnectionStyle, System.Action<ConnectionDrawData>> ConnectionStyleDrawers 
         = new Dictionary<ConnectionStyle, Action<ConnectionDrawData>>()
@@ -253,17 +278,18 @@ namespace Framework.Editor
             var drawer = ConnectionStyleDrawers[style];
             foreach (GraphNode parent in AllNodes)
             {
-                foreach (GraphNode.ConnectionInfo child in parent.connectedTo)
+                foreach (Connection child in parent.connectedTo)
                 {
-                    ChildNodePositionsBuffer.Clear();
-                    parent.GetChildConnectPositions(child.Node, ChildNodePositionsBuffer);
-                    foreach (Vector2 position in ChildNodePositionsBuffer)
+                    // ChildNodePositionsBuffer.Clear();
+                    ConnectionDrawInfo info;
+                    parent.GetConnectionDrawData(child, out info);
+                    // foreach (ConnectionDrawInfo info in ChildNodePositionsBuffer)
                     {
-                        LastConnectionData.fromOrigin = parent.Position + PannedOffset;
-                        LastConnectionData.from = position + PannedOffset;
-                        LastConnectionData.toOrigin = child.Node.Position + PannedOffset;
-                        LastConnectionData.to = child.Node.GetParentConnectPosition(child.Node) + PannedOffset;
-                        LastConnectionData.color = child.Node.GetParentConnectColor(parent);
+                        LastConnectionData.fromOrigin = parent.DrawRect.center + PannedOffset;
+                        LastConnectionData.from = info.@from + PannedOffset;
+                        LastConnectionData.toOrigin = child.Target.Owner.DrawRect.center + PannedOffset;
+                        LastConnectionData.to = info.to + PannedOffset;
+                        LastConnectionData.color = info.color;
 
                         drawer(LastConnectionData);
                     }
@@ -271,9 +297,9 @@ namespace Framework.Editor
             }
         }
 
-        public void StartConnection(GraphNode node, Vector2 position)
+        public void StartConnection(Slot slot, Vector2 position)
         {
-            NextMouseMode = new ConnectMode(this, node, position);
+            NextMouseMode = new ConnectMode(this, slot, position);
             
 //            IsConnecting = true;
 //            CurrentConnectionStart = position;
@@ -416,6 +442,33 @@ namespace Framework.Editor
             OnSelectNode.Process();
         }
 
+        private bool HandleSlotClick()
+        {
+            var mousePos = Event.current.mousePosition - new Vector2(0, 0);
+            var allSlots = new List<Slot>();
+            
+            allSlots.AddRange(AllNodes.SelectMany(n => n.Inputs));
+            allSlots.AddRange(AllNodes.SelectMany(n => n.Outputs));
+
+            var slot = allSlots.FirstOrDefault(s =>
+            {
+                var rect = s.Owner.GetDrawSlotRect(s);
+                rect.position += s.Owner.PhysicalRect.position;
+                return rect.Contains(mousePos);
+            });
+
+            if (slot != null)
+            {
+                var @event = OnSlotClicked.Post();
+                @event.Source = slot;
+                @event.MousePos = mousePos;
+
+                return true;
+            }
+
+            return false;
+        }
+
         private bool HandleMouseDown()
         {
             bool left  = Event.current.button == 0;
@@ -426,15 +479,22 @@ namespace Framework.Editor
 
             if (MouseRect.Contains(Event.current.mousePosition))
             {
+                var mousePos = Event.current.mousePosition - new Vector2(0, 16);
                 var newNodes = new List<GraphNode>();
                 newNodes.AddRange(AllNodes
-                    .Where(node => node.PhysicalRect.Contains(Event.current.mousePosition - new Vector2(0,16)))
+                    .Where(node => node.PhysicalRect.Contains(mousePos))
                     .OrderByDescending(node => node.Id));
 
                 if (!newNodes.Any())
                 {
                     DeselectNodes(SelectedNodes);
                     GUI.FocusControl(string.Empty);
+
+//                    if (HandleSlotClick())
+//                    {
+//                        Event.current.Use();
+//                        return true;
+//                    }
                 }
                 else if (!(CurrentMouseMode is ConnectMode))
                 {
@@ -504,16 +564,28 @@ namespace Framework.Editor
                 CtrlPressed = true;
             if (Event.current.type == EventType.KeyUp && Event.current.keyCode == KeyCode.LeftControl)
                 CtrlPressed = false;
+            if (Event.current.type == EventType.KeyDown && Event.current.keyCode == KeyCode.Delete)
+            {
+                foreach (var node in SelectedNodes)
+                {
+                    OnDeleteNode.Post().Node = node;
+                }
+
+                DeselectNodes(SelectedNodes);
+
+                WantsRepaint = true;
+            }
 
             HandleMouseMode();
             ProcessSelection();
-            
+
+            OnSlotClicked.Process();
             OnRightClick.Process();
             OnConnection.Process();
             OnDeleteNode.Process();
         }
 
-        GenericMenu.MenuFunction CreateRemoveConnectionCallback(GraphNode source, GraphNode.ConnectionInfo toRemove)
+        GenericMenu.MenuFunction CreateRemoveConnectionCallback(GraphNode source, Connection toRemove)
         {
             return () => source.RemoveConnection(toRemove);
         }

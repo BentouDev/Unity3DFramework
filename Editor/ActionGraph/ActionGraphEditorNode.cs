@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+using System;
 using System.Linq;
 using UnityEngine;
 using UnityEditor;
@@ -7,19 +7,19 @@ namespace Framework.Editor
 {
     public class ActionGraphEditorNode : GraphNode
     {
-        public ActionGraphNode ActionNode;
+        public ActionGraphNodeBase ActionNode;
 
-        public ActionGraph Graph;
+        protected ActionGraph Graph;
 
-        private ActionGraphPresenter Presenter;
+        protected ActionGraphPresenter Presenter;
 
-        private List<GraphNode> Parents = new List<GraphNode>();
+        protected System.Collections.Generic.List<Connection> Parents = new System.Collections.Generic.List<Connection>();
 
         public static readonly float ContentMargin = 14; 
 
         public override string Name => ActionNode.name;
-        
-        public ActionGraphEditorNode(ActionGraph graph, ActionGraphNode node, ActionGraphPresenter presenter)
+
+        public ActionGraphEditorNode(ActionGraph graph, ActionGraphNodeBase node, ActionGraphPresenter presenter)
         {
             Graph = graph;
             ActionNode = node;
@@ -27,9 +27,51 @@ namespace Framework.Editor
             
             Size = new Vector2(164, 64);
             Position = ActionNode.EditorPosition;
+
+            if (!Inputs.Any())
+                Inputs.Add(new Slot(this, SlotType.Input));
+            
+            ActionNode.ValidationSubscribe(OnTargetChanged);
         }
 
-        public override bool IsAcceptingConnection(GraphNode parent, Vector2 physicalPos)
+        public override void OnDestroy()
+        {
+            if (ActionNode != null)
+                ActionNode.ValidationUnsubscribe(OnTargetChanged);
+        }
+
+        public virtual void RebuildConnections(Func<object, GraphNode> lookup)
+        {
+            if (ActionNode is ActionGraphNode asAction)
+            {
+                foreach (var node in asAction.Connections)
+                {
+                    var slot = new Slot(this, SlotType.Output);
+                    MakeConnection(slot, lookup.Invoke(node)?.GetDefaultInputSlot());
+                    Outputs.Add(slot);
+                }    
+            }
+        }
+
+        public override Vector2 GetSlotPosition(Slot slot)
+        {
+            if (slot.Type == SlotType.Input)
+                return new Vector2(0, Size.y * 0.5f);
+            return base.GetSlotPosition(slot);
+        }
+
+        protected internal override Slot GetDefaultInputSlot()
+        {
+            return Inputs.Any() ? Inputs[0] : null;
+        }
+
+        protected virtual void OnTargetChanged()
+        {
+            ActionNode.OnSetupParametrizedProperties();
+            Editor.WantsRepaint = true;
+        }
+
+        /*public override bool IsAcceptingConnection(GraphNode parent, Vector2 physicalPos)
         {
             if (CanMakeConnection(parent, this))
             {
@@ -45,34 +87,38 @@ namespace Framework.Editor
             }
 
             return false;
-        }
+        }*/
 
-        public override Vector2 GetParentConnectPosition(GraphNode parent)
-        {
-            return drawRect.CenterLeft();
-        }
-
-        public override void GetChildConnectPositions(GraphNode child, IList<Vector2> positions)
-        {
-            positions.Add(drawRect.CenterRight());
-        }
-
-        protected override void OnParentDisconnected(GraphNode node)
+        protected override void OnParentDisconnected(Connection node)
         {
             Parents.Remove(node);
         }
 
-        protected override void OnConnectToParent(GraphNode parent)
+        protected override void OnConnectToParent(Connection eventSource)
         {
-            Parents.Add(parent);
+            Parents.Add(eventSource);
         }
 
-        protected override void OnConnectToChild(GraphNode node)
+        protected override void OnChildDisconnected(Connection connection)
         {
-            var asAction = node as ActionGraphEditorNode;
-            if (asAction != null)
+            connectedTo.Remove(connection);
+            if (ActionNode is ActionGraphNode asNode)
             {
-                Presenter.OnConnectChildNode(this, asAction);
+                if (connection.Target.Owner is ActionGraphEditorNode asAction) 
+                    asNode.Connections.Remove((ActionGraphNode) asAction.ActionNode);
+            }
+        }
+
+        protected override void OnConnectToChild(Connection eventSource)
+        {
+            if (ActionNode is ActionGraphNode Self)
+            {
+                var asAction = eventSource.Target.Owner as ActionGraphEditorNode;
+                if (asAction != null && asAction.ActionNode is ActionGraphNode asNode)
+                {
+                    connectedTo.Add(eventSource);
+                    Self.Connections.Add(asNode);
+                }                
             }
         }
 
@@ -97,14 +143,23 @@ namespace Framework.Editor
             Selection.activeObject = ActionNode;
         }
 
+        protected virtual bool CanRename()
+        {
+            return true;
+        }
+
         void DrawLabel()
         {
-            // GUI.Label(drawRect, ActionNode.name, EditorStyles.whiteLabel);
-            HandleLabel(drawRect, ActionNode.name, EditorStyles.whiteLabel);
+            if (CanRename())
+                HandleLabel(drawRect, ActionNode.name, EditorStyles.whiteLabel);
+            else
+                GUI.Label(drawRect, ActionNode.name, EditorStyles.whiteLabel);
         }
 
         protected override void OnGUI()
         {
+            ActionNode.OnSetupParametrizedProperties();
+
             if (Selected)
                 GUI.color = SpaceEditorStyles.ActiveColor;
 
@@ -138,7 +193,23 @@ namespace Framework.Editor
 
         protected override void PostGUI()
         {
-            DrawConnectDots(DrawRect);
+            // DrawConnectionSlots(DrawRect);
+        }
+
+        protected override void DrawSlot(Slot slot)
+        {
+            base.DrawSlot(slot);
+
+            if (Event.current.type == EventType.MouseDown
+            &&  Event.current.button == 0)
+            {
+                var rect = GetDrawSlotRect(slot);
+                if (rect.Contains(Event.current.mousePosition))
+                {
+                    // TODO pass actual slot
+                    Presenter.OnNodeConnectorClicked(slot, rect.center);
+                }                
+            }
         }
 
         protected override void OnDrawContent()
@@ -149,8 +220,15 @@ namespace Framework.Editor
         private Rect ParentDotRect = new Rect();
         private Rect ChildDotRect = new Rect();
 
-        void DrawParentConnector(Rect dotRect)
+        void DrawInputSlots(Rect dotRect)
         {
+            foreach (var slots in Inputs)
+            {
+                
+            }
+
+            return;
+            
             ParentDotRect.Set(
                 dotRect.xMin - ConnectorSize.x * 0.5f, 
                 dotRect.center.y - ConnectorSize.y * 0.5f, 
@@ -166,7 +244,7 @@ namespace Framework.Editor
 
             if (Parents.Any())
             {
-                GUI.color = GetParentConnectColor(Parents.FirstOrDefault(p => p.Selected));
+                GUI.color = GetParentConnectColor(Parents.FirstOrDefault(p => p.From.Owner.Selected)?.From.Owner);
                 GUI.Box 
                 (
                     ParentDotRect,
@@ -175,7 +253,7 @@ namespace Framework.Editor
             }            
         }
 
-        void DrawChildConnector(Rect dotRect)
+        void DrawOutputSlots(Rect dotRect)
         {
             ChildDotRect.Set(
                 dotRect.xMax - ConnectorSize.x * 0.5f, 
@@ -189,31 +267,36 @@ namespace Framework.Editor
                 ChildDotRect,
                 GUIContent.none, SpaceEditorStyles.DotFlowTarget
             );
-            
-            if (ActionNode.Connections.Any())
+
+            var asAction = ActionNode as ActionGraphNode;
+            if (asAction)
             {
-                GUI.color = Selected ? SpaceEditorStyles.ActiveColor : Color.white;
-                GUI.Box 
-                (
-                    ChildDotRect,
-                    GUIContent.none, SpaceEditorStyles.DotFlowTargetFill
-                );
+                if (asAction.Connections.Any())
+                {
+                    GUI.color = Selected ? SpaceEditorStyles.ActiveColor : Color.white;
+                    GUI.Box 
+                    (
+                        ChildDotRect,
+                        GUIContent.none, SpaceEditorStyles.DotFlowTargetFill
+                    );
+                }                
             }
-            
+
             if (ChildDotRect.Contains(Event.current.mousePosition) 
                 && Event.current.type == EventType.MouseDown 
                 && Event.current.button == 0)
             {
-                Presenter.OnNodeConnectorClicked(this, ChildDotRect.center);
+                // TODO pass actual slot
+                Presenter.OnNodeConnectorClicked(null, ChildDotRect.center);
             }
 
             GUI.color = Color.white;
         }
 
-        void DrawConnectDots(Rect dotRect)
+        void DrawConnectionSlots(Rect dotRect)
         {
-            DrawParentConnector(dotRect);
-            DrawChildConnector (dotRect);
+            DrawInputSlots (dotRect);
+            DrawOutputSlots(dotRect);
         }
     }
 }
