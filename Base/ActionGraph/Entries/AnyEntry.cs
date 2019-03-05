@@ -8,13 +8,12 @@ namespace Framework
     public class AnyEntry : GraphEntry
     {
         [System.Serializable]
-        public struct EntryInfo
+        public class EntryInfo
         {
             [SerializeField]
             public string Name;
 
             [SerializeField]
-            [ReorderableAttribute]
             public TConditionList Conditions;
 
             [SerializeField] 
@@ -29,19 +28,29 @@ namespace Framework
         [System.Serializable]
         public class TEntryList : ReorderableArray<EntryInfo>
         { }
-        
-        [System.Serializable]
-        public class TConditionList : ReorderableArray<Condition>
-        { }
 
         private void OnEnable()
         {
-            name = "any";
+            EnsureConditionData();
         }
 
         void OnValidate()
         {
+            EnsureConditionData();
+        }
+
+        private void EnsureConditionData()
+        {
             name = "any";
+
+            foreach (var entry in Entries)
+            {
+                foreach (var condition in entry.Conditions)
+                {
+                    if (condition)
+                        condition.Graph = Graph;
+                }
+            }            
         }
     }
 }

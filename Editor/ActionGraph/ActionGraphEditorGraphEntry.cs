@@ -18,6 +18,8 @@ namespace Framework.Editor
     public class ActionGraphEditorEntryBase : ActionGraphEditorNode, IReorderableNotify
     {
         private static readonly float BASIC_HEIGHT = 24;
+        private static readonly float OUTPUT_HEIGHT = 20;
+
         private readonly PropertyPath ConditionPropertyPath;
 
         protected AnyEntry AsAny => ActionNode as AnyEntry;
@@ -119,8 +121,6 @@ namespace Framework.Editor
             return ActionNode is EventEntry;
         }
 
-        private static readonly float OUTPUT_HEIGHT = 20;
-
         public override Vector2 GetSlotPosition(Slot slot)
         {
             Debug.Assert(slot.Type == SlotType.Output);
@@ -167,44 +167,50 @@ namespace Framework.Editor
             Size = new Vector2(Size.x, BASIC_HEIGHT + drawRect.y - oldRect.y);
         }
 
-        public void OnReordered(int oldIndex, int newIndex)
+        public void OnReordered(PropertyPath path, int oldIndex, int newIndex)
         {
-            if (!AsAny)
+            if (!AsAny || !ConditionPropertyPath.Equals(path))
                 return;
             
             var oldInput = AsAny.Entries[oldIndex];
-            var oldSocket = Outputs[oldIndex];
-
             AsAny.Entries.RemoveAt(oldIndex);
             AsAny.Entries.Insert(newIndex, oldInput);
-            
+
+            var oldSocket = Outputs[oldIndex];
             Outputs.RemoveAt(oldIndex);
             Outputs.Insert(newIndex, oldSocket);
 
             Editor.WantsRepaint = true;
         }
 
-        public void OnAdded()
+        public void OnAdded(PropertyPath path)
         {
-            if (!AsAny)
+            if (!AsAny || !ConditionPropertyPath.Equals(path))
                 return;
-            
-//            if (AsAny.Entries.Any())
-//
-//            var last = AsAny.Entries.Last();
-//            last.Name = "out";
-//            AsAny.Entries[AsAny.Entries.Count - 1] = last;
+
+            // All fresh entries shall be clear!
+            if (AsAny.Entries.Any())
+            {
+                var last = AsAny.Entries.Last();
+                last.Name = "out";
+                last.Child = null;
+                last.Conditions.Clear();
+                AsAny.Entries[AsAny.Entries.Count - 1] = last;    
+            }
 
             Outputs.Add(new Slot(this, SlotType.Output));
             Editor.WantsRepaint = true;
         }
 
-        public void OnRemoved(int index)
+        public void OnRemoved(PropertyPath path, int index)
         {
-            if (!AsAny)
+            if (!AsAny || !ConditionPropertyPath.Equals(path))
                 return;
             
+            RemoveAllConnectionFrom(Outputs[index]);
+
             Outputs.RemoveAt(index);
+
             Editor.WantsRepaint = true;
         }
 

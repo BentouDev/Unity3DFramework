@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
@@ -5,6 +6,7 @@ using System.Linq;
 using Framework.Utils;
 using UnityEditor;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace Framework.Editor {
 
@@ -25,16 +27,17 @@ namespace Framework.Editor {
 
 		public delegate void DrawHeaderDelegate(Rect rect, GUIContent label);
 		public delegate void DrawFooterDelegate(Rect rect);
-		public delegate void DrawElementDelegate(Rect rect, SerializedProperty element, GUIContent label, bool selected, bool focused);
+		public delegate void DrawElementDelegate(Rect rect, SerializedProperty element, GUIContent label, int index, bool selected, bool focused);
 		public delegate void ActionDelegate(ReorderableList list);
 		public delegate bool ActionBoolDelegate(ReorderableList list);
 		public delegate void AddDropdownDelegate(Rect buttonRect, ReorderableList list);
 		public delegate Object DragDropReferenceDelegate(Object[] references, ReorderableList list);
 		public delegate void DragDropAppendDelegate(Object reference, ReorderableList list);
-		public delegate float GetElementHeightDelegate(SerializedProperty element);
+		public delegate float GetElementHeightDelegate(SerializedProperty element, int index);
 		public delegate float GetElementsHeightDelegate(ReorderableList list);
-		public delegate string GetElementNameDelegate(SerializedProperty element);
+		public delegate string GetElementNameDelegate(SerializedProperty element, int index);
 		public delegate GUIContent GetElementLabelDelegate(SerializedProperty element);
+		public delegate void RemoveDelegate(int[] indices);
 
 		public event DrawHeaderDelegate drawHeaderCallback;
 		public event DrawFooterDelegate drawFooterCallback;
@@ -50,7 +53,7 @@ namespace Framework.Editor {
 		public event ActionDelegate onSelectCallback;
 		public event ActionDelegate onAddCallback;
 		public event AddDropdownDelegate onAddDropdownCallback;
-		public event ActionDelegate onRemoveCallback;
+		public event RemoveDelegate onRemoveCallback;
 		public event ActionDelegate onMouseUpCallback;
 		public event ActionBoolDelegate onCanRemoveCallback;
 		public event ActionDelegate onChangedCallback;
@@ -522,21 +525,21 @@ namespace Framework.Editor {
 
 			for (i = start; i < end; i++) {
 
-				totalHeight += GetElementHeight(list.GetArrayElementAtIndex(i)) + spacing;
+				totalHeight += GetElementHeight(list.GetArrayElementAtIndex(i), i) + spacing;
 			}
 
 			return totalHeight + 7 - spacing;
 		}
 
-		private float GetElementHeight(SerializedProperty element)
+		private float GetElementHeight(SerializedProperty element, int index)
 		{
-			if (getElementHeightCallback != null)return getElementHeightCallback(element) + ELEMENT_HEIGHT_OFFSET;
+			if (getElementHeightCallback != null)return getElementHeightCallback(element, index) + ELEMENT_HEIGHT_OFFSET;
 	
 			var list = element.type != "string" ? ReorderableDrawer.GetList(element) : default(Pair<bool,ReorderableList>);
 			if (list.Second != null)
 				return list.Second.GetHeight();
 
-			return EditorGUI.GetPropertyHeight(element, GetElementLabel(element), IsElementExpandable(element)) + ELEMENT_HEIGHT_OFFSET;
+			return EditorGUI.GetPropertyHeight(element, GetElementLabel(element, index), IsElementExpandable(element)) + ELEMENT_HEIGHT_OFFSET;
 		}
 
 		private Rect GetElementDrawRect(int index, Rect desiredRect) {
@@ -774,7 +777,7 @@ namespace Framework.Editor {
 					//update the elementRects value for this object. Grab the last elementRect for startPosition
 
 					elementRect.y = elementRect.yMax;
-					elementRect.height = GetElementHeight(element);
+					elementRect.height = GetElementHeight(element, i);
 					elementRects[i] = elementRect;
 
 					elementRect.yMax += spacing;
@@ -803,7 +806,7 @@ namespace Framework.Editor {
 
 					bool selected = selection.Contains(i);
 
-					DrawElement(list.GetArrayElementAtIndex(i), GetElementDrawRect(i, elementRects[i]), selected, selected && GUIUtility.keyboardControl == controlID);
+					DrawElement(list.GetArrayElementAtIndex(i), GetElementDrawRect(i, elementRects[i]), i, selected, selected && GUIUtility.keyboardControl == controlID);
 				}
 			}
 			else if (evt.type == EventType.Repaint) {
@@ -831,13 +834,15 @@ namespace Framework.Editor {
 
 				while (--i > -1) {
 
-					DragElement element = dragList[i];					
+					DragElement element = dragList[i];
+
+					int originalIndex = dragList.GetIndexFromSelection(i);
 
 					//draw dragging elements last as the loop is backwards
 
 					if (element.selected) {
 
-						DrawElement(element.property, element.desiredRect, true, true);
+						DrawElement(element.property, element.desiredRect, originalIndex, true, true);
 						continue;
 					}
 
@@ -864,7 +869,7 @@ namespace Framework.Editor {
 
 					//draw the element with the new rect
 
-					DrawElement(element.property, GetElementDrawRect(i, elementRect), false, false);
+					DrawElement(element.property, GetElementDrawRect(i, elementRect), originalIndex,false, false);
 
 					//reassign the element back into the dragList
 
@@ -874,13 +879,13 @@ namespace Framework.Editor {
 			}
 		}
 
-		private void DrawElement(SerializedProperty element, Rect rect, bool selected, bool focused) {
+		private void DrawElement(SerializedProperty element, Rect rect, int index, bool selected, bool focused) {
 
 			Event evt = Event.current;
 
 			if (drawElementBackgroundCallback != null) {
 
-				drawElementBackgroundCallback(rect, element, null, selected, focused);
+				drawElementBackgroundCallback(rect, element, null, index, selected, focused);
 			}
 			else if (evt.type == EventType.Repaint) {
 
@@ -892,17 +897,17 @@ namespace Framework.Editor {
 				Style.draggingHandle.Draw(new Rect(rect.x + 5, rect.y + 6, 10, rect.height - (rect.height - 6)), false, false, false, false);
 			}			
 
-			GUIContent label = GetElementLabel(element);
+			GUIContent label = GetElementLabel(element, index);
 
 			Rect renderRect = GetElementRenderRect(element, rect);
 
 			if (drawElementCallback != null) {
 
-				drawElementCallback(renderRect, element, label, selected, focused);
+				drawElementCallback(renderRect, element, label, index, selected, focused);
 			}
 			else
 			{
-				var list = element.type != "string" ? ReorderableDrawer.GetList(element) : default(Pair<bool, ReorderableList>);
+				var list = element.type != "string" ? ReorderableDrawer.GetList(element) : default;
 				if (list.Second != null)
 				{
 					list.Second.DoList(renderRect, label);
@@ -923,14 +928,14 @@ namespace Framework.Editor {
 
 					if (rect.Contains(evt.mousePosition)) {
 
-						HandleSingleContextClick(evt, element);
+						HandleSingleContextClick(evt, element, index);
 					}
 
 					break;
 			}
 		}
 
-		private GUIContent GetElementLabel(SerializedProperty element) {
+		private GUIContent GetElementLabel(SerializedProperty element, int index) {
 
 			if (getElementLabelCallback != null) {
 
@@ -941,7 +946,7 @@ namespace Framework.Editor {
 
 			if (getElementNameCallback != null) {
 
-				name = getElementNameCallback(element);
+				name = getElementNameCallback(element, index);
 			}
 			else {
 
@@ -1059,9 +1064,11 @@ namespace Framework.Editor {
 				drawFooterCallback(rect);
 				return;
 			}
-
-			if (Event.current.type == EventType.Repaint) {
-
+			
+			var path = list.GetPath();
+			
+			if (Event.current.type == EventType.Repaint) 
+			{
 				Style.footerBackground.Draw(rect, false, false, false, false);
 			}
 
@@ -1070,18 +1077,23 @@ namespace Framework.Editor {
 
 			EditorGUI.BeginDisabledGroup(!canAdd);
 
-			if (GUI.Button(addRect, onAddDropdownCallback != null ? Style.iconToolbarPlusMore : Style.iconToolbarPlus, Style.preButton)) {
+			// var type = new SerializedType(list.type).Type;
+			// CreatedByFactory factoryAttribute = (CreatedByFactory) Attribute.GetCustomAttribute(type, typeof (CreatedByFactory));
 
-				if (onAddDropdownCallback != null) {
+			bool hasSpecializedCreation = onAddDropdownCallback != null; // factoryAttribute != null ||  
 
+			if (GUI.Button(addRect, hasSpecializedCreation ? Style.iconToolbarPlusMore : Style.iconToolbarPlus, Style.preButton)) 
+			{
+				if (onAddDropdownCallback != null) 
+				{
 					onAddDropdownCallback(addRect, this);
 				}
-				else if (onAddCallback != null) {
-
+				else if (onAddCallback != null) 
+				{
 					onAddCallback(this);
 				}
-				else {
-
+				else 
+				{
 					AddItem();
 				}
 
@@ -1090,7 +1102,7 @@ namespace Framework.Editor {
 				{
 					// Add feature to filter out properties by "something"
 					// Can we get reflection info for serializedProperty?
-					asIObject.GetNotify<IReorderableNotify>(list.GetPath())?.OnAdded();
+					asIObject.GetNotify<IReorderableNotify>(path)?.OnAdded(path);
 				}
 			}
 
@@ -1100,15 +1112,6 @@ namespace Framework.Editor {
 
 			if (GUI.Button(subRect, Style.iconToolbarMinus, Style.preButton)) 
 			{
-				if (onRemoveCallback != null) 
-				{
-					onRemoveCallback(this);
-				}
-				else 
-				{
-					Remove(selection.ToArray());
-				}
-				
 				var asIObject = list.serializedObject.targetObject as IBaseObject;
 				if (asIObject != null)
 				{
@@ -1116,13 +1119,22 @@ namespace Framework.Editor {
 					{
 						foreach (var index in selection.ToArray())
 						{
-							asIObject.GetNotify<IReorderableNotify>(list.GetPath())?.OnRemoved(index);
+							asIObject.GetNotify<IReorderableNotify>(path)?.OnRemoved(path, index);
 						}	
 					}
 					else
 					{
-						asIObject.GetNotify<IReorderableNotify>(list.GetPath())?.OnRemoved(0);
+						asIObject.GetNotify<IReorderableNotify>(path)?.OnRemoved(path, 0);
 					}
+				}
+
+				if (onRemoveCallback != null) 
+				{
+					onRemoveCallback(selection.ToArray());
+				}
+				else 
+				{
+					Remove(selection.ToArray());
 				}
 			}
 
@@ -1247,7 +1259,7 @@ namespace Framework.Editor {
 			}
 		}
 
-		private void HandleSingleContextClick(Event evt, SerializedProperty element) {
+		private void HandleSingleContextClick(Event evt, SerializedProperty element, int index) {
 
 			selection.Select(IndexOf(element));
 
@@ -1255,7 +1267,7 @@ namespace Framework.Editor {
 
 			if (element.isInstantiatedPrefab) {
 
-				menu.AddItem(new GUIContent("Revert " + GetElementLabel(element).text + " to Prefab"), false, selection.RevertValues, list);
+				menu.AddItem(new GUIContent("Revert " + GetElementLabel(element, index).text + " to Prefab"), false, selection.RevertValues, list);
 				menu.AddSeparator(string.Empty);
 			}
 
@@ -1727,10 +1739,11 @@ namespace Framework.Editor {
 
 			//swap the selected elements in the List
 
+			var path = list.GetPath();
 			IReorderableNotify notify = null;
 			if (list.serializedObject.targetObject is IBaseObject asIObject)
 			{
-				notify = asIObject.GetNotify<IReorderableNotify>(list.GetPath());
+				notify = asIObject.GetNotify<IReorderableNotify>(path);
 			}
 
 			int s = selection.Length;			
@@ -1742,7 +1755,7 @@ namespace Framework.Editor {
 				selection[s] = listIndex;
 
 				list.MoveArrayElement(dragList[newIndex].startIndex, listIndex);
-				notify?.OnReordered(dragList[newIndex].startIndex, listIndex);
+				notify?.OnReordered(path, dragList[newIndex].startIndex, listIndex);
 			}
 
 			//restore expanded states on items
@@ -2431,7 +2444,11 @@ namespace Framework.Editor {
 					list.GetArrayElementAtIndex(this[i]).DuplicateCommand();				
 					list.serializedObject.ApplyModifiedProperties();
 					list.serializedObject.Update();
-					
+
+					var path = list.GetPath();
+					var asIObject = list.serializedObject.targetObject as IBaseObject;
+					asIObject?.GetNotify<IReorderableNotify>(path)?.OnAdded(path);
+
 					offset++;
 				}				
 
@@ -2444,9 +2461,12 @@ namespace Framework.Editor {
 				
 				int i = Length;
 
-				while (--i > -1) {
-
+				var path = list.GetPath();
+				var asIObject = list.serializedObject.targetObject as IBaseObject;
+				while (--i > -1) 
+				{
 					list.GetArrayElementAtIndex(this[i]).DeleteCommand();
+					asIObject?.GetNotify<IReorderableNotify>(path)?.OnRemoved(path, this[i]);					
 				}
 
 				Clear();

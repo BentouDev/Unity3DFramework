@@ -67,6 +67,7 @@ public static class SerializedPropertyExtension
             int endLenght = endIndex - startIndex;
             int.TryParse(path.Substring(startIndex, endLenght), out index);
 
+            // What if there's a null in the list?
             var genericList = target as IList;
             newTarget = genericList?[index];
 

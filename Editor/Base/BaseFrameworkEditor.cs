@@ -264,7 +264,7 @@ namespace Framework.Editor
                 {
                     list.Second.drawElementCallback += GenericParameterDrawer;
                     list.Second.onAddDropdownCallback += GenericParameterAdd;
-                    list.Second.getElementHeightCallback += e => 16;
+                    list.Second.getElementHeightCallback += (e,i) => 16;
                 }
 
                 list.Second.DoLayoutList();
@@ -314,7 +314,7 @@ namespace Framework.Editor
             );
         }
         
-        private void GenericParameterDrawer(Rect rect, SerializedProperty element, GUIContent label, bool selected, bool focused)
+        private void GenericParameterDrawer(Rect rect, SerializedProperty element, GUIContent label, int index, bool selected, bool focused)
         {
             var param = element.GetAs<GenericParameter>();
             if (param != null)

@@ -1,7 +1,9 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Framework.AI;
+using Framework.Utils;
 using UnityEngine;
 
 namespace Framework
@@ -20,7 +22,7 @@ namespace Framework
 #endif
 
         public abstract IValue CreateValue(GenericParameter param);
-        public abstract PropertyReference GetProperty(System.Type type, string name);
+        public abstract PropertyReference GetProperty<T>(System.Type type, string name);
         protected internal abstract PropertyReference CreatePropertyForType<U>(string name);
 
         private static readonly Dictionary<string, KnownType> _knownTypes = new Dictionary<string, KnownType>();
@@ -163,10 +165,13 @@ namespace Framework
 
     public class KnownType<T> : KnownType
     {
-        protected internal System.Func<GenericParameter, T> Getter;
-        protected internal System.Action<GenericParameter, T> Setter;
+        protected internal Func<GenericParameter, T> Getter;
+        protected internal Action<GenericParameter, T> Setter;
 
-        private readonly Dictionary<string, PropertyReference> _properties = new Dictionary<string, PropertyReference>();
+        private class PropertyBank : Dictionary<Pair<Type,string>, PropertyReference> 
+        { }
+
+        private readonly PropertyBank _properties = new PropertyBank();
 
         protected internal KnownType(string name)
         {
@@ -184,24 +189,25 @@ namespace Framework
             return new PropertyReference<U, T>(name);
         }
 
-        public override PropertyReference GetProperty(System.Type type, string name)
+        public override PropertyReference GetProperty<TOwner>(System.Type type, string name)
         {
-            PropertyReference reference;
-            if (_properties.TryGetValue(name, out reference))
+            var propIndex = PairUtils.MakePair(typeof(TOwner), name);
+            if (!_properties.TryGetValue(propIndex, out var reference))
             {
                 var otherType = GetKnownType(type);
                 if (otherType != null)
                 {
-                    reference = otherType.CreatePropertyForType<T>(name);
+                    reference = otherType.CreatePropertyForType<TOwner>(name);
+
                     if (reference.IsValid())
                     {
-                        _properties[name] = reference;
+                        _properties[propIndex] = reference;
                     }
                     else
                     {
                         // no delete, let GC do it's job ;__;
                         reference = null;
-                    }    
+                    }
                 }
             }
 

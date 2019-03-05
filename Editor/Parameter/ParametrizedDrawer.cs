@@ -1,34 +1,31 @@
+using System;
 using System.Collections.Generic;
+using System.Reflection;
 using UnityEditor;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace Framework.Editor
 {
-    [CustomPropertyDrawer(typeof(Parametrized))]
-    public class ParametrizedDrawer : PropertyDrawer
+    public class ParametrizedView
     {
         private static readonly int LockSize = 16;
         private static readonly int BoxBackgroundHeight = 4;
         private static readonly int BoxBackgroundMargin = 2;
-        private static readonly int FieldHeight = 22;
+        internal static readonly int FieldHeight = 22;
         private static readonly Color DarkRed = new Color(128, 0, 0);
 
-        private List<GenericParameter> Parameters { get; set; }
+        public List<GenericParameter> Parameters { get; set; }
 
         private List<GUIContent> ParameterListContent { get; set; }
 
-        private IDataSetProvider DataProvider { get; set; }
+        public IDataSetProvider DataProvider { get; set; }
 
-        private IBaseObject AsParametrized { get; set; }
+        public IBaseObject AsParametrized { get; set; }
 
-        private Object Target { get; set; }
+        public Object Target { get; set; }
 
-        private string Typename { get; set; }
-
-        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
-        {
-            return FieldHeight;
-        }
+        public string Typename { get; set; }
 
         private void DrawBackground(Rect position, Color color)
         {
@@ -39,7 +36,7 @@ namespace Framework.Editor
             GUI.Box(boxRect, GUIContent.none);
             GUI.color = Color.white;
         }
-        
+
         private void SetContentForParameters()
         {
             if (ParameterListContent == null)
@@ -55,58 +52,42 @@ namespace Framework.Editor
             }
         }
 
-        private bool Initialize(ref Rect position, SerializedProperty property, GUIContent label)
+        private void DrawParamField(ref Rect fieldRect, ref int index, SerializedProperty property, bool modified = false)
         {
-            position.height = base.GetPropertyHeight(property, label);
+            fieldRect.y += BoxBackgroundMargin;
+            int result = EditorGUI.Popup
+            (
+                fieldRect,
+                GUIContent.none,
+                index + 1,
+                ParameterListContent.ToArray(), 
+                SpaceEditorStyles.ParametrizedField
+            );
 
-            Target = property.serializedObject.targetObject;
-
-            AsParametrized = Target as IBaseObject;
-
-            DataProvider = AsParametrized?.GetProvider();
-
-            if (DataProvider == null)
+            bool changed = (result - 1) != index || modified;
+            if (changed && DataProvider.CanEditObject(Target))
             {
-                EditorGUI.HelpBox(position, $"{property.name}: Unable to get instance of IDataSetProvider!", MessageType.Error);
-                return false;
+                if (result > 0 && result <= Parameters.Count)
+                {
+                    var parameter = Parameters[result - 1];
+
+                    AsParametrized.SetParameter(property.name, parameter);
+                }
+                else
+                {
+                    AsParametrized.ClearParameter(property.name);
+                }
             }
-
-            Parameters = DataProvider.GetParameters(p => p.HoldType.Type.IsSubclassOf(fieldInfo.FieldType));
-
-            Typename = KnownType.GetDisplayedName(fieldInfo.FieldType);
-            if (Typename == null)
-            {
-                EditorGUI.HelpBox(position, string.Format("Type {0} is not a known type!", fieldInfo.FieldType), MessageType.Error);
-                return false;
-            }
-
-            if (!DataProvider.HasObject(Target))
-            {
-                EditorGUI.HelpBox(position, "Unable to edit this object!", MessageType.Error);
-                return false;
-            }
-
-            if (!(attribute is Parametrized))
-            {
-                EditorGUI.HelpBox(position, "Unable to get Parametrized attribute!", MessageType.Error);
-                return false;
-            }
-
-            SetContentForParameters();
-
-            return true;
         }
 
-        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        public void OnGUI(Rect position, SerializedProperty property, GUIContent label, 
+            SerializedType fieldType, PropertyAttribute attribute, bool displayLock = true)
         {
-            if (!Initialize(ref position, property, label))
-                return;
-
-            var type = new SerializedType(fieldInfo.FieldType);
+            SetContentForParameters();
 
             int index = -1;
             bool wasConstant = false;
-            var setParam = AsParametrized.GetParameter(property.name, type);
+            var setParam = AsParametrized.GetParameter(property.name, fieldType);
             if (setParam != null)
             {
                 index = Parameters.FindIndex(p => p.Name.Equals(setParam.Name) && p.HoldType.Equals(setParam.HoldType));
@@ -123,50 +104,35 @@ namespace Framework.Editor
                 EditorGUI.indentLevel = 0;
                 EditorGUI.BeginChangeCheck();
                 {
-                    //var objectFieldRect = position;
+                    var fieldRect = position;
 
-                    var fieldRect = position;//EditorGUILayout.GetControlRect(true, LockSize, SpaceEditorStyles.LightObjectField);
-                    var lockRect  = new Rect(fieldRect.x + fieldRect.width - LockSize, fieldRect.y + 2, LockSize, fieldRect.height);
-
-                    bool isConstant = EditorGUI.Toggle(lockRect, wasConstant, SpaceEditorStyles.LockButton);
-
-                    fieldRect.width -= LockSize;
-
-                    if (isConstant)
+                    if (displayLock)
                     {
-                        GenericParameter parameter = wasConstant
-                            ? AsParametrized.GetParameter(property.name, type)
-                            : new GenericParameter(type);
+                        var lockRect = new Rect(fieldRect.x + fieldRect.width - LockSize, fieldRect.y + 2, LockSize,
+                            fieldRect.height);
 
-                        GenericParamUtils.DrawParameter(fieldRect, parameter, false);
+                        bool isConstant = EditorGUI.Toggle(lockRect, wasConstant, SpaceEditorStyles.LockButton);
 
-                        AsParametrized.SetParameter(property.name, parameter, true);
+                        fieldRect.width -= LockSize;
+
+                        if (isConstant)
+                        {
+                            GenericParameter parameter = wasConstant
+                                ? AsParametrized.GetParameter(property.name, fieldType)
+                                : new GenericParameter(fieldType);
+
+                            GenericParamUtils.DrawParameter(fieldRect, parameter, false);
+
+                            AsParametrized.SetParameter(property.name, parameter, true);
+                        }
+                        else
+                        {
+                            DrawParamField(ref fieldRect, ref index, property, wasConstant != isConstant);
+                        }
                     }
                     else
                     {
-                        fieldRect.y += BoxBackgroundMargin;
-                        int result = EditorGUI.Popup
-                        (
-                            fieldRect,
-                            GUIContent.none,
-                            index + 1,
-                            ParameterListContent.ToArray(), 
-                            SpaceEditorStyles.ParametrizedField
-                        );
-
-                        if ((result - 1) != index && DataProvider.CanEditObject(Target))
-                        {
-                            if (result > 0 && result <= Parameters.Count)
-                            {
-                                var parameter = Parameters[result - 1];
-
-                                AsParametrized.SetParameter(property.name, parameter);
-                            }
-                            else
-                            {
-                                AsParametrized.ClearParameter(property.name);
-                            }                            
-                        }
+                        DrawParamField(ref fieldRect, ref index, property);
                     }
                 }
                 if (EditorGUI.EndChangeCheck())
@@ -175,6 +141,66 @@ namespace Framework.Editor
                 }
             }
             EditorGUI.EndProperty();
+        }
+    }
+
+    [CustomPropertyDrawer(typeof(Parametrized))]
+    public class ParametrizedDrawer : PropertyDrawer
+    {
+        private readonly ParametrizedView View = new ParametrizedView();
+        
+        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+        {
+            return ParametrizedView.FieldHeight;
+        }
+
+        private bool Initialize(ref Rect position, SerializedProperty property, GUIContent label, 
+            FieldInfo fieldInfo, PropertyAttribute attribute)
+        {
+            position.height = EditorGUI.GetPropertyHeight(property, label);
+
+            View.Target = property.serializedObject.targetObject;
+
+            View.AsParametrized = View.Target as IBaseObject;
+
+            View.DataProvider = View.AsParametrized?.GetProvider();
+
+            if (View.DataProvider == null)
+            {
+                EditorGUI.HelpBox(position, $"{property.name}: Unable to get instance of IDataSetProvider!", MessageType.Error);
+                return false;
+            }
+
+            View.Parameters = View.DataProvider.GetParameters((p) => fieldInfo.FieldType.IsAssignableFrom(p.HoldType.Type));
+
+            View.Typename = KnownType.GetDisplayedName(fieldInfo.FieldType);
+            if (View.Typename == null)
+            {
+                EditorGUI.HelpBox(position, string.Format("Type {0} is not a known type!", fieldInfo.FieldType), MessageType.Error);
+                return false;
+            }
+
+            if (!View.DataProvider.HasObject(View.Target))
+            {
+                EditorGUI.HelpBox(position, "Unable to edit this object!", MessageType.Error);
+                return false;
+            }
+
+            if (!(attribute is Parametrized))
+            {
+                EditorGUI.HelpBox(position, "Unable to get Parametrized attribute!", MessageType.Error);
+                return false;
+            }
+
+            return true;
+        }
+
+        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        {
+            if (!Initialize(ref position, property, label, fieldInfo, attribute))
+                return;
+
+            View.OnGUI(position, property, label, new SerializedType(fieldInfo.FieldType), attribute);
         }
     }
 }

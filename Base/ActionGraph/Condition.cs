@@ -1,13 +1,26 @@
+using System.Collections.Generic;
+using Malee;
+using UnityEngine;
+
 namespace Framework
 {
-    public abstract class Condition : BaseScriptableObject
+    [System.Serializable]
+    public class TConditionList : ReorderableArray<Condition>
+    { }
+
+    [System.Serializable]
+    public abstract class Condition : ParametrizedScriptableObject
     {
         public static readonly string NO_DESCRIPTION = string.Empty;
-        
+
         public int Priority;
 
-        public abstract bool IsSatisfied();
+        [SerializeField]
+        [HideInInspector]
+        public ActionGraph Graph;
 
+        public abstract bool IsSatisfied();
+        
         public virtual string GetDescription()
         {
             return NO_DESCRIPTION;
@@ -20,6 +33,11 @@ namespace Framework
                 return;
 
             name = desc;
+        }
+
+        public override IDataSetProvider GetProvider()
+        {
+            return Graph;
         }
     }
 }

@@ -6,11 +6,11 @@ namespace Framework.Editor
     {
         bool IsFromPath(PropertyPath path);
     }
-    
+
     public interface IReorderableNotify : INotify
     {
-        void OnReordered(int oldIndex, int newIndex);
-        void OnAdded();
-        void OnRemoved(int index);
+        void OnReordered(PropertyPath path, int oldIndex, int newIndex);
+        void OnAdded(PropertyPath path);
+        void OnRemoved(PropertyPath path, int index);
     }
 }

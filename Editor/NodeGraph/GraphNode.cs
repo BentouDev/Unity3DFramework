@@ -467,6 +467,21 @@ namespace Framework.Editor
 //            node.OnParentDisconnected(this);
         //}
 
+        public void RemoveAllConnectionFrom(Slot slot)
+        {
+            var toDisconnect = new List<Connection>();
+            foreach (var connection in connectedTo)
+            {
+                if (connection.From == slot)
+                    toDisconnect.Add(connection);
+            }
+
+            foreach (var connection in toDisconnect)
+            {
+                RemoveConnection(connection);
+            }
+        }
+
         public void RemoveAllConnectionFrom(GraphNode node)
         {
             var toDisconnect = new List<Connection>();

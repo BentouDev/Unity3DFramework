@@ -8,9 +8,14 @@ namespace Framework.Editor
 {
     public static class KnownTypeUtils
     {
-        public static void ShowAddParameterMenu(System.Action<SerializedType> callback)
+        public static void ShowAddParameterMenu(System.Action<SerializedType> callback, bool addNulltype = false)
         {
             GenericMenu menu = new GenericMenu();
+
+            if (addNulltype)
+            {
+                menu.AddItem(new GUIContent("none"), false, () => callback(null));
+            }
 
             var types = KnownType.GetKnownTypes();
             for (int i = 0; i < types.Count; i++)

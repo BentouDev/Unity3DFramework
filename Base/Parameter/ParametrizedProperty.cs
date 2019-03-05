@@ -47,60 +47,20 @@ namespace Framework
 
         public void Initialize<TOwner>(TOwner instance, string propName)
         {
+            if (Owner != null && Property != null)
+                return;
+
             Owner = new PropertyOwner<TOwner>(instance);
-            
+
             var knownType = KnownType.GetKnownType(typeof(TOwner));
             if (knownType != null)
             {
-                Property = knownType.GetProperty(Parameter.HoldType.Type, propName);
+                Property = knownType.GetProperty<TOwner>(Parameter.HoldType.Type, propName);
                 
                 if (Constant)
                     Owner.CallSetter(Property, Parameter);
             }
         }
-        
-        /*public void GetProperty<T>(T instance, string name)
-        {
-            var knownType = KnownType.GetKnownType(Parameter.HoldType.Type);
-            if (knownType != null)
-            {
-                Property = knownType.CreateProperty(name);
-            }
-            
-            Property = Parameter.CreatePropertyReference(instance, name);
-        }
-
-        public PropertyReference CreatePropertyReference<T>(T instance, string name)
-        {
-            var knownType = KnownType.GetKnownType(HoldType.Type);
-            if (knownType != null)
-            {
-                return knownType.CreateProperty(instance, name);
-            }
-            else
-            {
-                Debug.LogErrorFormat("Known type for {0} not found! Unable to crate IValue.", HoldType.Type);
-                return null;
-            }
-        }
-
-        protected PropertyReference GetProperty<T,U>(string propName)
-        {
-            if (Property != null)
-                return Property;
-
-            var knownType = KnownType.GetKnownType(typeof(T));
-            if (knownType != null)
-            {
-                var propRef = knownType.GetProperty<U>(propName);
-                if (propRef != null)
-                {
-                    Property = propRef;
-                }
-            }
-
-            return Property;
-        }*/
 
         public void UpdateFromProvider(IDataSetProvider provider)
         {
@@ -128,12 +88,11 @@ namespace Framework
     }
 
     [System.Serializable]
-    public class PropertyReference<T, F> : PropertyReference// where T : class
+    public class PropertyReference<T, F> : PropertyReference
     {
         public System.Func<T, F> Getter;
         public System.Action<T, F> Setter;
     
-        // private readonly T _instance;
         private readonly System.Reflection.PropertyInfo _propertyInfo;
         private readonly System.Reflection.FieldInfo _fieldInfo;
     
@@ -144,7 +103,6 @@ namespace Framework
     
         public PropertyReference(string propertyName)
         {
-            // _instance = instance;
             _propertyInfo = typeof(T).GetProperty(propertyName);
             _fieldInfo = typeof(T).GetField(propertyName);
     

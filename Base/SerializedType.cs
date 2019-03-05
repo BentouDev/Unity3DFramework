@@ -130,7 +130,11 @@ public class SerializedType : IEquatable<SerializedType>, ISerializationCallback
     private string _serializedMetadata;
 
     public string SerializedTypeName => _serializedTypeName;
-    public string Metadata => _serializedMetadata;
+    public string Metadata
+    {
+        get => _serializedMetadata;
+        set => _serializedMetadata = value;
+    }
 
     private System.Type _type;
     public System.Type Type

@@ -21,7 +21,12 @@ namespace Framework.Editor
         }
 
         public readonly EventQueue<ConnectEvent> OnConnectNodesQueue = new EventQueue<ConnectEvent>();
-        
+
+        internal override void OnDestroy()
+        {
+            ActionGraph.TryRepairAsset(AssetPath, Asset);
+        }
+
         public ActionGraphPresenter(ActionGraphView view)
         {
             View = view;
@@ -167,14 +172,6 @@ namespace Framework.Editor
             }*/
         }
 
-        private void AddToAsset(UnityEngine.Object asset)
-        {
-            asset.hideFlags |= HideFlags.HideInHierarchy;
-            AssetDatabase.AddObjectToAsset(asset, Asset);
-            AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh();
-        }
-        
         internal void OnLostAsset()
         {
             Asset.EditorPos = View.GetScrollPos();
@@ -206,7 +203,7 @@ namespace Framework.Editor
         
         private GraphNode AddNewNode(ActionGraphNodeBase node)
         {
-            AddToAsset(node);
+            AssetDatabaseUtils.AddToAsset(Asset, node);
 
             switch (node)
             {

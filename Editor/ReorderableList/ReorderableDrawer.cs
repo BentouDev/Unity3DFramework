@@ -5,8 +5,8 @@ using Malee;
 using UnityEditor;
 using UnityEngine;
 
-namespace Framework.Editor {
-
+namespace Framework.Editor 
+{
 	[CustomPropertyDrawer(typeof(ReorderableAttribute))]
 	public class ReorderableDrawer : PropertyDrawer 
 	{

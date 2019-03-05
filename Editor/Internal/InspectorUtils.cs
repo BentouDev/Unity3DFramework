@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using Framework;
 using UnityEngine;
 using UnityEditor;
 
@@ -46,6 +47,7 @@ public static class InspectorUtils
         EditorGUI.BeginChangeCheck();
         obj.Update();
         SerializedProperty iterator = obj.GetIterator();
+        
         bool enterChildren = true;
         while (iterator.NextVisible(enterChildren))
         {
@@ -56,6 +58,49 @@ public static class InspectorUtils
 
             enterChildren = false;
         }
+
+        obj.ApplyModifiedProperties();
+        return EditorGUI.EndChangeCheck();
+    }
+
+    public static float GetDefaultInspectorHeight(SerializedObject obj,
+        System.Predicate<SerializedProperty> predicate = null)
+    {
+        SerializedProperty iterator = obj.GetIterator();
+
+        float height = 0;
+        bool enterChildren = true;
+        while (iterator.NextVisible(enterChildren))
+        {
+            if (!enterChildren && (predicate == null || predicate(iterator)))
+            {
+                height += EditorGUI.GetPropertyHeight(iterator);
+            }
+
+            enterChildren = false;
+        }
+
+        return height;
+    }
+
+    public static bool DrawDefaultInspector(Rect rect, SerializedObject obj, System.Predicate<SerializedProperty> predicate = null)
+    {
+        EditorGUI.BeginChangeCheck();
+        obj.Update();
+        SerializedProperty iterator = obj.GetIterator();
+
+        bool enterChildren = true;
+        while (iterator.NextVisible(enterChildren))
+        {
+            if (!enterChildren && (predicate == null || predicate(iterator)))
+            {
+                EditorGUI.PropertyField(rect, iterator, true);
+                rect.y += EditorGUI.GetPropertyHeight(iterator);
+            }
+
+            enterChildren = false;
+        }
+
         obj.ApplyModifiedProperties();
         return EditorGUI.EndChangeCheck();
     }

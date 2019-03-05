@@ -1,5 +1,7 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Reflection;
 
 namespace Framework.Editor
 {
@@ -44,6 +46,30 @@ namespace Framework.Editor
         public void Clear()
         {
             _path.Clear();
+        }
+
+        public FieldInfo MaterializeToFieldInfo(Type targetType)
+        {
+            FieldInfo result = null;
+            Type owningType = targetType;
+
+            foreach (var index in _path)
+            {
+                Type indexType = typeof(IList).IsAssignableFrom(index.Type) 
+                    ? index.Type.GenericTypeArguments[0] 
+                    : index.Type;
+
+                var info = owningType.GetField(index.Name);
+                if (info == null || info.GetUnderlyingType() != index.Type)
+                {
+                    return null;
+                }
+
+                result = info;
+                owningType = indexType;
+            }
+
+            return result;
         }
 
         public bool Equals(PropertyPath other)

@@ -20,7 +20,7 @@ namespace Framework
         {
             GenericParameter.BuildKnownTypeList();
             SetDrawersForKnownTypes();
-            Debug.LogFormat("Regenerated GenericParam for : {0} types", KnownType.Register.Count);
+            // Debug.LogFormat("Regenerated GenericParam for : {0} types", KnownType.Register.Count);
         }
 
         public static void SetDrawersForKnownTypes()

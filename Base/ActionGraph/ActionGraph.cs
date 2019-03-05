@@ -1,8 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Framework.AI;
 using UnityEngine;
 using Object = UnityEngine.Object;
+
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Framework
 {
@@ -54,10 +59,24 @@ namespace Framework
 
         public bool HasObject(Object obj)
         {
-            var asNode = obj as ActionGraphNode;
-            if (asNode)
+            switch (obj)
             {
-                return Nodes.Contains(asNode);
+                case ActionGraphNode asNode:
+                {
+                    return Nodes.Contains(asNode);
+                }
+                case AnyEntry asAny:
+                {
+                    return AnyEntryNode == asAny;
+                }
+                case EventEntry asEvent:
+                {
+                    return NamedEventEntries.Contains(asEvent);
+                }
+                case Condition asCondition:
+                {
+                    return asCondition.Graph == this;
+                }
             }
 
             return false;            
@@ -101,6 +120,49 @@ namespace Framework
             }
             
             return ValidationResult.Ok;
+        }
+
+        public static void TryRepairAsset(string path, ActionGraph asset)
+        {
+            bool assetChanged = false;
+            foreach (var obj in AssetDatabase.LoadAllAssetsAtPath(path))
+            {
+                var asGraph = obj as ActionGraph;
+                if (asGraph)
+                    continue;
+                
+                if (asset.HasObject(obj))
+                    continue;
+
+                assetChanged = true;
+                Object.DestroyImmediate(obj, true);
+            }
+
+            if (!assetChanged)
+                return;
+
+            EditorUtility.SetDirty(asset);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+        }
+
+        [MenuItem("CONTEXT/ActionGraph/Optimize")]
+        static void RebuildCommand(MenuCommand command)
+        {
+            if (EditorUtility.DisplayDialog
+            (
+                "Optimize Asset",
+                "This will remove unused nodes inside asset, but will break redo command stack. Are you sure?",
+                "Optimize",
+                "Cancel"
+            ))
+            {
+                TryRepairAsset
+                (
+                    AssetDatabase.GetAssetPath(command.context), 
+                    command.context as ActionGraph
+                );
+            }
         }
 #endif
     }

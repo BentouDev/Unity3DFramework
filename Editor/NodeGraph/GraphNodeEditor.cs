@@ -120,6 +120,7 @@ namespace Framework.Editor
             {
                 data.Node.SetSelected(true);
                 SelectedNodes.Add(data.Node);
+                WantsRepaint = true;
                 return true;
             });
 
@@ -127,6 +128,7 @@ namespace Framework.Editor
             {
                 data.Node.SetSelected(false);
                 SelectedNodes.Remove(data.Node);
+                WantsRepaint = true;
                 return true;
             });
             
@@ -280,15 +282,13 @@ namespace Framework.Editor
             {
                 foreach (Connection child in parent.connectedTo)
                 {
-                    // ChildNodePositionsBuffer.Clear();
                     ConnectionDrawInfo info;
                     parent.GetConnectionDrawData(child, out info);
-                    // foreach (ConnectionDrawInfo info in ChildNodePositionsBuffer)
                     {
-                        LastConnectionData.fromOrigin = parent.DrawRect.center + PannedOffset;
                         LastConnectionData.from = info.@from + PannedOffset;
-                        LastConnectionData.toOrigin = child.Target.Owner.DrawRect.center + PannedOffset;
+                        LastConnectionData.fromOrigin = new Vector2((parent.DrawRect.center + PannedOffset).x, LastConnectionData.from.y);
                         LastConnectionData.to = info.to + PannedOffset;
+                        LastConnectionData.toOrigin = new Vector2((child.Target.Owner.DrawRect.center + PannedOffset).x, LastConnectionData.to.y);
                         LastConnectionData.color = info.color;
 
                         drawer(LastConnectionData);
@@ -489,12 +489,6 @@ namespace Framework.Editor
                 {
                     DeselectNodes(SelectedNodes);
                     GUI.FocusControl(string.Empty);
-
-//                    if (HandleSlotClick())
-//                    {
-//                        Event.current.Use();
-//                        return true;
-//                    }
                 }
                 else if (!(CurrentMouseMode is ConnectMode))
                 {
