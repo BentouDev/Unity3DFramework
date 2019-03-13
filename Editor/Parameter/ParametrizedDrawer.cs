@@ -27,13 +27,21 @@ namespace Framework.Editor
 
         public string Typename { get; set; }
 
-        private void DrawBackground(Rect position, Color color)
+        private void DrawBackground(Rect position, bool isSet)
         {
             var boxRect = position;
             boxRect.height += BoxBackgroundHeight;
+
+            if (!isSet)
+            {
+                GUI.color = Color.Lerp(DarkRed, Color.clear, 0.5f);
+            }
+            else
+            {
+                GUI.color = Color.Lerp(Color.white, new Color(1,1,1,0), 0.5f);
+            }
         
-            GUI.color = Color.Lerp(color, Color.clear, 0.5f);
-            GUI.Box(boxRect, GUIContent.none);
+            GUI.Box(boxRect, GUIContent.none, SpaceEditorStyles.LightBox);
             GUI.color = Color.white;
         }
 
@@ -94,7 +102,7 @@ namespace Framework.Editor
                 wasConstant = AsParametrized.IsParameterConstant(property.name);
             }
 
-            DrawBackground(position, index != -1 || wasConstant ? Color.white : DarkRed);
+            DrawBackground(position, index != -1 || wasConstant);
 
             label = EditorGUI.BeginProperty(position, label, property);
             {

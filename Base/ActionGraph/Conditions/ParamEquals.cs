@@ -30,8 +30,8 @@ namespace Framework
 
         public override string GetDescription()
         {
-            string first = !string.IsNullOrEmpty(First.Name) ? First.Name : "first";
-            string second = !string.IsNullOrEmpty(Second.Name) ? Second.Name : "second";
+            string first = First.Get() == null ? "first" : First.Get().ToString();
+            string second = Second.Get() == null ? "second" : Second.Get().ToString();
             return $"[{first}] equals [{second}]";
         }
 

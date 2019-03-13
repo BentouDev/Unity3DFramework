@@ -34,13 +34,14 @@ namespace Framework.Editor.MouseModes
                     Event.current.Use();
                     break;
                 case EventType.MouseUp:
-                    if (Event.current.button == 0)
+                    /*if (Event.current.button == 0)
                     {
                         //Editor.OnLeftClick?.Invoke(Event.current.mousePosition);
                         //Editor.DeselectNodes(Editor.SelectedNodes);
+                        Editor.OnLeftClick.Post().MousePos = Event.current.mousePosition;
                         Event.current.Use();
                     }
-                    else if (Event.current.button == 1)
+                    else*/ if (Event.current.button == 1)
                     {
                         //Editor.OnRightClick();
                         Editor.OnRightClick.Post().MousePos = Event.current.mousePosition;
@@ -56,6 +57,7 @@ namespace Framework.Editor.MouseModes
                     else if (Event.current.clickCount == 2)
                     {
                         //Editor.OnDoubleClick?.Invoke(Event.current.mousePosition);
+                        Editor.OnDoubleClick.Post().MousePos = Event.current.mousePosition;
                         Event.current.Use();
                     }
                     break;

@@ -1100,8 +1100,8 @@ namespace Framework.Editor {
 				var asIObject = list.serializedObject.targetObject as IBaseObject;
 				if (asIObject != null)
 				{
-					// Add feature to filter out properties by "something"
-					// Can we get reflection info for serializedProperty?
+					list.serializedObject.ApplyModifiedProperties();
+
 					asIObject.GetNotify<IReorderableNotify>(path)?.OnAdded(path);
 				}
 			}

@@ -57,6 +57,7 @@ namespace Framework.Editor
         public readonly EventQueue<NodeEvent>  OnSelectNode   = new EventQueue<NodeEvent>();
         public readonly EventQueue<NodeEvent>  OnDeselectNode = new EventQueue<NodeEvent>();
         public readonly EventQueue<MouseEvent> OnRightClick   = new EventQueue<MouseEvent>();
+        public readonly EventQueue<MouseEvent> OnLeftClick    = new EventQueue<MouseEvent>();
         public readonly EventQueue<MouseEvent> OnDoubleClick  = new EventQueue<MouseEvent>();
         
         public readonly EventQueue<NodeConnectionEvent> OnConnection = new EventQueue<NodeConnectionEvent>();
@@ -72,9 +73,12 @@ namespace Framework.Editor
 
         public float ZoomLevel
         {
-            get { return zoom; }
-            set { zoom = Mathf.Clamp(value, 0.25f, 1.25f); }
+            get => zoom;
+            set => zoom = Mathf.Clamp(value, MinZoom, MaxZoom);
         }
+
+        public float MinZoom = 0.25f;
+        public float MaxZoom = 1.25f;
 
         public Rect MouseRect => new Rect(0, DrawRect.y, DrawRect.width, DrawRect.height - DrawRect.y);
         public Rect PhysicalRect => new Rect(0, 0, DrawRect.width / ZoomLevel, DrawRect.height / ZoomLevel);
@@ -417,7 +421,10 @@ namespace Framework.Editor
 
         public void DeselectNodes(params GraphNode[] nodes)
         {
-            DeselectNodes(nodes as IEnumerable<GraphNode>);
+            if (nodes.Length == 0)
+                DeselectNodes(SelectedNodes);
+            else
+                DeselectNodes(nodes as IEnumerable<GraphNode>);
         }
 
         public void DeselectNodes(IEnumerable<GraphNode> nodes)
@@ -426,6 +433,8 @@ namespace Framework.Editor
             {
                 OnDeselectNode.Post().Node = node;
             }
+
+            WantsRepaint = true;
         }
 
         private void ProcessSelection()
@@ -512,7 +521,7 @@ namespace Framework.Editor
                 if (CurrentMouseMode is NormalMode && left)
                 {
                     NextMouseMode = new SelectMode(this);
-
+                    OnLeftClick.Post().MousePos = Event.current.mousePosition;
                     Event.current.Use();
                     return true;   
                 }
@@ -575,6 +584,8 @@ namespace Framework.Editor
 
             OnSlotClicked.Process();
             OnRightClick.Process();
+            OnLeftClick.Process();
+            OnDoubleClick.Process();
             OnConnection.Process();
             OnDeleteNode.Process();
         }

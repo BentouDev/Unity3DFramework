@@ -21,6 +21,9 @@ namespace Framework
         public TypeLayoutFunc LayoutFunc;
 #endif
 
+        public abstract object CallGetter(GenericParameter param);
+        public abstract void CallSetter(GenericParameter param, object value);
+
         public abstract IValue CreateValue(GenericParameter param);
         public abstract PropertyReference GetProperty<T>(System.Type type, string name);
         protected internal abstract PropertyReference CreatePropertyForType<U>(string name);
@@ -177,6 +180,16 @@ namespace Framework
         {
             GenericName = name;
             HoldType = typeof(T);
+        }
+
+        public override object CallGetter(GenericParameter param)
+        {
+            return Getter(param);
+        }
+
+        public override void CallSetter(GenericParameter param, object value)
+        {
+            Setter(param, (T) value);
         }
 
         public override IValue CreateValue(GenericParameter param)

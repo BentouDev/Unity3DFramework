@@ -160,7 +160,7 @@ namespace Framework.Editor
                 {
                     cache = new List<ReflectionInfo>();
 
-                    foreach (var member in targetType.GetMembers())
+                    foreach (var member in targetType.GetMembers().OrderBy(m => m.MetadataToken))
                     {
                         ProcessClassMember(cache, targetType, member);
                     }

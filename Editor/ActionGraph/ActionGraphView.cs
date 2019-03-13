@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEditor;
+using UnityEditor.VersionControl;
 using UnityEngine.Assertions;
 
 namespace Framework.Editor
@@ -345,6 +346,12 @@ namespace Framework.Editor
                 
                 return true;
             });
+            
+            Nodes.OnLeftClick.Reassign(data =>
+            {
+                Presenter.OnLeftClick(data.MousePos);
+                return true;
+            });
 
             Nodes.OnConnection.Reassign((data =>
             {
@@ -431,19 +438,6 @@ namespace Framework.Editor
             return editorNode;
         }
 
-//        private void ConnectNodeEditor(GraphNode parent, ActionGraphNode child)
-//        {
-//            if (NodeLookup.TryGetValue(child, out var foundNode))
-//            {
-//                if (GraphNode.CanMakeConnection(parent, foundNode))
-//                    GraphNode.MakeConnection(parent, foundNode);
-//            }
-//            else
-//            {
-//                Debug.LogError($"Couldn't find editor node for {child.name}", child);
-//            }
-//        }
-
         public void RecreateNodes(ActionGraph asset)
         {
             using (new GraphNode.NodeRecreationContext())
@@ -489,17 +483,44 @@ namespace Framework.Editor
                 }   
             }
         }
+
+        private bool showParams;
+        private float ParamsWidth = 300;
+        private Splitter Split = new Splitter();
         
         public void OnDraw(ActionGraph graph, string assetPath)
         {
             GUILayout.BeginVertical();
             {
-                DrawNodeGraph();
+                GUILayout.BeginHorizontal();
+                {
+                    DrawNodeGraph();
+
+                    if (showParams)
+                    {
+                        Split.Layout();
+                        DrawParameters(graph);
+                    }
+                }
+                GUILayout.EndHorizontal();
+                
                 DrawFooter(graph, assetPath);
                 
-                Nodes.HandleEvents(this);
+                HandleEvents();
             }
             GUILayout.EndVertical();
+        }
+
+        private void HandleEvents()
+        {
+            var (wantsRepaint, paramWidthDelta) = Split.HandleWidth();
+
+            ParamsWidth -= paramWidthDelta;
+            ParamsWidth = Mathf.Clamp(ParamsWidth, 100, EditorSize.x * 0.9f);
+            
+            Nodes.WantsRepaint = wantsRepaint;
+            
+            Nodes.HandleEvents(this);
         }
 
         public void OnUpdate()
@@ -523,6 +544,37 @@ namespace Framework.Editor
             }
             GUILayout.EndVertical();
         }
+        
+        private ParamListDrawer _drawer;
+        private ParamListDrawer GetDrawer(ActionGraph graph)
+        {
+            if (_drawer == null)
+            {
+                _drawer = new ParamListDrawer();
+                _drawer.Init(graph.Parameters);
+                _drawer.Recreate();
+            }
+
+            return _drawer;
+        }
+        
+        private void DrawParameters(ActionGraph graph)
+        {
+            GUILayout.BeginVertical(GUILayout.Width(ParamsWidth));
+            {
+                var drawer = GetDrawer(graph);
+                EditorGUI.BeginChangeCheck();
+                {
+                    drawer.DrawerList.DoLayoutList();
+                }
+                if (EditorGUI.EndChangeCheck())
+                {
+                    graph.Parameters = drawer.GetParameters();
+                    AssetDatabase.SaveAssets();
+                }
+            }
+            GUILayout.EndVertical();
+        }
 
         private void DrawFooter(ActionGraph graph, string assetPath)
         {
@@ -535,10 +587,14 @@ namespace Framework.Editor
                 }
 
                 GUILayout.FlexibleSpace();
-                GUILayout.Label($"<<{(Nodes.CurrentMouseMode != null ? Nodes.CurrentMouseMode.GetType().Name : "null")}>>");
+                //GUILayout.Label($"<<{(Nodes.CurrentMouseMode != null ? Nodes.CurrentMouseMode.GetType().Name : "null")}>>");
+                
                 //GUILayout.Label($"{Nodes.ScrollPos} :: {Event.current.mousePosition} :: ");
-                //GUILayout.Label($"{Nodes.ZoomLevel * 100:##.##}%");
-                Nodes.ZoomLevel = GUILayout.HorizontalSlider(Nodes.ZoomLevel, 0.25f, 1, GUILayout.Width(64));
+                GUILayout.Label($"{Nodes.ZoomLevel * 100:##.##}%");
+                
+                Nodes.ZoomLevel = GUILayout.HorizontalSlider(Nodes.ZoomLevel, Nodes.MinZoom, Nodes.MaxZoom, GUILayout.Width(64));
+
+                showParams = GUILayout.Toggle(showParams, "Params", EditorStyles.toolbarButton);
             }
             EditorGUILayout.EndHorizontal();
         }
@@ -619,6 +675,11 @@ namespace Framework.Editor
         public void DeleteNode(ActionGraphEditorNode node)
         {
             Nodes.OnDeleteNode.Post().Node = node;
+        }
+
+        public void OnSelectionChanged()
+        {
+            Nodes.DeselectNodes();
         }
     }
 }

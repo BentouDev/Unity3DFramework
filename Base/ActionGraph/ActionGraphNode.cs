@@ -5,6 +5,7 @@ namespace Framework
 {
     public abstract class ActionGraphNode : ActionGraphNodeBase
     {
+        [Header("Execution")]
         public int Priority;
 
         [SerializeField]

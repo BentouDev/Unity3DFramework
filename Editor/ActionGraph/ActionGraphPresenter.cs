@@ -91,8 +91,15 @@ namespace Framework.Editor
             }
 
             var asAct = Selection.activeObject as ActionGraphNodeBase;
-            if (Selection.activeObject != Asset && (asAct == null || !isFromAsset(asAct)))
-                ReloadAssetFromSelection();
+            if (Selection.activeObject != Asset)
+            {
+                if (asAct == null || !isFromAsset(asAct))
+                    ReloadAssetFromSelection();
+            }
+            else
+            {
+                View.OnSelectionChanged();
+            }
         }
 
         bool ShouldReloadFromSelection()
@@ -507,6 +514,11 @@ namespace Framework.Editor
         public void DisconnectNodes(ActionGraphNode parent, ActionGraphNode node)
         {
             View.DisconnectNodes(parent, node);
+        }
+
+        public void OnLeftClick(Vector2 mousePos)
+        {
+            Selection.activeObject = Asset;
         }
     }
 }

@@ -53,9 +53,9 @@ public class ParamListDrawer
             GUI.Label(rect, "Name");
 
                 
-            rect.x = original.x + GenericParamUtils.LabelWidth * 1.35f;
+            rect.x = original.x + rect.width;
             rect.width = GenericParamUtils.FieldWidth;
-            GUI.Label(rect, "Default value");
+            GUI.Label(rect, "Value");
         };
 
         if (!CustomAdd)

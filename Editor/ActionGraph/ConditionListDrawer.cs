@@ -37,9 +37,13 @@ namespace Framework.Editor
         {
             CurrentProperty = property;
             Target = CurrentProperty.GetAs<TConditionList>();
+
+            GUI.color = Color.Lerp(Color.white, Color.black, 0.25f);
             
             var list = GetList(property);
             list.DoList(position, label);
+
+            GUI.color = Color.white;
         }
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
@@ -94,15 +98,26 @@ namespace Framework.Editor
             }
 
             rect.x += 10;
+            rect.width -= 10;
             var foldoutRect = rect;
             foldoutRect.height = GenericParamUtils.FieldHeight;
+
+            var backgroundRect = rect;
+            backgroundRect.x -= 29;
+            backgroundRect.y -= 1;
+            backgroundRect.width += 33;
+            backgroundRect.height = 20;
+
+            var oldColor = GUI.color;
+            GUI.color = Color.Lerp(new Color(1,1,1,0), Color.white, 0.75f);
+            GUI.Box(backgroundRect, GUIContent.none, SpaceEditorStyles.LightBox);
+            GUI.color = oldColor;
 
             element.isExpanded = EditorGUI.Foldout(foldoutRect, element.isExpanded, new GUIContent(description), true);
             if (element.isExpanded)
             {
-                rect.width -= 10;
-                rect.y += GenericParamUtils.FieldHeight;
-                rect.height -= GenericParamUtils.FieldHeight;
+                rect.y += GenericParamUtils.FieldHeight + 4;
+                rect.height -= GenericParamUtils.FieldHeight + 2;
 
                 if (condition)
                 {

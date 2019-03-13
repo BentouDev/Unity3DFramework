@@ -7,6 +7,9 @@ namespace Framework.Editor
 {
     public class ActionGraphEditorNode : GraphNode
     {
+        protected static readonly float BASIC_HEIGHT = 24;
+        protected static readonly float OUTPUT_HEIGHT = 20;
+        
         public ActionGraphNodeBase ActionNode;
 
         protected ActionGraph Graph;
@@ -56,8 +59,10 @@ namespace Framework.Editor
         public override Vector2 GetSlotPosition(Slot slot)
         {
             if (slot.Type == SlotType.Input)
-                return new Vector2(0, Size.y * 0.5f);
-            return base.GetSlotPosition(slot);
+                return new Vector2(0, BASIC_HEIGHT + 0.5f * ConnectorSize.y);
+            
+            int index = Outputs.IndexOf(slot);
+            return new Vector2(Size.x,BASIC_HEIGHT + (ConnectorSize.y * 0.5f) + (index * OUTPUT_HEIGHT));
         }
 
         protected internal override Slot GetDefaultInputSlot()
@@ -140,7 +145,8 @@ namespace Framework.Editor
 
         protected override void OnSelected(bool value)
         {
-            Selection.activeObject = ActionNode;
+            if (value)
+                Selection.activeObject = ActionNode;
         }
 
         protected virtual bool CanRename()

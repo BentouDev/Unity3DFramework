@@ -104,7 +104,7 @@ namespace Framework.Editor
 				}
 			}
 
-			return new Pair<bool, ReorderableList>(justCreated, list);
+			return PairUtils.MakePair(justCreated, list);
 		}
 	}
 }

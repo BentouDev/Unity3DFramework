@@ -159,6 +159,23 @@ public static class SpaceEditorStyles
         }
     }
 
+    private static GUIStyle _lightBox;
+
+    public static GUIStyle LightBox
+    {
+        get
+        {
+            if (_lightBox == null)
+            {
+                _lightBox = new GUIStyle(EditorStyles.helpBox);
+                _lightBox.onNormal.background = Texture2D.whiteTexture;
+                _lightBox.normal.background = Texture2D.whiteTexture;
+            }
+
+            return _lightBox;
+        }
+    }
+
     private static GUIStyle _selectedListItem;
     public static GUIStyle SelectedListItem
     {
@@ -470,7 +487,7 @@ public static class SpaceEditorStyles
             return _behaviourTreeIcon;
         }
     }
-
+    
     public static Color ActiveColor => EditorGUIUtility.isProSkin
         ? new Color(61 / 255.0f, 96 / 255.0f, 145 / 255.0f)
         : new Color(0.33f, 0.66f, 1f, 0.66f); 

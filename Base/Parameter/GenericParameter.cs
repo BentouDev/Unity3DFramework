@@ -277,6 +277,30 @@ namespace Framework
             return ((KnownType<T>)KnownType.Register[type.FullName]).Getter(this);
         }
 
+        public object Get()
+        {
+            if (HoldType.Type == null || string.IsNullOrEmpty(HoldType.Type.FullName))
+                return null;
+            
+            if (KnownType.Register.TryGetValue(HoldType.Type.FullName, out var knownType))
+            {
+                return knownType.CallGetter(this);    
+            }
+
+            return null;
+        }
+
+        public void Set(object value)
+        {
+            if (HoldType.Type == null || string.IsNullOrEmpty(HoldType.Type.FullName))
+                return;
+
+            if (KnownType.Register.TryGetValue(HoldType.Type.FullName, out var knownType))
+            {
+                knownType.CallSetter(this, value);
+            }
+        }
+
 #if UNITY_EDITOR
         public static void Layout(GenericParameter parameter, bool label)
         {

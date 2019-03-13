@@ -17,9 +17,6 @@ namespace Framework.Editor
     [CustomActionEditor(typeof(EventEntry))]
     public class ActionGraphEditorEntryBase : ActionGraphEditorNode, IReorderableNotify
     {
-        private static readonly float BASIC_HEIGHT = 24;
-        private static readonly float OUTPUT_HEIGHT = 20;
-
         private readonly PropertyPath ConditionPropertyPath;
 
         protected AnyEntry AsAny => ActionNode as AnyEntry;
@@ -121,19 +118,10 @@ namespace Framework.Editor
             return ActionNode is EventEntry;
         }
 
-        public override Vector2 GetSlotPosition(Slot slot)
-        {
-            Debug.Assert(slot.Type == SlotType.Output);
-
-            int index = Outputs.IndexOf(slot);
-
-            return new Vector2(Size.x,BASIC_HEIGHT + 7 + (index * OUTPUT_HEIGHT));
-        }
-
         protected override void DrawContent()
         {
             drawRect.height = BASIC_HEIGHT;
-
+            
             List<string> outNames = new List<string>();
             switch (ActionNode)
             {
@@ -164,7 +152,7 @@ namespace Framework.Editor
                 drawRect.y += OUTPUT_HEIGHT;
             }
 
-            Size = new Vector2(Size.x, BASIC_HEIGHT + drawRect.y - oldRect.y);
+            Size = new Vector2(Size.x, Mathf.Max(BASIC_HEIGHT * 2, BASIC_HEIGHT + drawRect.y - oldRect.y));
         }
 
         public void OnReordered(PropertyPath path, int oldIndex, int newIndex)

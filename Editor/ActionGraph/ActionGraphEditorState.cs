@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEditor;
 using UnityEngine;
 
 namespace Framework.Editor
@@ -8,9 +9,6 @@ namespace Framework.Editor
     [CustomActionEditor(typeof(ActionState))]
     public class ActionGraphEditorState : ActionGraphEditorNode, IReorderableNotify
     {
-        private static readonly float BASIC_HEIGHT = 24;
-        private static readonly float OUTPUT_HEIGHT = 20;
-
         public ActionState State => (ActionState) ActionNode;
 
         private readonly PropertyPath ToConnectionInfos;
@@ -93,6 +91,9 @@ namespace Framework.Editor
             drawRect.y += 1;
             
             Rect oldRect = drawRect;
+            oldRect.x += 10;
+            GUI.Label(oldRect, "in", EditorStyles.whiteBoldLabel);
+
             drawRect.width -= 10;
             foreach (var outName in outNames)
             {
@@ -100,19 +101,7 @@ namespace Framework.Editor
                 drawRect.y += OUTPUT_HEIGHT;
             }
 
-            Size = new Vector2(Size.x, BASIC_HEIGHT + drawRect.y - oldRect.y);
-        }
-
-        public override Vector2 GetSlotPosition(Slot slot)
-        {
-            if (SlotType.Output == slot.Type)
-            {
-                int index = Outputs.IndexOf(slot);
-
-                return new Vector2(Size.x,BASIC_HEIGHT + 7 + (index * OUTPUT_HEIGHT));                
-            }
-
-            return base.GetSlotPosition(slot);
+            Size = new Vector2(Size.x, Mathf.Max(BASIC_HEIGHT * 2,BASIC_HEIGHT + drawRect.y - oldRect.y));
         }
 
         public void OnReordered(PropertyPath path, int oldIndex, int newIndex)
@@ -124,6 +113,10 @@ namespace Framework.Editor
             State.Connections.RemoveAt(oldIndex);
             State.Connections.Insert(newIndex, old_node);
 
+            var old_connection = connectedTo[oldIndex];
+            connectedTo.RemoveAt(oldIndex);
+            connectedTo.Insert(newIndex, old_connection);
+
             Editor.WantsRepaint = true;
         }
 
@@ -131,6 +124,11 @@ namespace Framework.Editor
         {
             if (!ToConnectionInfos.Equals(path))
                 return;
+
+            var last = State.ConnectionInfos.Last();
+            last.Name = "out";
+            last.Condition.Clear();
+            last.ChildId = -1;
 
             Outputs.Add(new Slot(this, SlotType.Output));
             Editor.WantsRepaint = true;
