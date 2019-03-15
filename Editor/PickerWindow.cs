@@ -68,10 +68,15 @@ namespace Framework
 		void OnGUI()
 		{
 			titleContent = new GUIContent(Title);
-			
-			if (CurrentFilterList == null)
-				CurrentFilterList = GetFilteredData(SearchString).ToList();
 
+			if (CurrentFilterList == null)
+			{
+				CurrentFilterList = GetFilteredData(SearchString).ToList();
+				SelectedElement = CurrentFilterList.FirstOrDefault();
+			}
+
+			HandleKeyboard();
+			
 			GUILayout.BeginVertical(GUIContent.none, EditorStyles.helpBox);
 			{
 				DrawSearchField();
@@ -96,8 +101,6 @@ namespace Framework
 				DrawSelectionInfoPanel();
 			}
 			GUILayout.EndVertical();
-
-			HandleKeyboard();
 		}
 			
 		private void DrawSearchField()
@@ -110,7 +113,12 @@ namespace Framework
 				{
 					CurrentFilterList = GetFilteredData(newSearchString).ToList();
 					SearchString = newSearchString;
+
+					if (!CurrentFilterList.Contains(SelectedElement))
+						SelectedElement = CurrentFilterList.FirstOrDefault();
 				}
+				
+				GUI.FocusControl(SearchFieldControl);
 
 				GUILayout.Box(GUIContent.none, (GUIStyle)"SearchCancelButtonEmpty");
 			}
@@ -160,42 +168,58 @@ namespace Framework
 
 		void HandleKeyboard()
 		{
-			if (SelectedElement != null &&
-			    Event.current.type == EventType.KeyDown)
+			if (Event.current.type == EventType.KeyDown || Event.current.rawType == EventType.KeyDown)
 			{
 				int index = CurrentFilterList.IndexOf(SelectedElement);
-	
+
 				switch (Event.current.keyCode)
 				{
+					case KeyCode.Escape:
+						Close();
+						break;
 					case KeyCode.Return:
 						if (PickSelected())
 							Event.current.Use();
 						break;
 					case KeyCode.UpArrow:
+						if (index == -1)
+							index = CurrentFilterList.Count - 1;
+
 						if (index > 0)
 						{
 							SelectedElement = CurrentFilterList[index - 1];
 							scrollPosition.y = GetScrollPosForIndex(index - 1);
 							Event.current.Use();
 						}
+
 						break;
 					case KeyCode.DownArrow:
+						if (index == -1)
+							index = 0;
+
 						if (index < CurrentFilterList.Count - 1)
 						{
 							SelectedElement = CurrentFilterList[index + 1];
 							scrollPosition.y = GetScrollPosForIndex(index + 1);
 							Event.current.Use();
 						}
+
 						break;
 					case KeyCode.Home:
-						SelectedElement = CurrentFilterList.First();
-						scrollPosition.y = GetScrollPosForIndex(0);
-						Event.current.Use();
+						if (!Event.current.control)
+						{
+							SelectedElement = CurrentFilterList.First();
+							scrollPosition.y = GetScrollPosForIndex(0);
+							Event.current.Use();
+						}
 						break;
 					case KeyCode.End:
-						SelectedElement = CurrentFilterList.Last();
-						scrollPosition.y = GetScrollPosForIndex(CurrentFilterList.Count - 1);
-						Event.current.Use();
+						if (!Event.current.control)
+						{
+							SelectedElement = CurrentFilterList.Last();						
+							scrollPosition.y = GetScrollPosForIndex(CurrentFilterList.Count - 1);
+							Event.current.Use();
+						}
 						break;
 				}
 			}

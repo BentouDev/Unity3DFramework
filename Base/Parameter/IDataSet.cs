@@ -4,11 +4,11 @@ namespace Framework
     {
         void Init();
         
-        void InsertFromParameter(GenericParameter parameter);
+        void InsertFromParameter(Parameter parameter);
 
-        bool GetFromParameter(GenericParameter parameter);
+        bool GetFromParameter(Variant parameter);
 
-        bool SetToParameter(GenericParameter parameter);
+        bool SetToParameter(Variant parameter);
 
         bool HasValue(System.Type type, string name);
 

@@ -11,7 +11,12 @@ namespace Framework
             return null;
         }
 
-        public virtual GenericParameter GetParameter(string paramName, SerializedType holdType)
+        public virtual ParameterReference GetParameter(string paramName, SerializedType holdType)
+        {
+            return null;
+        }
+
+        public virtual Variant GetVariant(string propertyName, SerializedType type)
         {
             return null;
         }
@@ -21,7 +26,10 @@ namespace Framework
             return false;
         }
 
-        public virtual void SetParameter(string paramName, GenericParameter parameter, bool constant = false)
+        public virtual void SetParameter(string paramName, ParameterReference parameter)
+        { }
+
+        public virtual void SetParameterConst(string paramName, Variant value)
         { }
 
         public virtual void ClearParameter(string paramName)
@@ -39,6 +47,9 @@ namespace Framework
         
         public event Validation OnValidation;
 
+        public virtual void OnPreValidate()
+        { }
+        
         public void OnPostValidate()
         {
             OnValidation?.Invoke();

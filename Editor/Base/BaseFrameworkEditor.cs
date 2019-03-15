@@ -198,14 +198,16 @@ namespace Framework.Editor
         {
             List<ReflectionInfo> cache;
             Cache.TryGetTarget(out cache);
-            
+
             InspectorUtils.DrawDefaultScriptField(serializedObject);
-            
+
+            (target as IBaseObject)?.OnPreValidate();
+
             EditorGUI.BeginChangeCheck();
             {
                 foreach (ReflectionInfo info in cache)
                 {
-                    var property = serializedObject.FindProperty(info.Info.Name);                
+                    var property = serializedObject.FindProperty(info.Info.Name);
                     if (property != null)
                     {
                         DrawField(info, property);
@@ -218,7 +220,7 @@ namespace Framework.Editor
             }
             if (EditorGUI.EndChangeCheck())
             {
-                (target as IBaseObject)?.OnPostValidate();                
+                (target as IBaseObject)?.OnPostValidate();
             }
         }
 
@@ -257,17 +259,24 @@ namespace Framework.Editor
             }
             else
             {
-                Pair<bool, ReorderableList> list = ReorderableDrawer.GetList(property);
-
-                if (property.arrayElementType.Equals(typeof(GenericParameter).Name)
-                && list.First)
+                var (initialize, list) = ReorderableDrawer.GetList(property);
+                if (initialize)
                 {
-                    list.Second.drawElementCallback += GenericParameterDrawer;
-                    list.Second.onAddDropdownCallback += GenericParameterAdd;
-                    list.Second.getElementHeightCallback += (e,i) => 16;
+                    if (property.arrayElementType.Equals(typeof(Variant).Name))
+                    {
+                        list.drawElementCallback += GenericParameterDrawer;
+                        list.onAddDropdownCallback += GenericParameterAdd;
+                        list.getElementHeightCallback += (e,i) => 16;
+                    }
+                    else if (property.arrayElementType.Equals(typeof(Framework.Parameter).Name))
+                    {
+                        list.drawElementCallback += ParameterDraw;
+                        list.onAddDropdownCallback += ParameterAdd;
+                        list.getElementHeightCallback += (e,i) => 16;                        
+                    }
                 }
 
-                list.Second.DoLayoutList();
+                list.DoLayoutList();
             }
 
             if (!result)
@@ -291,40 +300,74 @@ namespace Framework.Editor
             // EditorGUILayout.HelpBox($"{info.MemberType.ToString()} : {info.Info.Name}", MessageType.Info);
         }
 
-        private void GenericParameterAdd(Rect buttonrect, ReorderableList list)
+        private void ParameterAdd(Rect buttonrect, ReorderableList list)
         {
-            var generic_list = list.ListUnsafe.GetAs<List<GenericParameter>>();
+            var generic_list = list.ListUnsafe.GetAs<List<Framework.Parameter>>();
             if (generic_list == null)
-                Debug.LogError("Unable to get GenericList!");
+                Debug.LogError("Unable to get List<Framework.Parameter>!");
             else
                 KnownTypeUtils.ShowAddParameterMenu((t) => { AddNewParam(t, generic_list); });
         }
 
-        private void AddNewParam(SerializedType type, List<GenericParameter> list)
+        private void ParameterDraw(Rect rect, SerializedProperty element, GUIContent label, int index, bool selected, bool focused)
+        {
+            var param = element.GetAs<Framework.Parameter>();
+            if (param != null)
+            {
+                VariantUtils.DrawParameter(rect, param.Value);
+            }
+            else
+            {
+                GUI.Label(rect, "Unable to render as Parameter!");
+            }
+        }
+
+        private void AddNewParam(SerializedType type, List<Framework.Parameter> list)
         {
             string typename = KnownType.GetDisplayedName(type.Type);
             string paramName = StringUtils.MakeUnique($"New {typename}", list.Select(p => p.Name));
 
             list.Add
             (
-                new GenericParameter(type)
+                new Framework.Parameter(type, paramName)
+            );
+        }
+
+        private void GenericParameterAdd(Rect buttonrect, ReorderableList list)
+        {
+            var generic_list = list.ListUnsafe.GetAs<List<Variant>>();
+            if (generic_list == null)
+                Debug.LogError("Unable to get List<Variant>!");
+            else
+                KnownTypeUtils.ShowAddParameterMenu((t) => { AddNewVariant(t, generic_list); });
+        }
+        
+        private void GenericParameterDrawer(Rect rect, SerializedProperty element, GUIContent label, int index, bool selected, bool focused)
+        {
+            var param = element.GetAs<Variant>();
+            if (param != null)
+            {
+                VariantUtils.DrawParameter(rect, param);
+            }
+            else
+            {
+                GUI.Label(rect, "Unable to render as Variant!");
+            }
+        }
+        
+        private void AddNewVariant(SerializedType type, List<Variant> list)
+        {
+            string typename = KnownType.GetDisplayedName(type.Type);
+            string paramName = StringUtils.MakeUnique($"New {typename}", list.Select(p => p.Name));
+
+            list.Add
+            (
+                new Variant(type)
                 {
                     Name = paramName
                 }
             );
         }
-        
-        private void GenericParameterDrawer(Rect rect, SerializedProperty element, GUIContent label, int index, bool selected, bool focused)
-        {
-            var param = element.GetAs<GenericParameter>();
-            if (param != null)
-            {
-                GenericParamUtils.DrawParameter(rect, param);
-            }
-            else
-            {
-                GUI.Label(rect, "Unable to render as GenericParameter!");
-            }
-        }
+
     }
 }

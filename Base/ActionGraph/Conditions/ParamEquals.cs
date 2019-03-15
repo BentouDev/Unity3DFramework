@@ -11,11 +11,11 @@ namespace Framework
 
         [Validate(nameof(OnValidateFirstParam))]
         [TypeRestricted(TypeRestricted.TypeSource.Field, nameof(InputType))]
-        public GenericParameter First;
+        public Variant First;
 
         [Validate(nameof(OnValidateSecondParam))]
         [TypeRestricted(TypeRestricted.TypeSource.Field, nameof(InputType))]
-        public GenericParameter Second;
+        public Variant Second;
 
         public override bool IsSatisfied()
         {
@@ -51,7 +51,7 @@ namespace Framework
             return OnValidateParam(Second);
         }
         
-        ValidationResult OnValidateParam(GenericParameter param)
+        ValidationResult OnValidateParam(Variant param)
         {
             if (string.IsNullOrEmpty(param.Name))
                 return new ValidationResult(ValidationStatus.Error,"Parameter reference must be set!");

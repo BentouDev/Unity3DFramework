@@ -14,17 +14,17 @@ namespace Framework
         public string GenericName;
 
 #if UNITY_EDITOR
-        public delegate void TypeDrawFunc(Rect rect, GenericParameter param, bool label);
-        public delegate void TypeLayoutFunc(GenericParameter param, bool label);
+        public delegate void TypeDrawFunc(Rect rect, Variant param, bool label);
+        public delegate void TypeLayoutFunc(Variant param, bool label);
         
         public TypeDrawFunc DrawFunc;
         public TypeLayoutFunc LayoutFunc;
 #endif
 
-        public abstract object CallGetter(GenericParameter param);
-        public abstract void CallSetter(GenericParameter param, object value);
+        public abstract object CallGetter(Variant param);
+        public abstract void CallSetter(Variant param, object value);
 
-        public abstract IValue CreateValue(GenericParameter param);
+        public abstract IValue CreateValue(Variant param);
         public abstract PropertyReference GetProperty<T>(System.Type type, string name);
         protected internal abstract PropertyReference CreatePropertyForType<U>(string name);
 
@@ -168,8 +168,8 @@ namespace Framework
 
     public class KnownType<T> : KnownType
     {
-        protected internal Func<GenericParameter, T> Getter;
-        protected internal Action<GenericParameter, T> Setter;
+        protected internal Func<Variant, T> Getter;
+        protected internal Action<Variant, T> Setter;
 
         private class PropertyBank : Dictionary<Pair<Type,string>, PropertyReference> 
         { }
@@ -182,17 +182,17 @@ namespace Framework
             HoldType = typeof(T);
         }
 
-        public override object CallGetter(GenericParameter param)
+        public override object CallGetter(Variant param)
         {
             return Getter(param);
         }
 
-        public override void CallSetter(GenericParameter param, object value)
+        public override void CallSetter(Variant param, object value)
         {
             Setter(param, (T) value);
         }
 
-        public override IValue CreateValue(GenericParameter param)
+        public override IValue CreateValue(Variant param)
         {
             return new Value<T>(param.HoldType.Type, param.GetAs<T>());
         }

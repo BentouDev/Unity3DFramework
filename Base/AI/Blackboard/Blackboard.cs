@@ -21,12 +21,12 @@ namespace Framework.AI
             Data.Init();
         }
 
-        public void InsertFromParameter(GenericParameter parameter)
+        public void InsertFromParameter(Parameter parameter)
         {
             Data.InsertFromParameter(parameter);
         }
 
-        public bool GetFromParameter(GenericParameter parameter)
+        public bool GetFromParameter(Variant parameter)
         {
             if (!Data.GetFromParameter(parameter))
             {
@@ -37,7 +37,7 @@ namespace Framework.AI
             return true;
         }
 
-        public bool SetToParameter(GenericParameter parameter)
+        public bool SetToParameter(Variant parameter)
         {
             if (!Data.SetToParameter(parameter))
             {

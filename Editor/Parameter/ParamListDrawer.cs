@@ -17,15 +17,15 @@ public class ParamListDrawer
 
     private float FirstPos;
     private List<float> Positions = new List<float>();
-    private List<GenericParameter> Parameters;
+    private List<Parameter> Parameters;
     private bool CustomAdd;
 
-    public List<GenericParameter> GetParameters()
+    public List<Parameter> GetParameters()
     {
         return Parameters;
     }
 
-    public void Init(List<GenericParameter> paramList, bool customAdd = false)
+    public void Init(List<Parameter> paramList, bool customAdd = false)
     {
         CustomAdd = customAdd;
         Parameters = paramList;
@@ -34,11 +34,11 @@ public class ParamListDrawer
 
     public void Recreate()
     {
-        GenericParamUtils.SetDrawersForKnownTypes();
+        VariantUtils.SetDrawersForKnownTypes();
 
         _drawerList = new ReorderableList
         (
-            Parameters, typeof(GenericParameter),
+            Parameters, typeof(Parameter),
             true, false, true, true
         );
         
@@ -54,7 +54,7 @@ public class ParamListDrawer
 
                 
             rect.x = original.x + rect.width;
-            rect.width = GenericParamUtils.FieldWidth;
+            rect.width = VariantUtils.FieldWidth;
             GUI.Label(rect, "Value");
         };
 
@@ -74,10 +74,10 @@ public class ParamListDrawer
         Positions.Resize(index + 1);
         Positions[index] = rect.y - FirstPos;
 
-        rect.height = GenericParamUtils.FieldHeight;
+        rect.height = VariantUtils.FieldHeight;
         rect.y     += 2;
 
-        GenericParamUtils.DrawParameter(rect, parameter);
+        VariantUtils.DrawParameter(rect, parameter.Value);
     }
     
     private void OnAddParameter(Rect buttonrect, ReorderableList list)
@@ -103,10 +103,7 @@ public class ParamListDrawer
 
         Parameters.Add
         (
-            new GenericParameter(type)
-            {
-                Name = paramName
-            }
+            new Parameter(type, paramName)
         );
     }
 }

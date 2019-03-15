@@ -11,7 +11,12 @@ namespace Framework
             return null;
         }
 
-        public virtual GenericParameter GetParameter(string paramName, SerializedType holdType)
+        public virtual ParameterReference GetParameter(string paramName, SerializedType holdType)
+        {
+            return null;
+        }
+
+        public virtual Variant GetVariant(string propertyName, SerializedType type)
         {
             return null;
         }
@@ -21,7 +26,10 @@ namespace Framework
             return false;
         }
 
-        public void SetParameter(string paramName, GenericParameter parameter, bool constant = false)
+        public void SetParameter(string paramName, ParameterReference parameter)
+        { }
+
+        public void SetParameterConst(string paramName, Variant value)
         { }
 
         public void ClearParameter(string paramName)
@@ -37,6 +45,11 @@ namespace Framework
         public T GetNotify<T>(Editor.PropertyPath path) where T : Editor.INotify
         {
             return (T) Notifiers.FirstOrDefault(n => n is T && n.IsFromPath(path));
+        }
+
+        public virtual void OnPreValidate()
+        {
+            
         }
 
         public void OnPostValidate()

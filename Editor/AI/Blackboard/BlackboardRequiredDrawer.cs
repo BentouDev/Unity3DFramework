@@ -13,7 +13,7 @@ public class BlackboardRequiredDrawer : PropertyDrawer
     private static readonly int BoxBackgroundMargin = 2;
     private static readonly int FieldHeight = 22;
 
-    private List<GenericParameter> Parameters { get; set; }
+    private List<Parameter> Parameters { get; set; }
 
     private BehaviourTreeNode AsNode { get; set; }
 
@@ -47,7 +47,7 @@ public class BlackboardRequiredDrawer : PropertyDrawer
 
         ParameterListContent.Add(new GUIContent(string.Format("none ({0})", Typename)));
 
-        foreach (GenericParameter parameter in Parameters)
+        foreach (Parameter parameter in Parameters)
         {
             ParameterListContent.Add(new GUIContent(parameter.Name));
         }
@@ -64,7 +64,7 @@ public class BlackboardRequiredDrawer : PropertyDrawer
             return false;
         }
 
-        Parameters = Editor.GetCurrentAsset().Parameters.Where(p => p.HoldType.Type == fieldInfo.FieldType).ToList();
+        Parameters = Editor.GetCurrentAsset().Parameters.Where(p => p.GetHoldType().Type == fieldInfo.FieldType).ToList();
 
         AsNode = (BehaviourTreeNode) property.serializedObject.targetObject;
 
@@ -97,7 +97,7 @@ public class BlackboardRequiredDrawer : PropertyDrawer
         if (!Initialize(ref position, property, label))
             return;
 
-        int index = AsNode.GetGenericParameterIndex(property.name, fieldInfo.FieldType, Parameters);
+        int index = -1;//AsNode.GetGenericParameterIndex(property.name, fieldInfo.FieldType, Parameters);
 
         DrawBackground(position, index == -1 ? Color.red : Color.white);
 
@@ -127,7 +127,7 @@ public class BlackboardRequiredDrawer : PropertyDrawer
                     {
                         var parameter = Parameters[result - 1];
 
-                        AsNode.SetRequiredParameter(property.name, parameter);
+                        AsNode.SetRequiredParameter(property.name, parameter.Value);
                     }
                     else
                     {

@@ -38,6 +38,12 @@ namespace Framework.Editor
             CurrentProperty = property;
             Target = CurrentProperty.GetAs<TConditionList>();
 
+            // ToDo: Hack!
+            foreach (var cond in Target)
+            {
+                cond.OnSetupParametrizedProperties();
+            }
+
             GUI.color = Color.Lerp(Color.white, Color.black, 0.25f);
             
             var list = GetList(property);
@@ -84,7 +90,7 @@ namespace Framework.Editor
                 return EditorGUIUtility.singleLineHeight + InspectorUtils.GetDefaultInspectorHeight(new SerializedObject(condition));
             }
 
-            return GenericParamUtils.FieldHeight;
+            return VariantUtils.FieldHeight;
         }
 
         private void DrawCondition(Rect rect, SerializedProperty element, GUIContent label, int index, bool selected, bool focused)
@@ -100,7 +106,7 @@ namespace Framework.Editor
             rect.x += 10;
             rect.width -= 10;
             var foldoutRect = rect;
-            foldoutRect.height = GenericParamUtils.FieldHeight;
+            foldoutRect.height = VariantUtils.FieldHeight;
 
             var backgroundRect = rect;
             backgroundRect.x -= 29;
@@ -116,8 +122,8 @@ namespace Framework.Editor
             element.isExpanded = EditorGUI.Foldout(foldoutRect, element.isExpanded, new GUIContent(description), true);
             if (element.isExpanded)
             {
-                rect.y += GenericParamUtils.FieldHeight + 4;
-                rect.height -= GenericParamUtils.FieldHeight + 2;
+                rect.y += VariantUtils.FieldHeight + 4;
+                rect.height -= VariantUtils.FieldHeight + 2;
 
                 if (condition)
                 {

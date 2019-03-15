@@ -25,17 +25,17 @@ namespace Framework
             Bank.Init();
         }
 
-        public void InsertFromParameter(GenericParameter parameter)
+        public void InsertFromParameter(Parameter parameter)
         {
             Bank.InsertFromParameter(parameter);
         }
 
-        public bool GetFromParameter(GenericParameter parameter)
+        public bool GetFromParameter(Variant parameter)
         {
             return Bank.GetFromParameter(parameter);
         }
 
-        public bool SetToParameter(GenericParameter parameter)
+        public bool SetToParameter(Variant parameter)
         {
             return Bank.SetToParameter(parameter);
         }

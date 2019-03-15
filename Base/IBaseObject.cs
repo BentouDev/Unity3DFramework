@@ -4,12 +4,17 @@ namespace Framework
 {
     public interface IDataSetProvider
     {
-        List<GenericParameter> GetParameters();
-        List<GenericParameter> GetParameters(System.Predicate<GenericParameter> param);
+        List<Parameter> GetParameters();
+        List<Parameter> GetParameters(System.Predicate<Parameter> param);
+
+        bool TryGetParameter(ParameterReference reference, out Parameter param);
+
+        void SetToVariant(ParameterReference parameter, Variant localValue);
+        void SetFromVariant(ParameterReference parameter, Variant localValue);
+        
         bool CanEditObject(UnityEngine.Object obj);
         bool HasObject(UnityEngine.Object obj);
-        void SetToParameter(GenericParameter parameter);
-        void GetFromParameter(GenericParameter parameter);
+
     }
 
     public delegate void Validation();
@@ -17,17 +22,25 @@ namespace Framework
     public interface IBaseObject
     {
         IDataSetProvider GetProvider();
-        GenericParameter GetParameter(string paramName, SerializedType holdType);
+
+        ParameterReference GetParameter(string paramName, SerializedType holdType);
+
+        Variant GetVariant(string propertyName, SerializedType type);
 
         bool IsParameterConstant(string name);
 
-        void SetParameter(string paramName, GenericParameter parameter, bool constant = false);
+        void SetParameter(string paramName, ParameterReference parameter);
+
+        void SetParameterConst(string paramName, Variant value);
+        
         void ClearParameter(string paramName);
 
 #if UNITY_EDITOR
         T GetNotify<T>(Editor.PropertyPath path) where T : Editor.INotify;
         
         event Validation OnValidation;
+
+        void OnPreValidate();
 
         void OnPostValidate();
 

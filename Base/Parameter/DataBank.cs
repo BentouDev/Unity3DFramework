@@ -10,9 +10,9 @@ namespace Framework
     {
         System.Type GetValueType();
 
-        void SetTo(GenericParameter parameter);
+        void SetTo(Variant parameter);
 
-        void GetFrom(GenericParameter parameter);
+        void GetFrom(Variant parameter);
     }
 
     public class Value<T> : IValue
@@ -37,12 +37,12 @@ namespace Framework
             return _type;
         }
 
-        public void SetTo(GenericParameter parameter)
+        public void SetTo(Variant parameter)
         {
             parameter.SetAs<T>(value);
         }
 
-        public void GetFrom(GenericParameter parameter)
+        public void GetFrom(Variant parameter)
         {
             value = parameter.GetAs<T>();
         }
@@ -73,7 +73,7 @@ namespace Framework
         [SerializeField]
         [HideInInspector]
         [FormerlySerializedAs("Values")]
-        private List<GenericParameter> Serialized = new List<GenericParameter>();
+        private List<Parameter> Serialized = new List<Parameter>();
 
         [HideInInspector]
         public List<IValue> Runtime;
@@ -88,10 +88,9 @@ namespace Framework
                 Serialized.Clear();
                 for (int i = 0; i < Runtime.Count; i++)
                 {
-                    var param = new GenericParameter(Runtime[i].GetValueType());
-                    Runtime[i].SetTo(param);
+                    var param = new Parameter(Runtime[i].GetValueType(), Names[i]);
+                    Runtime[i].SetTo(param.Value);
 
-                    param.Name = Names[i];
                     Serialized.Add(param);
                 }
             }
@@ -101,13 +100,13 @@ namespace Framework
         {
             RebuildIndex();
 
-            foreach (GenericParameter parameter in Serialized)
+            foreach (Parameter parameter in Serialized)
             {
                 InsertFromParameter(parameter);
             }
         }
         
-        public List<GenericParameter> GetSerialized()
+        public List<Parameter> GetSerialized()
         {
             return Serialized;
         }
@@ -126,8 +125,8 @@ namespace Framework
             {
                 for (int i = 0; i < Serialized.Count; i++)
                 {
-                    IValue val = Serialized[i].CreateValue();
-                    val.GetFrom(Serialized[i]);
+                    IValue val = Serialized[i].Value.CreateValue();
+                    val.GetFrom(Serialized[i].Value);
                     pairs.Add(new Pair<string, IValue>(Serialized[i].Name, val));
                 }
             }
@@ -135,7 +134,7 @@ namespace Framework
             return pairs;
         }
         
-        public void SetValues(List<GenericParameter> values)
+        public void SetValues(List<Parameter> values)
         {
             Serialized = values;
         }
@@ -160,7 +159,7 @@ namespace Framework
             RebuildIndex();
         }
 
-        public void InsertFromParameter(GenericParameter parameter)
+        public void InsertFromParameter(Parameter parameter)
         {
             int index = GetIndexOf(parameter.Name);
             if (index == -1)
@@ -168,8 +167,8 @@ namespace Framework
                 if (HasRuntime)
                 {
                     index = Runtime.Count;
-                    IValue val = parameter.CreateValue();
-                    val.GetFrom(parameter);
+                    IValue val = parameter.Value.CreateValue();
+                    val.GetFrom(parameter.Value);
                     Runtime.Add(val);
                 }
                 else
@@ -182,7 +181,7 @@ namespace Framework
             }
         }
 
-        public bool GetFromParameter(GenericParameter parameter)
+        public bool GetFromParameter(Variant parameter)
         {
             int index = GetIndexOf(parameter.Name);
             if (index != -1)
@@ -197,9 +196,9 @@ namespace Framework
                 }
                 else
                 {
-                    if (Serialized[index].HoldType == parameter.HoldType)
+                    if (Serialized[index].GetHoldType() == parameter.HoldType)
                     {
-                        Serialized[index] = parameter;
+                        Serialized[index].Value.Set(parameter.Get());
                         return true;                        
                     }
                 }
@@ -208,7 +207,7 @@ namespace Framework
             return false;
         }
 
-        public bool SetToParameter(GenericParameter parameter)
+        public bool SetToParameter(Variant parameter)
         {
             int index = GetIndexOf(parameter.Name);
             if (index != -1)
@@ -223,9 +222,9 @@ namespace Framework
                 }
                 else
                 {
-                    if (Serialized[index].HoldType == parameter.HoldType)
+                    if (Serialized[index].GetHoldType() == parameter.HoldType)
                     {
-                        parameter.CopyFrom(Serialized[index]);
+                        parameter.CopyFrom(Serialized[index].Value);
                         return true;
                     }
                 }
@@ -243,7 +242,7 @@ namespace Framework
                     return Runtime[index].GetValueType() == type;
                 else
                     // ToDo: remove this allocation
-                    return Serialized[index].HoldType.Equals(new SerializedType(type));
+                    return Serialized[index].GetHoldType().Equals(new SerializedType(type));
             }
 
             return false;
@@ -258,7 +257,7 @@ namespace Framework
                     return Runtime[index] is Value<T>;
                 else
                     // ToDo: remove this allocation
-                    return Serialized[index].HoldType.Equals(new SerializedType(typeof(T)));
+                    return Serialized[index].GetHoldType().Equals(new SerializedType(typeof(T)));
             }
 
             return false;
@@ -277,8 +276,8 @@ namespace Framework
                 }
                 else
                 {
-                    value = Serialized[index].CreateValue();
-                    value.GetFrom(Serialized[index]);
+                    value = Serialized[index].Value.CreateValue();
+                    value.GetFrom(Serialized[index].Value);
                 }
                 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -318,22 +317,22 @@ namespace Framework
                         Debug.LogErrorFormat("Parameter name {0} is not of type {1} in dataset {2}", name, typeof(T).Name, this);
                     }
 #else
-                    ((Value<T>)value).Set(newValue);
+                    ((Value<T>)value).Value.Set(newValue);
 #endif
                 }
                 else
                 {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    if (Serialized[index].HoldType.Equals(new SerializedType(typeof(T))))
+                    if (Serialized[index].GetHoldType().Equals(new SerializedType(typeof(T))))
                     {
-                        Serialized[index].SetAs<T>(newValue);
+                        Serialized[index].Value.SetAs<T>(newValue);
                     }
                     else
                     {
                         Debug.LogErrorFormat("Parameter name {0} is not of type {1} in dataset {2}", name, typeof(T).Name, this);
                     }
 #else
-                    Serialized[index].SetAs<T>(newValue);
+                    Serialized[index].Value.SetAs<T>(newValue);
 #endif
                 }
             }

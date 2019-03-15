@@ -90,12 +90,12 @@ namespace Framework
 
         private IDataSet TopSet => Runtime.LastOrDefault();
 
-        public void InsertFromParameter(GenericParameter parameter)
+        public void InsertFromParameter(Parameter parameter)
         {
             TopSet?.InsertFromParameter(parameter);
         }
 
-        public bool GetFromParameter(GenericParameter parameter)
+        public bool GetFromParameter(Variant parameter)
         {
             foreach (var set in Runtime)
             {
@@ -108,7 +108,7 @@ namespace Framework
             return false;
         }
 
-        public bool SetToParameter(GenericParameter parameter)
+        public bool SetToParameter(Variant parameter)
         {
             foreach (var set in Runtime)
             {

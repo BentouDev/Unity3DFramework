@@ -39,8 +39,8 @@ namespace Framework.AI
         {
             foreach (var key in ParametrizedProperties.Keys.ToList())
             {
-                var paramProp = ParametrizedProperties[key];
-                    paramProp.Initialize<T>(this as T, key);
+//                var paramProp = ParametrizedProperties[key];
+//                    paramProp.Initialize<T>(this as T, GetProvider(), key);
 
 //                if (paramProp.Constant)
 //                {
@@ -51,9 +51,9 @@ namespace Framework.AI
             }
         }
 
-        public void SetRequiredParameter(string parameterName, GenericParameter parameter, bool constant = false)
+        public void SetRequiredParameter(string parameterName, Variant parameter, bool constant = false)
         {
-            ParametrizedProperties[parameterName] = new ParametrizedProperty() { Parameter = parameter, Constant = constant };
+            // ParametrizedProperties[parameterName] = new ParametrizedProperty() { Parameter = parameter, Constant = constant };
         }
 
         public void ClearRequiredParamerer(string parameterName)
@@ -74,7 +74,7 @@ namespace Framework.AI
             return false;
         }
         
-        public int GetGenericParameterIndex(string parameterName, System.Type type, List<GenericParameter> parameters)
+        public int GetGenericParameterIndex(string parameterName, System.Type type, List<Variant> parameters)
         {
             int result = -1;
 
@@ -86,12 +86,12 @@ namespace Framework.AI
             if (!ParametrizedProperties.TryGetValue(parameterName, out value))
                 return result;
 
-            if(value.Parameter.HoldType.Type == type)
-            {
-                result = parameters.FindIndex(p => p.Name.Equals(value.Parameter.Name)
-                                                && p.HoldType.Equals(value.Parameter.HoldType)
-                                                && p.HoldType.Type == type);
-            }
+//            if(value.Parameter.HoldType.Type == type)
+//            {
+//                result = parameters.FindIndex(p => p.Name.Equals(value.Parameter.Name)
+//                                                && p.HoldType.Equals(value.Parameter.HoldType)
+//                                                && p.HoldType.Type == type);
+//            }
 
             return result;
         }

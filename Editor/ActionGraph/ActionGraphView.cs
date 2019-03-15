@@ -31,7 +31,7 @@ namespace Framework.Editor
 
         void RecreateDrawer()
         {
-            GenericParamUtils.SetDrawersForKnownTypes();
+            VariantUtils.SetDrawersForKnownTypes();
 
             /*ProxyList = new List<int>(Graph.Inputs.Count);
 
@@ -52,8 +52,8 @@ namespace Framework.Editor
                 GUI.Label(rect, "Name");
 
                 
-                rect.x = original.x + GenericParamUtils.LabelWidth * 1.35f;
-                rect.width = GenericParamUtils.FieldWidth;
+                rect.x = original.x + VariantUtils.LabelWidth * 1.35f;
+                rect.width = VariantUtils.FieldWidth;
                 GUI.Label(rect, "Input value");
             };
 
@@ -98,7 +98,7 @@ namespace Framework.Editor
 
         private void OnAddInput(UnityEditorInternal.ReorderableList list)
         {
-            /*string typename = GenericParameter.GetDisplayedName(Graph.InputType.Type);
+            /*string typename = Variant.GetDisplayedName(Graph.InputType.Type);
             string paramName = StringUtils.MakeUnique($"New {typename}", Graph.Inputs.Select(p => p.Input.Name));
 
             ProxyList.Add(1);
@@ -106,7 +106,7 @@ namespace Framework.Editor
             (
                 new ActionGraph.EntryPoint()
                 {
-                    Input = new GenericParameter(Graph.InputType)
+                    Input = new Variant(Graph.InputType)
                     {
                         Name = paramName
                     } 
@@ -123,10 +123,10 @@ namespace Framework.Editor
 
             Positions[index] = rect.y - FirstPos;
 
-            rect.height = GenericParamUtils.FieldHeight;
+            rect.height = VariantUtils.FieldHeight;
             rect.y     += 2;
 
-            GenericParamUtils.DrawParameter(rect, parameter.Input);*/
+            VariantUtils.DrawParameter(rect, parameter.Input);*/
         }
 
         protected override void OnSelected(bool value)
@@ -170,7 +170,7 @@ namespace Framework.Editor
 
         Rect DrawNodeHeader()
         {
-            drawRect.height = GenericParamUtils.FieldHeight * 2 + 6;
+            drawRect.height = VariantUtils.FieldHeight * 2 + 6;
             GUI.color = Selected ? SpaceEditorStyles.ActiveColor : Color.white;
             GUI.Box(drawRect, GUIContent.none, Selected
                 ? SpaceEditorStyles.GraphNodeBackgroundSelected
@@ -186,7 +186,7 @@ namespace Framework.Editor
             var old_rect = drawRect;
 
             drawRect.x += 4;
-            drawRect.height = GenericParamUtils.FieldHeight * 1.5f;
+            drawRect.height = VariantUtils.FieldHeight * 1.5f;
             GUI.Label(drawRect, "Inputs", EditorStyles.whiteLargeLabel);
 
             return old_rect;
@@ -282,11 +282,11 @@ namespace Framework.Editor
             {
                 var old_rect = DrawNodeHeader();
 
-                drawRect.y += GenericParamUtils.FieldHeight + 2;
+                drawRect.y += VariantUtils.FieldHeight + 2;
                 drawRect.width = drawRect.width - 20;
 
                 drawRect.y += 20;
-                drawRect.height = GenericParamUtils.FieldHeight;
+                drawRect.height = VariantUtils.FieldHeight;
                 string content = Graph.InputType.ToString();
                 if (GUI.Button(drawRect, content, EditorStyles.objectField))
                 {
@@ -296,7 +296,7 @@ namespace Framework.Editor
                 drawRect.x = old_rect.x;
                 drawRect.width = old_rect.width;
 
-                drawRect.y += GenericParamUtils.FieldHeight + 4;
+                drawRect.y += VariantUtils.FieldHeight + 4;
                 drawRect.height = old_rect.height - drawRect.y;
 
                 var base_y = drawRect.y - old_rect.y;

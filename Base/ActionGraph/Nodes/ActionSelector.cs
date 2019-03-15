@@ -13,7 +13,7 @@ namespace Framework
         public class EntryPoint
         {
             [SerializeField]
-            public GenericParameter Input;
+            public Variant Input;
 
             [SerializeField]
             public List<ActionGraphNode> Nodes = new List<ActionGraphNode>();

@@ -9,7 +9,7 @@ namespace Framework
 
         [SerializeField]
         [HideInInspector]
-        public GenericParameter AnimParam = new GenericParameter();
+        public Variant AnimParam = new Variant();
 
         [Parametrized] 
         [VisibleInInspector]

@@ -202,7 +202,7 @@ public class SerializedType : IEquatable<SerializedType>, ISerializationCallback
 
     public void OnAfterDeserialize()
     {
-        // Fix: due to how 'move' when reordering elements in egx. List<GenericParameter> works,
+        // Fix: due to how 'move' when reordering elements in egx. List<Variant> works,
         // _type field is left with inappropriate value. We shall reset it, and automated property will do the rest :)
         _type = null;
     }

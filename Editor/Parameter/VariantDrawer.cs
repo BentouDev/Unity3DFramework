@@ -7,12 +7,12 @@ using UnityEngine;
 
 namespace Framework.Editor.Parameter
 {
-    [CustomPropertyDrawer(typeof(GenericParameter))]
-    public class GenericParameterDrawer : PropertyDrawer
+    [CustomPropertyDrawer(typeof(Variant))]
+    public class VariantDrawer : PropertyDrawer
     {
         private ParametrizedView View = new ParametrizedView();
 
-        bool Initialize(ref Rect position, ref bool displayLock, SerializedProperty property, GenericParameter asGeneric)
+        bool Initialize(ref Rect position, ref bool displayLock, SerializedProperty property, Variant asGeneric)
         {
             Type targetType = property.serializedObject.targetObject.GetType();
             SerializedType isTypeRestricted = null;
@@ -69,9 +69,9 @@ namespace Framework.Editor.Parameter
                 View.Parameters = View.DataProvider.GetParameters(t =>
                 {
                     if (string.IsNullOrEmpty(isTypeRestricted.Metadata))
-                        return isTypeRestricted.Type.IsAssignableFrom(t.HoldType.Type);
+                        return isTypeRestricted.Type.IsAssignableFrom(t.GetHoldType().Type);
                     else
-                        return isTypeRestricted.Equals(t.HoldType);
+                        return isTypeRestricted.Equals(t.GetHoldType());
                 });
                 View.Typename = KnownType.GetDisplayedName(isTypeRestricted.Type);
             }
@@ -117,7 +117,7 @@ namespace Framework.Editor.Parameter
         {
             position.height = EditorGUI.GetPropertyHeight(property, label);
 
-            var asGeneric = property.GetAs<GenericParameter>();
+            var asGeneric = property.GetAs<Variant>();
             var asBaseObject = property.serializedObject.targetObject as IBaseObject;
 
             bool displayLock = true;
@@ -129,7 +129,7 @@ namespace Framework.Editor.Parameter
             }
             else
             {
-                EditorGUI.HelpBox(position, "Cannot draw as GenericParameter!", MessageType.Error);
+                EditorGUI.HelpBox(position, "Cannot draw as Variant!", MessageType.Error);
             }
         }
     }

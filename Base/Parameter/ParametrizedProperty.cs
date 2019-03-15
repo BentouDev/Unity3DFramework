@@ -7,8 +7,8 @@ namespace Framework
 {
     public interface IPropertyOwner
     {
-        void CallSetter(PropertyReference property, GenericParameter param);
-        void CallGetter(PropertyReference property, GenericParameter param);
+        void CallSetter(PropertyReference property, Variant param);
+        void CallGetter(PropertyReference property, Variant param);
     }
 
     public class PropertyOwner<T> : IPropertyOwner
@@ -20,17 +20,17 @@ namespace Framework
             _instance = instance;
         }
 
-        public void CallSetter(PropertyReference property, GenericParameter param)
+        public void CallSetter(PropertyReference property, Variant param)
         {
             property.GetFromParameter(_instance, param);
         }
 
-        public void CallGetter(PropertyReference property, GenericParameter param)
+        public void CallGetter(PropertyReference property, Variant param)
         {
             property.SetToParameter(_instance, param);
         }
     }
-    
+
     [System.Serializable]
     public class ParametrizedProperty
     {
@@ -40,42 +40,76 @@ namespace Framework
         private PropertyReference Property;
 
         [SerializeField]
-        public GenericParameter Parameter;
-        
+        public ParameterReference Parameter;
+
+        private Variant _localValue;
+
         [SerializeField]
         public bool Constant;
 
-        public void Initialize<TOwner>(TOwner instance, string propName)
+        public void Initialize<TOwner>(TOwner instance, IDataSetProvider provider, string propName)
         {
             if (Owner != null && Property != null)
                 return;
 
             Owner = new PropertyOwner<TOwner>(instance);
 
+            var parameter = Parameter.Get(provider);
             var knownType = KnownType.GetKnownType(typeof(TOwner));
             if (knownType != null)
             {
-                Property = knownType.GetProperty<TOwner>(Parameter.HoldType.Type, propName);
-                
+                bool isParametrized = parameter != null && !Constant;
+                var type = isParametrized ? parameter.GetHoldType().Type : _localValue.HoldType.Type;
+                Property = knownType.GetProperty<TOwner>(type, propName);
+
+                if (_localValue == null)
+                    _localValue = new Variant(type);
+
                 if (Constant)
-                    Owner.CallSetter(Property, Parameter);
+                    Owner.CallSetter(Property, isParametrized ? parameter.Value : _localValue);
             }
         }
 
         public void UpdateFromProvider(IDataSetProvider provider)
         {
-            provider.SetToParameter(Parameter);
-            
+            provider.SetToVariant(Parameter, _localValue);
+
             if (Property != null)
-                Owner.CallSetter(Property, Parameter);
+                Owner.CallSetter(Property, _localValue);
         }
 
         public void SetToProvider(IDataSetProvider provider)
         {
             if (Property != null)
-                Owner.CallGetter(Property, Parameter);
-            
-            provider.GetFromParameter(Parameter);
+                Owner.CallGetter(Property, _localValue);
+
+            provider.SetFromVariant(Parameter, _localValue);
+        }
+
+        public void SetValue(Variant value)
+        {
+            if (Owner != null)
+                Owner.CallSetter(Property, value);
+            else
+            {
+                if (_localValue == null)
+                    _localValue = new Variant(value.HoldType);
+
+                _localValue.Set(value.Get());
+            }
+        }
+
+        public void GetValue(Variant variant)
+        {
+            if (Owner != null)
+                Owner.CallGetter(Property, variant);
+            else
+            {
+                if (_localValue == null)
+                    _localValue = new Variant(variant.HoldType);
+
+                variant.Set(_localValue.Get());
+            }
         }
     }
 
@@ -83,8 +117,8 @@ namespace Framework
     public abstract class PropertyReference
     {
         public abstract bool IsValid();
-        public abstract void SetToParameter  <T>(T instance, GenericParameter parameter);
-        public abstract void GetFromParameter<T>(T instance, GenericParameter parameter);
+        public abstract void SetToParameter  <T>(T instance, Variant parameter);
+        public abstract void GetFromParameter<T>(T instance, Variant parameter);
     }
 
     [System.Serializable]
@@ -126,7 +160,8 @@ namespace Framework
         {
             var obj = System.Linq.Expressions.Expression.Parameter(typeof(T), "instance");
             var field = System.Linq.Expressions.Expression.Field(obj, fieldInfo);
-            return System.Linq.Expressions.Expression.Lambda<System.Func<T, F>>(field, obj).Compile();
+            var castField = System.Linq.Expressions.Expression.Convert(field, fieldInfo.FieldType);
+            return System.Linq.Expressions.Expression.Lambda<System.Func<T, F>>(castField, obj).Compile();
         }
     
         public static System.Action<T, F> BuildFieldSetter(System.Reflection.FieldInfo fieldInfo)
@@ -134,8 +169,10 @@ namespace Framework
             var obj = System.Linq.Expressions.Expression.Parameter(typeof(T), "instance");
             var param = System.Linq.Expressions.Expression.Parameter(typeof(F), "parameter");
             var field = System.Linq.Expressions.Expression.Field(obj, fieldInfo);
+
+            var castParam = System.Linq.Expressions.Expression.Convert(param, fieldInfo.FieldType);
     
-            var assignment = System.Linq.Expressions.Expression.Assign(field, param);
+            var assignment = System.Linq.Expressions.Expression.Assign(field, castParam);
     
             return System.Linq.Expressions.Expression.Lambda<System.Action<T, F>>(assignment, obj, param).Compile();
         }
@@ -176,12 +213,12 @@ namespace Framework
     //            return System.Linq.Expressions.Expression.Lambda<System.Action<T, F>>(typeAs, instance, parameter).Compile();
     //        }
     
-        public override void GetFromParameter<U>(U instance, GenericParameter parameter)
+        public override void GetFromParameter<U>(U instance, Variant parameter)
         {
             Setter((T)(object) instance, parameter.GetAs<F>());
         }
     
-        public override void SetToParameter<U>(U instance, GenericParameter parameter)
+        public override void SetToParameter<U>(U instance, Variant parameter)
         {
             parameter.SetAs(Getter((T)(object) instance));
         }

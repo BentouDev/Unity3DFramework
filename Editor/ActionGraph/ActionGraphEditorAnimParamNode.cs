@@ -24,27 +24,27 @@ namespace Framework.Editor
             switch (param.type)
             {
                 case AnimatorControllerParameterType.Trigger:
-                    Node.AnimParam = new GenericParameter
+                    Node.AnimParam = new Variant
                     (
                         new SerializedType(typeof(bool), ActionAnimParam.TriggerMetadata)
                     );
                     break;
                 case AnimatorControllerParameterType.Bool:
-                    Node.AnimParam = new GenericParameter
+                    Node.AnimParam = new Variant
                     (
                         typeof(bool)
                     );
                     Node.AnimParam.SetAs(param.defaultBool);
                     break;
                 case AnimatorControllerParameterType.Float:
-                    Node.AnimParam = new GenericParameter
+                    Node.AnimParam = new Variant
                     (
                         typeof(float)
                     );
                     Node.AnimParam.SetAs(param.defaultFloat);
                     break;
                 case AnimatorControllerParameterType.Int:
-                    Node.AnimParam = new GenericParameter
+                    Node.AnimParam = new Variant
                     (
                         typeof(int)
                     );
@@ -79,7 +79,7 @@ namespace Framework.Editor
                 drawRect.x += ContentMargin;
                 drawRect.width = drawRect.width - ContentMargin * 2;
 
-                drawRect.height = GenericParamUtils.FieldHeight;
+                drawRect.height = VariantUtils.FieldHeight;
                 int newIndex = EditorGUI.Popup(drawRect, index, paramList.Select(p => p.name).ToArray());
                 if (newIndex != index)
                 {
@@ -89,7 +89,7 @@ namespace Framework.Editor
                 if (string.IsNullOrWhiteSpace(Node.AnimParam?.HoldType?.Metadata))
                 {
                     drawRect.y += drawRect.height;
-                    GenericParamUtils.DrawParameter(drawRect, Node.AnimParam, false);
+                    VariantUtils.DrawParameter(drawRect, Node.AnimParam, false);
                 }
             }
             else

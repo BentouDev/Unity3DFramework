@@ -49,6 +49,7 @@ public static class SerializedPropertyExtension
 
         string baseMember = string.Empty;
         object newTarget = null;
+        Type targetType = null;
         if (path.StartsWith(ArrayFieldName))
         {
             // skip 'array' fields
@@ -74,6 +75,7 @@ public static class SerializedPropertyExtension
             if (newTarget == null)
                 throw new Exception($"Unable to materialize indexer from path '{path}'!");
 
+            targetType = newTarget.GetType();
             path = path.Substring(endIndex + ArraySuffix.Length);
         }
         else
@@ -93,18 +95,19 @@ public static class SerializedPropertyExtension
                 throw new Exception($"Unable to process path fragment '{baseMember}' in path '{path}'!");
             
             newTarget = field.GetValue(target);
+            targetType = field.FieldType;
         }
 
         if (propertyPath != null && !string.IsNullOrEmpty(baseMember))
         {
-            propertyPath.Append(baseMember, newTarget.GetType());
+            propertyPath.Append(baseMember, targetType);
         }
 
         var dotIndex = path.IndexOf('.');
         if (dotIndex != -1)
         {
             return ProcessPropertyPath(
-                newTarget.GetType(), newTarget, 
+                targetType, newTarget, 
                 path.Substring(dotIndex + 1), 
                 baseMember, propertyPath
             );  

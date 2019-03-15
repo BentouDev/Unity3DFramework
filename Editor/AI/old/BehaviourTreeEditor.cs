@@ -466,11 +466,11 @@ namespace Framework.AI
             if (!TreeAsset)
                 return;
 
-            GenericParamUtils.SetDrawersForKnownTypes();
+            VariantUtils.SetDrawersForKnownTypes();
 
             ParameterList = new UnityEditorInternal.ReorderableList
             (
-                TreeAsset.Parameters, typeof(GenericParameter),
+                TreeAsset.Parameters, typeof(Variant),
                 true, false, true, true
             );
 
@@ -485,8 +485,8 @@ namespace Framework.AI
                 GUI.Label(rect, "Name");
 
                 
-                rect.x = original.x + GenericParamUtils.LabelWidth * 1.35f;
-                rect.width = GenericParamUtils.FieldWidth;
+                rect.x = original.x + VariantUtils.LabelWidth * 1.35f;
+                rect.width = VariantUtils.FieldWidth;
                 GUI.Label(rect, "Default value");
             };
 
@@ -522,10 +522,10 @@ namespace Framework.AI
         {
             var parameter = TreeAsset.Parameters[index];
 
-            rect.height = GenericParamUtils.FieldHeight;
+            rect.height = VariantUtils.FieldHeight;
             rect.y     += 2;
 
-            GenericParamUtils.DrawParameter(rect, parameter);
+            VariantUtils.DrawParameter(rect, parameter.Value);
         }
 
         UnityEditor.GenericMenu.MenuFunction CreateNewParameterCallback(Type type)
@@ -541,12 +541,12 @@ namespace Framework.AI
             string typename  = KnownType.GetDisplayedName(type);
             string paramName = StringUtils.MakeUnique(string.Format("New {0}", typename), TreeAsset.Parameters.Select(p => p.Name));
 
-            TreeAsset.Parameters.Add (
-               new GenericParameter(type)
-               {
-                   Name = paramName
-               }
-           );
+//            TreeAsset.Parameters.Add (
+//               new Variant(type)
+//               {
+//                   Name = paramName
+//               }
+//           );
         }
 
         private void OnObjectReferenceTypeSelected(System.Type type)
@@ -656,7 +656,7 @@ namespace Framework.AI
                 {
                     GenericMenu menu = new GenericMenu();
 
-                    var names = Enum.GetNames(typeof(GenericParameter.ParameterType));
+                    var names = Enum.GetNames(typeof(Variant.ParameterType));
 
                     for (int i = 0; i < names.Length; i++)
                     {
@@ -673,9 +673,9 @@ namespace Framework.AI
                 ParameterList.DoLayoutList();
             }
 
-            /*foreach (GenericParameter parameter in TreeAsset.Parameters)
+            /*foreach (Variant parameter in TreeAsset.Parameters)
             {
-                GenericParamUtils.LayoutParameter(parameter);
+                VariantUtils.LayoutParameter(parameter);
             }*/
 
             GUILayout.EndScrollView();

@@ -53,13 +53,13 @@ public class OfTypeAttributeDrawer : PropertyDrawer
                 // gets matching value from itself, sets/retrives (type check)
 
                 List<GUIContent> guiContent = new List<GUIContent>();
-                foreach (GenericParameter parameter in parameters.Where(p => p.HoldType.Type == ofType.RequiredType))
+                foreach (Variant parameter in parameters.Where(p => p.HoldType.Type == ofType.RequiredType))
                 {
                     guiContent.Add(new GUIContent(parameter.Name));
                 }
 
                 int index = -1;
-                GenericParameter value;
+                Variant value;
                 if (asTaskNode.BlackboardRequired.TryGetValue(property.displayName, out value))
                 {
                     index = parameters.FindIndex(p => p.Name == value.Name && p.HoldType == value.HoldType);
@@ -75,7 +75,7 @@ public class OfTypeAttributeDrawer : PropertyDrawer
                 }
 
                 /List<GUIContent> guiContent = new List<GUIContent>();
-                foreach (GenericParameter parameter in parameters.Where(p => p.Type == ofType.RequiredType))
+                foreach (Variant parameter in parameters.Where(p => p.Type == ofType.RequiredType))
                 {
                     guiContent.Add(new GUIContent(parameter.Name));
                 }
@@ -97,13 +97,13 @@ public class OfTypeAttributeDrawer : PropertyDrawer
                 }/
 
                 *List<GUIContent> guiContent = new List<GUIContent>();
-                foreach (GenericParameter parameter in parameters)
+                foreach (Variant parameter in parameters)
                 {
                     guiContent.Add(new GUIContent(string.Format("{0} ({1})", parameter.Name, parameter.HoldType)));
                 }
 
                 int index = -1;
-                GenericParameter value;
+                Variant value;
                 if (asTaskNode.BlackboardRequired.TryGetValue(property.displayName, out value))
                 {
                     index = parameters.FindIndex(p => p.Name == value.Name && p.HoldType == value.HoldType);

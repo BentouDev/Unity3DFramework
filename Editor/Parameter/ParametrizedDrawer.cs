@@ -15,7 +15,7 @@ namespace Framework.Editor
         internal static readonly int FieldHeight = 22;
         private static readonly Color DarkRed = new Color(128, 0, 0);
 
-        public List<GenericParameter> Parameters { get; set; }
+        public List<Framework.Parameter> Parameters { get; set; }
 
         private List<GUIContent> ParameterListContent { get; set; }
 
@@ -54,7 +54,7 @@ namespace Framework.Editor
 
             ParameterListContent.Add(new GUIContent($"none ({Typename})"));
 
-            foreach (GenericParameter parameter in Parameters)
+            foreach (var parameter in Parameters)
             {
                 ParameterListContent.Add(new GUIContent(parameter.Name));
             }
@@ -79,7 +79,7 @@ namespace Framework.Editor
                 {
                     var parameter = Parameters[result - 1];
 
-                    AsParametrized.SetParameter(property.name, parameter);
+                    AsParametrized.SetParameter(property.name, parameter.CreateReference());
                 }
                 else
                 {
@@ -94,12 +94,12 @@ namespace Framework.Editor
             SetContentForParameters();
 
             int index = -1;
-            bool wasConstant = false;
+            bool wasConstant = AsParametrized.IsParameterConstant(property.name);         
             var setParam = AsParametrized.GetParameter(property.name, fieldType);
-            if (setParam != null)
+            var param = setParam?.Get(DataProvider);
+            if (param != null)
             {
-                index = Parameters.FindIndex(p => p.Name.Equals(setParam.Name) && p.HoldType.Equals(setParam.HoldType));
-                wasConstant = AsParametrized.IsParameterConstant(property.name);
+                index = Parameters.FindIndex(p => p.Name.Equals(param.Name) && p.GetHoldType().Equals(param.GetHoldType()));           
             }
 
             DrawBackground(position, index != -1 || wasConstant);
@@ -125,13 +125,11 @@ namespace Framework.Editor
 
                         if (isConstant)
                         {
-                            GenericParameter parameter = wasConstant
-                                ? AsParametrized.GetParameter(property.name, fieldType)
-                                : new GenericParameter(fieldType);
+                            Variant value = wasConstant ? AsParametrized.GetVariant(property.name, fieldType) : new Variant(fieldType);
 
-                            GenericParamUtils.DrawParameter(fieldRect, parameter, false);
+                            VariantUtils.DrawParameter(fieldRect, value, false);
 
-                            AsParametrized.SetParameter(property.name, parameter, true);
+                            AsParametrized.SetParameterConst(property.name, value);
                         }
                         else
                         {
@@ -179,7 +177,7 @@ namespace Framework.Editor
                 return false;
             }
 
-            View.Parameters = View.DataProvider.GetParameters((p) => fieldInfo.FieldType.IsAssignableFrom(p.HoldType.Type));
+            View.Parameters = View.DataProvider.GetParameters((p) => fieldInfo.FieldType.IsAssignableFrom(p.GetHoldType().Type));
 
             View.Typename = KnownType.GetDisplayedName(fieldInfo.FieldType);
             if (View.Typename == null)

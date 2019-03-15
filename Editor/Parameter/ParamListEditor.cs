@@ -19,7 +19,7 @@ namespace Framework.Editor.Parameter
                 if (list.First)
                 {
                     // Just created, setup first
-                    list.Second.drawElementCallback += GenericParameterDrawer;
+                    list.Second.drawElementCallback += VariantDrawer;
                     list.Second.onAddDropdownCallback += GenericParameterAdd;                    
                 }
 
@@ -43,16 +43,16 @@ namespace Framework.Editor.Parameter
             
         }
 
-        private void GenericParameterDrawer(Rect rect, SerializedProperty element, GUIContent label, bool selected, bool focused)
+        private void VariantDrawer(Rect rect, SerializedProperty element, GUIContent label, bool selected, bool focused)
         {
-            var param = element.GetAs<GenericParameter>();
+            var param = element.GetAs<Variant>();
             if (param != null)
             {
-                GenericParamUtils.DrawParameter(rect, param);
+                VariantUtils.DrawParameter(rect, param);
             }
             else
             {
-                GUI.Label(rect, "Unable to render as GenericParameter!");
+                GUI.Label(rect, "Unable to render as Variant!");
             }
         }
     }*/

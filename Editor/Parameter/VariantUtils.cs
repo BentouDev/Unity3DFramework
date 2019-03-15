@@ -10,15 +10,15 @@ using UnityEngine.Events;
 namespace Framework
 {
     [InitializeOnLoad]
-    public static class GenericParamUtils
+    public static class VariantUtils
     {
         public static int LabelWidth = 100;
         public static int FieldWidth = 150;
         public static int FieldHeight = 16;
 
-        static GenericParamUtils()
+        static VariantUtils()
         {
-            GenericParameter.BuildKnownTypeList();
+            Variant.BuildKnownTypeList();
             SetDrawersForKnownTypes();
             // Debug.LogFormat("Regenerated GenericParam for : {0} types", KnownType.Register.Count);
         }
@@ -53,21 +53,21 @@ namespace Framework
             }
             else
             {
-                Debug.LogErrorFormat("GenericParameter for type {0} was not found", typename);
+                Debug.LogErrorFormat("Variant for type {0} was not found", typename);
             }
         }
 
-        public static void DrawParameter(Rect drawRect, GenericParameter parameter, bool label = true)
+        public static void DrawParameter(Rect drawRect, Variant parameter, bool label = true)
         {
-            GenericParameter.Draw(drawRect, parameter, label);
+            Variant.Draw(drawRect, parameter, label);
         }
         
-        public static void LayoutParameter(GenericParameter parameter, bool label = true)
+        public static void LayoutParameter(Variant parameter, bool label = true)
         {
-            GenericParameter.Layout(parameter, label);
+            Variant.Layout(parameter, label);
         }
 
-        private static System.Action<SerializedType> BuildSerializedTypeCallback(GenericParameter param)
+        private static System.Action<SerializedType> BuildSerializedTypeCallback(Variant param)
         {
             return type =>
             {
@@ -75,7 +75,7 @@ namespace Framework
             };
         }
 
-        private static System.Action<System.Type> BuildDerivedTypeCallback(GenericParameter param, System.Type baseType)
+        private static System.Action<System.Type> BuildDerivedTypeCallback(Variant param, System.Type baseType)
         {
             return type =>
             {
@@ -85,7 +85,7 @@ namespace Framework
         
         #region Draw
 
-        private static void DrawAsDerivedTypePicker(Rect rect, GenericParameter parameter, bool label)
+        private static void DrawAsDerivedTypePicker(Rect rect, Variant parameter, bool label)
         {
             if (label)
             {
@@ -111,7 +111,7 @@ namespace Framework
             }
         }
 
-        private static void DrawAsTypePicker(Rect rect, GenericParameter parameter, bool label)
+        private static void DrawAsTypePicker(Rect rect, Variant parameter, bool label)
         {
             if (label)
             {
@@ -133,7 +133,7 @@ namespace Framework
             }
         }
 
-        private static void DrawAsObject<T>(Rect rect, GenericParameter parameter, bool label) where T : UnityEngine.Object
+        private static void DrawAsObject<T>(Rect rect, Variant parameter, bool label) where T : UnityEngine.Object
         {
             if (label)
             {
@@ -150,7 +150,7 @@ namespace Framework
             parameter.SetAs(result);
         }
 
-        private static void DrawAsGenericObject(Rect rect, GenericParameter parameter, bool label)
+        private static void DrawAsGenericObject(Rect rect, Variant parameter, bool label)
         {
             if (label)
             {
@@ -167,7 +167,7 @@ namespace Framework
             parameter.SetAs(result);
         }
 
-        private static void DrawAsColor(Rect rect, GenericParameter parameter, bool label)
+        private static void DrawAsColor(Rect rect, Variant parameter, bool label)
         {
             if (label)
             {
@@ -184,7 +184,7 @@ namespace Framework
             parameter.SetAs(result);
         }
 
-        private static void DrawAsCurve(Rect rect, GenericParameter parameter, bool label)
+        private static void DrawAsCurve(Rect rect, Variant parameter, bool label)
         {
             if (label)
             {
@@ -201,7 +201,7 @@ namespace Framework
             parameter.SetAs(result);
         }
 
-        private static void DrawAsString(Rect rect, GenericParameter parameter, bool label)
+        private static void DrawAsString(Rect rect, Variant parameter, bool label)
         {
             if (label)
             {
@@ -218,7 +218,7 @@ namespace Framework
             parameter.SetAs(result);
         }
 
-        private static void DrawAsVec3(Rect rect, GenericParameter parameter, bool label)
+        private static void DrawAsVec3(Rect rect, Variant parameter, bool label)
         {
             if (label)
             {
@@ -235,7 +235,7 @@ namespace Framework
             parameter.SetAs(result);
         }
 
-        private static void DrawAsVec2(Rect rect, GenericParameter parameter, bool label)
+        private static void DrawAsVec2(Rect rect, Variant parameter, bool label)
         {
             if (label)
             {
@@ -252,7 +252,7 @@ namespace Framework
             parameter.SetAs(result);
         }
 
-        private static void DrawAsInt(Rect rect, GenericParameter parameter, bool label)
+        private static void DrawAsInt(Rect rect, Variant parameter, bool label)
         {
             if (label)
             {
@@ -274,7 +274,7 @@ namespace Framework
             EditorGUIUtility.labelWidth = oldWidth;
         }
 
-        private static void DrawAsFloat(Rect rect, GenericParameter parameter, bool label)
+        private static void DrawAsFloat(Rect rect, Variant parameter, bool label)
         {
             if (label)
             {
@@ -296,7 +296,7 @@ namespace Framework
             EditorGUIUtility.labelWidth = oldWidth;
         }
 
-        private static void DrawAsBool(Rect rect, GenericParameter parameter, bool label)
+        private static void DrawAsBool(Rect rect, Variant parameter, bool label)
         {
             if (label)
             {
@@ -324,7 +324,7 @@ namespace Framework
 
         #region Layout
 
-        private static void LayoutAsDerivedTypePicker(GenericParameter parameter, bool label)
+        private static void LayoutAsDerivedTypePicker(Variant parameter, bool label)
         {
             EditorGUILayout.BeginHorizontal();
             {
@@ -360,7 +360,7 @@ namespace Framework
             EditorGUILayout.EndHorizontal();
         }
 
-        private static void LayoutAsTypePicker(GenericParameter parameter, bool label)
+        private static void LayoutAsTypePicker(Variant parameter, bool label)
         {
             EditorGUILayout.BeginHorizontal();
             {
@@ -380,7 +380,7 @@ namespace Framework
             EditorGUILayout.EndHorizontal();
         }
 
-        private static void LayoutAsObject<T>(GenericParameter parameter, bool label) where T : UnityEngine.Object
+        private static void LayoutAsObject<T>(Variant parameter, bool label) where T : UnityEngine.Object
         {
             EditorGUILayout.BeginHorizontal();
             {
@@ -395,7 +395,7 @@ namespace Framework
             EditorGUILayout.EndHorizontal();
         }
 
-        private static void LayoutAsGenericObject(GenericParameter parameter, bool label)
+        private static void LayoutAsGenericObject(Variant parameter, bool label)
         {
             EditorGUILayout.BeginHorizontal();
             {
@@ -410,7 +410,7 @@ namespace Framework
             EditorGUILayout.EndHorizontal();
         }
 
-        private static void LayoutAsVec3(GenericParameter parameter, bool label)
+        private static void LayoutAsVec3(Variant parameter, bool label)
         {
             EditorGUILayout.BeginHorizontal();
             {
@@ -425,7 +425,7 @@ namespace Framework
             EditorGUILayout.EndHorizontal();
         }
 
-        private static void LayoutAsVec2(GenericParameter parameter, bool label)
+        private static void LayoutAsVec2(Variant parameter, bool label)
         {
             EditorGUILayout.BeginHorizontal();
             {
@@ -440,7 +440,7 @@ namespace Framework
             EditorGUILayout.EndHorizontal();
         }
 
-        private static void LayoutAsInt(GenericParameter parameter, bool label)
+        private static void LayoutAsInt(Variant parameter, bool label)
         {
             EditorGUILayout.BeginHorizontal();
             {
@@ -455,7 +455,7 @@ namespace Framework
             EditorGUILayout.EndHorizontal();
         }
 
-        private static void LayoutAsFloat(GenericParameter parameter, bool label)
+        private static void LayoutAsFloat(Variant parameter, bool label)
         {
             EditorGUILayout.BeginHorizontal();
             {
@@ -470,7 +470,7 @@ namespace Framework
             EditorGUILayout.EndHorizontal();
         }
 
-        private static void LayoutAsBool(GenericParameter parameter, bool label)
+        private static void LayoutAsBool(Variant parameter, bool label)
         {
             EditorGUILayout.BeginHorizontal();
             {
@@ -485,7 +485,7 @@ namespace Framework
             EditorGUILayout.EndHorizontal();
         }
 
-        private static void LayoutAsString(GenericParameter parameter, bool label)
+        private static void LayoutAsString(Variant parameter, bool label)
         {
             EditorGUILayout.BeginHorizontal();
             {
@@ -500,7 +500,7 @@ namespace Framework
             EditorGUILayout.EndHorizontal();
         }
 
-        private static void LayoutAsColor(GenericParameter parameter, bool label)
+        private static void LayoutAsColor(Variant parameter, bool label)
         {
             EditorGUILayout.BeginHorizontal();
             {
@@ -515,7 +515,7 @@ namespace Framework
             EditorGUILayout.EndHorizontal();
         }
 
-        private static void LayoutAsCurve(GenericParameter parameter, bool label)
+        private static void LayoutAsCurve(Variant parameter, bool label)
         {
             EditorGUILayout.BeginHorizontal();
             {

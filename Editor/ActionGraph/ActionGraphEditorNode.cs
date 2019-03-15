@@ -181,7 +181,7 @@ namespace Framework.Editor
 
             GUI.color = Color.white;
 
-            drawRect.height = GenericParamUtils.FieldHeight;
+            drawRect.height = VariantUtils.FieldHeight;
             drawRect.y += 4;
             drawRect.x += 4;
             drawRect.width -= 8;

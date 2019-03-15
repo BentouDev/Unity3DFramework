@@ -15,33 +15,33 @@ using Object = UnityEngine.Object;
 namespace Framework
 {
     [System.Serializable]
-    public class GenericParameter : ISerializationCallbackReceiver
+    public class Variant : ISerializationCallbackReceiver
     {
-        public GenericParameter()
+        public Variant()
         {
             _curve   = new AnimationCurve();
         }
 
-        public GenericParameter(SerializedType type)
+        public Variant(SerializedType type)
         {
             HoldType = type;
             _curve   = new AnimationCurve();
         }
         
-        public GenericParameter(System.Type type)
+        public Variant(System.Type type)
         {
             HoldType = new SerializedType(type);
             _curve   = new AnimationCurve();
         }
 
-        public static GenericParameter Copy(GenericParameter other)
+        public static Variant Copy(Variant other)
         {
-            var self = new GenericParameter(other.GetType());
+            var self = new Variant(other.GetType());
             self.CopyFrom(other);
             return self;
         }
 
-        public void CopyFrom(GenericParameter other)
+        public void CopyFrom(Variant other)
         {
             Name     = other.Name;
             HoldType = other.HoldType;
@@ -73,7 +73,7 @@ namespace Framework
         [SerializeField]
         private float[] _floats = new float[4];
 
-        bool HasSameValue(GenericParameter other)
+        bool HasSameValue(Variant other)
         {
             if (!HoldType.Equals(other.HoldType))
                 return false;
@@ -88,8 +88,8 @@ namespace Framework
             
             return new KnownType<T>(name)
             {
-                Getter = PropertyReference<GenericParameter, T>.BuildPropertyGetter(propertyInfo),
-                Setter = PropertyReference<GenericParameter, T>.BuildPropertySetter(propertyInfo),
+                Getter = PropertyReference<Variant, T>.BuildPropertyGetter(propertyInfo),
+                Setter = PropertyReference<Variant, T>.BuildPropertySetter(propertyInfo),
             };
         }
 
@@ -302,7 +302,7 @@ namespace Framework
         }
 
 #if UNITY_EDITOR
-        public static void Layout(GenericParameter parameter, bool label)
+        public static void Layout(Variant parameter, bool label)
         {
             var typename = parameter.HoldType.Type.FullName;
 
@@ -334,7 +334,7 @@ namespace Framework
             }
         }
 
-        public static void Draw(Rect drawRect, GenericParameter parameter, bool label)
+        public static void Draw(Rect drawRect, Variant parameter, bool label)
         {
             if (parameter.HoldType.Type != null)
             {

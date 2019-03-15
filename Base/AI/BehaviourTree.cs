@@ -19,7 +19,7 @@ namespace Framework.AI
 #endif
 
         [SerializeField]
-        public List<GenericParameter> Parameters = new List<GenericParameter>();
+        public List<Parameter> Parameters = new List<Parameter>();
 
         [SerializeField]
         public List<BehaviourTreeNode> Nodes = new List<BehaviourTreeNode>();
@@ -30,9 +30,9 @@ namespace Framework.AI
         
         public void BuildEmptyBlackboard(Blackboard blackboard)
         {
-            GenericParameter.BuildKnownTypeList();
+            Variant.BuildKnownTypeList();
             
-            foreach (GenericParameter parameter in Parameters)
+            foreach (Parameter parameter in Parameters)
             {
                 blackboard.InsertFromParameter(parameter);
             }

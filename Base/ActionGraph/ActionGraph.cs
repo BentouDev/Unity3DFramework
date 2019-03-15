@@ -21,7 +21,7 @@ namespace Framework
 
         [SerializeField]
         [Validate("OnValidateParameters")]
-        public List<GenericParameter> Parameters = new List<GenericParameter>();
+        public List<Parameter> Parameters = new List<Parameter>();
 
         [HideInInspector]
         public AnyEntry AnyEntryNode;
@@ -42,14 +42,36 @@ namespace Framework
             return this;
         }
 
-        public List<GenericParameter> GetParameters()
+        public List<Parameter> GetParameters()
         {
             return Parameters;
         }
 
-        public List<GenericParameter> GetParameters(Predicate<GenericParameter> predicate)
+        public List<Parameter> GetParameters(Predicate<Parameter> predicate)
         {
             return Parameters.Where(t => predicate(t)).ToList();
+        }
+
+        public bool TryGetParameter(ParameterReference reference, out Parameter param)
+        {
+            param = Parameters.FirstOrDefault(p => p.Id == reference.ParameterId);
+            return param != null;
+        }
+
+        public void SetToVariant(ParameterReference parameter, Variant localValue)
+        {
+            if (TryGetParameter(parameter, out var param))
+            {
+                localValue.Set(param.Value.Get());
+            }
+        }
+
+        public void SetFromVariant(ParameterReference parameter, Variant localValue)
+        {
+            if (TryGetParameter(parameter, out var param))
+            {
+                param.Value.Set(localValue.Get());
+            }            
         }
 
         public bool CanEditObject(Object obj)
@@ -82,12 +104,12 @@ namespace Framework
             return false;            
         }
 
-        public void SetToParameter(GenericParameter parameter)
+        public void SetToParameter(Variant parameter)
         {
             
         }
 
-        public void GetFromParameter(GenericParameter parameter)
+        public void GetFromParameter(Variant parameter)
         {
             
         }
@@ -117,6 +139,8 @@ namespace Framework
                 if (_cache.Contains(parameter.Name))
                     return new ValidationResult(ValidationStatus.Error,
                         $"All parameters name must be unique! Repeated '{parameter.Name}'");
+                else
+                    _cache.Add(parameter.Name);
             }
             
             return ValidationResult.Ok;

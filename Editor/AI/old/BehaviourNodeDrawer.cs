@@ -21,7 +21,7 @@ public class BehaviourNodeDrawer : Editor
 
     private BehaviourTreeEditor Editor { get; set; }
 
-    private List<GenericParameter> Parameters { get; set; }
+    private List<Parameter> Parameters { get; set; }
 
     private bool Initialize()
     {
@@ -80,9 +80,9 @@ public class BehaviourNodeDrawer : Editor
                 continue;
             }
 
-            var matchingParameters = Parameters.Where(p => p.HoldType.Type == propertyInfo.PropertyType).ToList();
+            var matchingParameters = Parameters.Where(p => p.GetHoldType().Type == propertyInfo.PropertyType).ToList();
 
-            int  oldIndex    = Node.GetGenericParameterIndex(propertyInfo.Name, propertyInfo.PropertyType, matchingParameters);
+            int oldIndex = -1;//Node.GetGenericParameterIndex(propertyInfo.Name, propertyInfo.PropertyType, matchingParameters);
             bool wasConstant = Node.IsGenericParameterConstant(propertyInfo.Name);
             
             BeginPanelBackground(wasConstant, oldIndex == -1);
@@ -100,25 +100,25 @@ public class BehaviourNodeDrawer : Editor
                     
                     if (isConstant)
                     {
-                        GenericParameter parameter = wasConstant
-                            ? Node.ParametrizedProperties[propertyInfo.Name].Parameter
-                            : new GenericParameter(propertyInfo.PropertyType);
-
-                        GenericParamUtils.DrawParameter(fieldRect, parameter, false);
-
-                        Node.SetRequiredParameter(propertyInfo.Name, parameter, true);
+//                        Variant parameter = wasConstant
+//                            ? Node.ParametrizedProperties[propertyInfo.Name].Parameter
+//                            : new Variant(propertyInfo.PropertyType);
+//
+//                        VariantUtils.DrawParameter(fieldRect, parameter, false);
+//
+//                        Node.SetRequiredParameter(propertyInfo.Name, parameter, true);
                     }
                     else
                     {
                         fieldRect.y += 2;
 
-                        var paramListContent = BuildParameterGUIList(typename, matchingParameters);
+                        /*var paramListContent = BuildParameterGUIList(typename, matchingParameters);
                         int newIndex = EditorGUI.Popup(fieldRect, GUIContent.none, oldIndex + 1, paramListContent.ToArray(), SpaceEditorStyles.LightObjectField);
 
                         if (!Editor.ExecuteInRuntime() && (oldIndex != (newIndex - 1) || (isConstant != wasConstant)))
                         {
                             ProcessSelectionResult(newIndex, propertyInfo, matchingParameters);
-                        }
+                        }*/
                     }
                 }
                 GUILayout.EndHorizontal();
@@ -153,13 +153,13 @@ public class BehaviourNodeDrawer : Editor
         GUILayout.EndVertical();
     }
     
-    private List<GUIContent> BuildParameterGUIList(string typename, List<GenericParameter> matchingParameters)
+    private List<GUIContent> BuildParameterGUIList(string typename, List<Variant> matchingParameters)
     {
         var paramListContent = new List<GUIContent>(matchingParameters.Count() + 1);
 
         paramListContent.Add(new GUIContent(string.Format("None ({0})", typename)));
 
-        foreach (GenericParameter parameter in matchingParameters)
+        foreach (Variant parameter in matchingParameters)
         {
             paramListContent.Add(new GUIContent(parameter.Name));
         }
@@ -167,7 +167,7 @@ public class BehaviourNodeDrawer : Editor
         return paramListContent;
     }
 
-    private void ProcessSelectionResult(int result, PropertyInfo propertyInfo, List<GenericParameter> matchingParameters)
+    private void ProcessSelectionResult(int result, PropertyInfo propertyInfo, List<Variant> matchingParameters)
     {
         if (result > 0 && result <= matchingParameters.Count)
         {

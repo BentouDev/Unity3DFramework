@@ -53,7 +53,7 @@ namespace Framework.Editor
                 drawRect.width = drawRect.width - 20;
 
                 //drawRect.y += 20;
-                drawRect.height = GenericParamUtils.FieldHeight;
+                drawRect.height = VariantUtils.FieldHeight;
                 string content = Node.InputType.ToString();
                 if (GUI.Button(drawRect, content, EditorStyles.objectField))
                 {
@@ -63,7 +63,7 @@ namespace Framework.Editor
                 drawRect.x = old_rect.x;
                 drawRect.width = old_rect.width;
 
-                drawRect.y += GenericParamUtils.FieldHeight + 4;
+                drawRect.y += VariantUtils.FieldHeight + 4;
                 drawRect.height = old_rect.height - drawRect.y;
 
                 var base_y = drawRect.y - old_rect.y + BOTTOM_MARGIN;
@@ -81,7 +81,7 @@ namespace Framework.Editor
         
         void RecreateDrawer()
         {
-            GenericParamUtils.SetDrawersForKnownTypes();
+            VariantUtils.SetDrawersForKnownTypes();
 
             ProxyList = new List<int>(Node.Inputs.Count);
 
@@ -102,8 +102,8 @@ namespace Framework.Editor
                 GUI.Label(rect, "Name");
 
                 
-                rect.x = original.x + GenericParamUtils.LabelWidth * 1.35f;
-                rect.width = GenericParamUtils.FieldWidth;
+                rect.x = original.x + VariantUtils.LabelWidth * 1.35f;
+                rect.width = VariantUtils.FieldWidth;
                 GUI.Label(rect, "Input value");
             };
 
@@ -192,7 +192,7 @@ namespace Framework.Editor
             (
                 new ActionSelector.EntryPoint()
                 {
-                    Input = new GenericParameter(Node.InputType)
+                    Input = new Variant(Node.InputType)
                     {
                         Name = paramName
                     } 
@@ -209,10 +209,10 @@ namespace Framework.Editor
 
             Positions[index] = rect.y - FirstPos;
 
-            rect.height = GenericParamUtils.FieldHeight;
+            rect.height = VariantUtils.FieldHeight;
             rect.y     += 2;
 
-            GenericParamUtils.DrawParameter(rect, parameter.Input);
+            VariantUtils.DrawParameter(rect, parameter.Input);
         }
     }
 }

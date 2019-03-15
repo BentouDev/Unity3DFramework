@@ -21,7 +21,7 @@ namespace Framework
         public string InterruptEvent;
 
         [SerializeField]
-        public List<BaseAction> Actions;
+        public List<BaseAction> Actions = new List<BaseAction>();
 
         [System.Serializable]
         public class ConnectionInfo

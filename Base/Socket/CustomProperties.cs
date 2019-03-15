@@ -8,7 +8,7 @@ public class CustomProperties : MonoBehaviour
 {
 	[HideInInspector]
 	[SerializeField]
-	public List<GenericParameter> Properties = new List<GenericParameter>();
+	public List<Parameter> Properties = new List<Parameter>();
 
 #if UNITY_EDITOR
 	public void AddProperty(string name, object value)
@@ -16,12 +16,13 @@ public class CustomProperties : MonoBehaviour
 		var entry = Properties.FirstOrDefault(p => p.Name.Equals(name));
 		if (entry == null)
 		{
-			entry = new GenericParameter(typeof(string));
+			entry = new Parameter(typeof(string), name);
 			Properties.Add(entry);
 		}
-		
-		entry.Name  = name;
-		entry.SetAs<string>(value.ToString());
+		else 
+			entry.Name  = name;
+
+		entry.Value.SetAs<string>(value.ToString());
 	}
 #endif
 }
