@@ -22,6 +22,22 @@ public static class CommonExtensions
         int j = System.Array.IndexOf<T>(Arr, src) + 1;
         return (Arr.Length == j) ? Arr[0] : Arr[j];
     }
+
+    public static T GetRandom<T>(this IList<T> list)
+    {
+        return list[Random.Range(0, list.Count)];
+    }
+
+    public static void Shuffle<T>(this IList<T> list)  
+    {
+        for (int i = 0; i < list.Count; i++)
+        {
+            T temp = list[i];
+            int randomIndex = Random.Range(i, list.Count);
+            list[i] = list[randomIndex];
+            list[randomIndex] = temp;
+        }
+    }
     
     public static Framework.UniqueQueue<T> EnqueueRange<T>(this Framework.UniqueQueue<T> queue, IEnumerable<T> range)
     {
