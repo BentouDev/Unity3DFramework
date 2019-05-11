@@ -138,10 +138,8 @@ namespace Framework
         {
             ObtainStates();
             
-            //var go = GameObject.FindWithTag("MainState");
-            //var levelState = go ? go.GetComponent<GameState>() : null;
-            var levelState = AllStates.FirstOrDefault(s => s.gameObject.scene.path != Loader.BaseScene
-                                                          && s.CompareTag("MainState"));
+            var levelState = Loader ? AllStates.FirstOrDefault(s => s.gameObject.scene.path != Loader.BaseScene
+                                                          && s.CompareTag("MainState")) : null;
 
             gameObject.BroadcastToAll("OnPreLevelLoaded");
             
