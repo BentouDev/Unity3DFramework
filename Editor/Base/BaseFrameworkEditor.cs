@@ -68,7 +68,10 @@ namespace Framework.Editor
                 if (property.isArray)
                     return property.arraySize > 0;
 
-                return !(property.objectReferenceValue == null && !property.hasVisibleChildren);
+                if (property.propertyType == SerializedPropertyType.ObjectReference)
+                    return property.objectReferenceValue != null || property.hasVisibleChildren;
+
+                return property.hasVisibleChildren;
             }
 
             // Move storage of last result to actual instance
