@@ -261,8 +261,10 @@ namespace Framework
 
             if (Controllers)
                 Controllers.Tick();
-        }
 
+            OnTick();
+        }
+        
         void FixedUpdate()
         {
             if (Loader && !Loader.IsReady)
@@ -285,7 +287,15 @@ namespace Framework
             
             if (Controllers)
                 Controllers.LateTick();
+
+            OnLateTick();
         }
+
+        protected virtual void OnTick()
+        { }
+
+        protected virtual void OnLateTick()
+        { }
 
         public ValidationResult ValidateLoadOnStart()
         {
