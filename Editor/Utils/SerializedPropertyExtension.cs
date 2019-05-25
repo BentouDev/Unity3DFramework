@@ -6,6 +6,7 @@ using Framework;
 using Framework.Editor;
 using Framework.Utils;
 using UnityEditor;
+using UnityEngine;
 
 public static class SerializedPropertyExtension
 {
@@ -49,6 +50,7 @@ public static class SerializedPropertyExtension
 
         string baseMember = string.Empty;
         object newTarget = null;
+        Type baseType = null;
         if (path.StartsWith(ArrayFieldName))
         {
             // skip 'array' fields
@@ -75,6 +77,7 @@ public static class SerializedPropertyExtension
                 throw new Exception($"Unable to materialize indexer from path '{path}'!");
 
             path = path.Substring(endIndex + ArraySuffix.Length);
+            baseType = newTarget?.GetType();
         }
         else
         {
@@ -93,11 +96,12 @@ public static class SerializedPropertyExtension
                 throw new Exception($"Unable to process path fragment '{baseMember}' in path '{path}'!");
             
             newTarget = field.GetValue(target);
+            baseType = newTarget?.GetType() ?? field.FieldType;
         }
 
         if (propertyPath != null && !string.IsNullOrEmpty(baseMember))
         {
-            propertyPath.Append(baseMember, newTarget.GetType());
+            propertyPath.Append(baseMember, baseType);
         }
 
         var dotIndex = path.IndexOf('.');

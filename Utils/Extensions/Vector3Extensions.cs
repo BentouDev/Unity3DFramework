@@ -7,25 +7,33 @@ public static class Vector3Extensions
         return new Vector3(a.x * b.x, a.y * b.y, a.z * b.z);
     }
 
-    public static void Decompose(this Matrix4x4 matrix, out Vector3 pos, out Quaternion rot, out Vector3 scl)
+    public static Vector3 GetPos(this Matrix4x4 matrix)
     {
-        // Extract new local position
-        pos = matrix.GetColumn(3);
- 
-        // Extract new local rotation
-//        rot = Quaternion.LookRotation(
-//            matrix.GetColumn(2),
-//            matrix.GetColumn(1)
-//        );
+        return matrix.GetColumn(3);
+    }
 
-        rot = matrix.rotation;
-
-        // Extract new local scale
-        scl = new Vector3(
+    public static Vector3 GetScale(this Matrix4x4 matrix)
+    {
+        return new Vector3
+        (
             matrix.GetColumn(0).magnitude,
             matrix.GetColumn(1).magnitude,
             matrix.GetColumn(2).magnitude
         );
+    }
+
+    public static void SetRotation(this Matrix4x4 matrix, Quaternion newRot)
+    {
+        matrix.SetTRS(matrix.GetPos(), newRot, matrix.GetScale());
+    }
+
+    public static void Decompose(this Matrix4x4 matrix, out Vector3 pos, out Quaternion rot, out Vector3 scl)
+    {
+        pos = matrix.GetPos();
+
+        rot = matrix.rotation;
+
+        scl = matrix.GetScale();
     }
 }
 

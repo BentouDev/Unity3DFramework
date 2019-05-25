@@ -92,7 +92,7 @@ namespace Framework.Editor
             
             Rect oldRect = drawRect;
             oldRect.x += 10;
-            GUI.Label(oldRect, "in", EditorStyles.whiteBoldLabel);
+            GUI.Label(oldRect, "in", SpaceEditorStyles.WhiteBoldText);
 
             drawRect.width -= 10;
             foreach (var outName in outNames)

@@ -18,6 +18,23 @@ public static class SpaceEditorStyles
         }
     }
 
+    private static GUIStyle _whiteBold;
+
+    public static GUIStyle WhiteBoldText
+    {
+        get
+        {
+            if (_whiteBold == null)
+            {
+                _whiteBold= new GUIStyle(EditorStyles.whiteBoldLabel);
+                _whiteBold.normal.textColor = Color.white;
+            }
+
+            return _whiteBold;
+        }
+    }
+    
+
     private static GUIStyle _alignedRight;
 
     public static GUIStyle AlignedRigthWhiteBoldText
@@ -27,6 +44,7 @@ public static class SpaceEditorStyles
             if (_alignedRight == null)
             {
                 _alignedRight = new GUIStyle(EditorStyles.whiteBoldLabel) {alignment = TextAnchor.UpperRight};
+                _alignedRight.normal.textColor = Color.white;
             }
 
             return _alignedRight;
