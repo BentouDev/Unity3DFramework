@@ -1,7 +1,9 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 public static class CommonExtensions
 {
@@ -38,7 +40,13 @@ public static class CommonExtensions
             list[randomIndex] = temp;
         }
     }
-    
+
+    public static IEnumerable<T> TranformByIndex<T>(this IList list, Func<int, T> action)
+    {
+        for (int i = 0; i < list.Count; i++)
+            yield return action(i);
+    }
+
     public static Framework.UniqueQueue<T> EnqueueRange<T>(this Framework.UniqueQueue<T> queue, IEnumerable<T> range)
     {
         foreach (T @object in range)
