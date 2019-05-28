@@ -200,7 +200,13 @@ namespace Framework
 
         public TState FindState<TState>() where TState : GameState
         {
-            return (TState) AllStates.FirstOrDefault(s => s is TState);
+            TState state = AllStates.FirstOrDefault(s => s is TState) as TState;
+            if (!state)
+            {
+                Debug.LogWarning($"Requested state change to {typeof(TState)}, which instance was not found!");
+            }
+
+            return state;
         }
 
         public void QuitGame()
