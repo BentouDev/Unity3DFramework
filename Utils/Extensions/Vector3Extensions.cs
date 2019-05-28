@@ -22,6 +22,11 @@ public static class Vector3Extensions
         );
     }
 
+    public static void SetPosition(this Matrix4x4 matrix, Vector3 newPos)
+    {
+        matrix.SetTRS(newPos, matrix.rotation, matrix.GetScale());
+    }
+
     public static void SetRotation(this Matrix4x4 matrix, Quaternion newRot)
     {
         matrix.SetTRS(matrix.GetPos(), newRot, matrix.GetScale());
