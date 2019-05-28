@@ -92,6 +92,11 @@ namespace Framework
             
         }
 
+        public IDataSet GetDataSet()
+        {
+            return null;
+        }
+
         public void UpdateFromDataset()
         {
             foreach (var node in Nodes)

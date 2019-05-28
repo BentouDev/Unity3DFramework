@@ -10,6 +10,7 @@ namespace Framework
         bool HasObject(UnityEngine.Object obj);
         void SetToParameter(GenericParameter parameter);
         void GetFromParameter(GenericParameter parameter);
+        IDataSet GetDataSet();
     }
 
     public delegate void Validation();
