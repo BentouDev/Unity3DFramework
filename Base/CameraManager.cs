@@ -1,9 +1,12 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace Framework
 {
-    public class CameraManager : BaseBehaviour, ILevelDependable
+    public class CameraManager : BaseBehaviour, ILevelDependable, ILoadingDependable
     {
         public string MainTag = "MainCamera";
 
@@ -20,80 +23,109 @@ namespace Framework
 
         public static Camera MainCamera { internal set; get; }
 
-        private Camera FindSceneCamera(Scene mainScene, bool expectedResult)
+        private void GatherCameras(ref Dictionary<Scene, List<Camera>> cameras)
         {
-            if (!mainScene.IsValid())
-                return null;
-
             foreach (var cam in FindObjectsOfType<Camera>())
             {
-                if ((cam.gameObject.scene == mainScene) == expectedResult)
+                var scene = cam.gameObject.scene;
+                if (cameras.ContainsKey(scene))
+                    cameras[scene].Add(cam);
+                else
                 {
-                    if (cam.CompareTag(MainTag))
-                        return cam;
+                    cameras.Add(scene, new List<Camera>(){cam});
                 }
+            }
+        }
+
+        private Camera FindMainCamera(IList<Camera> cameras)
+        {
+        #if UNITY_EDITOR
+            if (cameras.Count(c => c.CompareTag(MainTag)) > 1)
+                Debug.LogErrorFormat("There are more than one MainCameras in the single scene {0}! You are asking for troubles!",
+                    cameras[0].gameObject.scene.ToString());
+        #endif
+            
+            foreach (var cam in cameras)
+            {
+                if (cam.CompareTag(MainTag))
+                    return cam;
             }
 
             return null;
         }
 
-        public Camera AquireLevelCamera(Scene mainScene)
-        {
-            return FindSceneCamera(mainScene, false);
-        }
-        
-        public Camera AquireMainCamera(Scene mainScene)
-        {
-            return FindSceneCamera(mainScene, true);
-        }
-
         public void OnLevelCleanUp()
         { }
+        
+        /// <summary>
+        /// Iterate over all current camera instances and select the Main one
+        /// Helps with "multiple audio listeners" Issue!
+        /// Use cases:
+        /// 1. One scene => there is only one scene, pick MainCamera from there
+        /// 2. There are two sys scenes => pick camera from the one with higher build index
+        /// 3. There is a game scene => always prefer camera from game scene
+        /// </summary>
 
-        public void Init()
+        public void AdjustCamera()
         {
-            var scene = BaseGame.Instance?.GetLoader()?.BaseScene;
-            if (scene != null && scene.HasValue())
-            {
-                var mainScene = SceneManager.GetSceneByPath(scene);
-                var gameCamera = AquireMainCamera(mainScene);
-                var levelCamera = AquireLevelCamera(mainScene);
+            var allCameras = new Dictionary<Scene, List<Camera>>();
+            var sysScenes = BaseGame.Instance?.GetLoader()?.GetCurrentSystemScenes();
+            var gameScenes = BaseGame.Instance?.GetLoader()?.GetLoadedGameScenes();
+            var toDisable = new List<Camera>();
 
-                if (gameCamera != levelCamera)
+            Scene? mainScene = null;
+            Camera mainCamera = null;
+
+            GatherCameras(ref allCameras);
+
+            foreach (var (scene, cams) in allCameras)
+            {
+                var main = FindMainCamera(cams);
+                if (main == null)
+                    continue;
+
+                if ((PreferLevelCamera && gameScenes.Contains(scene)) || sysScenes.Contains(scene))
                 {
-                    if (levelCamera && PreferLevelCamera)
+                    if (!mainScene.HasValue || scene.buildIndex > mainScene.Value.buildIndex)
                     {
-                        SwitchCameras(gameCamera, levelCamera);
+                        if (mainCamera)
+                            toDisable.Add(mainCamera);
+
+                        mainScene = scene;
+                        mainCamera = main;
+
+                        continue;
                     }
-                    else
-                    {
-                        SwitchCameras(levelCamera, gameCamera);
-                    }                    
                 }
-            }            
+
+                if (main.enabled)
+                    toDisable.Add(main);
+            }
+            
+            SwitchCameras(toDisable, mainCamera);
         }
 
         public void Start()
         {
             if (Autostart == InitMode.OnStart)
-                Init();
+                AdjustCamera();
         }
 
         public void OnLevelLoaded()
         {
             if (Autostart == InitMode.OnLevelLoaded)
-                Init();
+                AdjustCamera();
         }
 
         public void OnPreLevelLoaded()
         { }
 
-        private void SwitchCameras(Camera toDisable, Camera toEnable)
+        private void SwitchCameras(IList<Camera> toDisable, Camera toEnable)
         {
-            if (toDisable)
+            foreach (var cam in toDisable)
             {
-                toDisable.enabled = false;
-                toDisable.GetComponent<AudioListener>().enabled = false;
+                cam.enabled = false;
+                cam.GetComponent<AudioListener>().enabled = false;                
             }
 
             MainCamera = toEnable;
@@ -103,6 +135,26 @@ namespace Framework
                 toEnable.enabled = true;
                 toEnable.GetComponent<AudioListener>().enabled = true;
             }
+        }
+
+        public void PreOnLoadingScreenOn()
+        {
+            AdjustCamera();
+        }
+
+        public void PostOnLoadingScreenOn()
+        {
+            AdjustCamera();
+        }
+
+        public void PreOnLoadingScreenOff()
+        {
+            AdjustCamera();
+        }
+
+        public void PostOnLoadingScreenOff()
+        {
+            AdjustCamera();
         }
     }
 }

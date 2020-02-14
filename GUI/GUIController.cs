@@ -16,6 +16,7 @@ namespace Framework
         public bool UseDefaultCinematics;
         public bool StartFromDefaultFade;
         public float DefaultFadeTime = 1.25f;
+        public int DefaultFadeDepth = -1000;
         
         [System.Serializable]
         public struct CanvasMode
@@ -332,12 +333,8 @@ namespace Framework
         void OnGUI()
         {
             GUI.color = FadeColor;
+            GUI.depth = DefaultFadeDepth;
             GUI.DrawTexture(FullscreenRect, TheTexture);
-            
-//            GUI.color = FadeColor;
-//            GUI.Label(new Rect(0,0,100,200), "Fading...");
-//            GUI.skin.box.normal.background = TheTexture;
-//            GUI.Box(FullscreenRect, GUIContent.none);
         }
     }
 }

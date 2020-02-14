@@ -4,10 +4,13 @@ using UnityEngine;
 namespace Framework
 {
     [System.Serializable]
-    public class Parameter : IEquatable<Parameter>
+    public class Parameter : IEquatable<Parameter>, ISerializationCallbackReceiver
     {
         [SerializeField]
+        private string _guidData;
+        
         private Guid _id;
+        
         public Guid Id => _id;
 
         [SerializeField]
@@ -35,8 +38,7 @@ namespace Framework
         public Parameter(SerializedType type, string name)
         {
             _id = Guid.NewGuid();
-            Value = new Variant(type);            
-            Value.Name = name;
+            Value = new Variant(type) {Name = name};
 
             Name = name;
         }
@@ -45,8 +47,7 @@ namespace Framework
         {
             _id = Guid.NewGuid();
 
-            Value = new Variant(type);
-            Value.Name = name;
+            Value = new Variant(type) {Name = name};
 
             Name = name;
         }
@@ -79,6 +80,17 @@ namespace Framework
         public override int GetHashCode()
         {
             return _id.GetHashCode();
+        }
+
+        public void OnBeforeSerialize()
+        {
+            _guidData = _id.ToString();
+        }
+
+        public void OnAfterDeserialize()
+        {
+            if (_guidData != null)
+                _id = Guid.Parse(_guidData);
         }
     }
 }

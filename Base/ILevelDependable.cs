@@ -8,3 +8,12 @@ public interface ILevelDependable
     void OnLevelLoaded();
     void OnPreLevelLoaded();
 }
+
+public interface ILoadingDependable
+{
+    void PreOnLoadingScreenOn();
+    void PostOnLoadingScreenOn();
+
+    void PreOnLoadingScreenOff();
+    void PostOnLoadingScreenOff();
+}

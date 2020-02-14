@@ -1,11 +1,19 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace Framework
 {
-    public class ActionPlayerController : BasePlayerController
+    public class ActionPlayerController : BasePlayerController, IActionGraphOwner
     {
+        [Header("LockOn")]
+        public Transform CurrentLockOnTarget;
+        
+        private Vector2 _currentInput;
+        public Vector2 CurrentInput => _currentInput;
+
         [Header("Input")]
         [RequireValue]
         public GenericInputBuffer Buffer;
@@ -17,12 +25,6 @@ namespace Framework
         [RequireValue]
         public ActionGraph Actions;
 
-        [Header("LockOn")]
-        public Transform CurrentLockOnTarget;
-        
-        private Vector2 _currentInput;
-        public Vector2 CurrentInput => _currentInput;
-        
         protected override void OnInit()
         {
             base.OnInit();
@@ -79,17 +81,16 @@ namespace Framework
 
         protected override void OnLateTick()
         {
-            //if (IsAttacking)
-            //    return;
+            var camTransform = PawnCamera.transform;
 
             if (Enabled)
             {
-                if (PawnCamera.transform.forward.magnitude > 0)
+                if (camTransform.forward.magnitude > 0)
                 {
                     Pawn.DesiredForward = Vector3.Slerp(Pawn.DesiredForward, new Vector3(
-                            PawnCamera.transform.forward.x,
+                            camTransform.forward.x,
                             0,
-                            PawnCamera.transform.forward.z
+                            camTransform.forward.z
                         ), Time.deltaTime * 10);
                 }
 
@@ -97,6 +98,20 @@ namespace Framework
             }
 
             Pawn.LateTick();
+        }
+
+        [SerializeField]
+        [HideInInspector]
+        public ParameterBinder Binder = new ParameterBinder();
+
+        public BindingContext GetBindingContext(ActionGraph graph)
+        {
+            return new BindingContext(Binder, graph.GetProvider());
+        }
+
+        public bool IsOwnerOf(ActionGraph graph)
+        {
+            return Actions == graph;
         }
     }
 }

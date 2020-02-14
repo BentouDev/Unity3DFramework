@@ -1058,6 +1058,9 @@ namespace Framework.Editor {
 		}
 
 		private void DrawFooter(Rect rect) {
+			
+			if (!canAdd && !canRemove && drawFooterCallback == null)
+				return;
 
 			if (drawFooterCallback != null) {
 

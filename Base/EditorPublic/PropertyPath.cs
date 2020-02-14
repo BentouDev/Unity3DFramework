@@ -1,7 +1,9 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
+using UnityEngine;
 
 namespace Framework.Editor
 {
@@ -34,9 +36,11 @@ namespace Framework.Editor
         }
     }
     
+    [System.Serializable]
     public class PropertyPath : IEquatable<PropertyPath>
     {
-        private readonly List<PropertyIndex> _path = new List<PropertyIndex>();
+        [SerializeField]
+        private List<PropertyIndex> _path = new List<PropertyIndex>();
 
         public void Append(string label, Type type)
         {
@@ -46,6 +50,11 @@ namespace Framework.Editor
         public void Clear()
         {
             _path.Clear();
+        }
+
+        public Type GetLastType()
+        {
+            return _path.Any() ? _path.Last().Type : null;
         }
 
         public FieldInfo MaterializeToFieldInfo(Type targetType)

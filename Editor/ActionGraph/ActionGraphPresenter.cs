@@ -8,12 +8,14 @@ using UnityEditor.PackageManager;
 
 namespace Framework.Editor
 {
-    public class ActionGraphPresenter : EditorPresenter
+    public class ActionGraphPresenter : EditorPresenter, IReorderableNotify
     {
         private ActionGraphView View;
         private ActionGraph Asset;
         private string AssetPath;
         private bool _duringRecreate;
+
+        private PropertyPath ParameterPath;
         
         public class ConnectEvent
         {
@@ -182,6 +184,7 @@ namespace Framework.Editor
         internal void OnLostAsset()
         {
             Asset.EditorPos = View.GetScrollPos();
+            Asset.Notifiers.Remove(this);
         }
         
         internal void OnLoadAsset(ActionGraph treeAsset)
@@ -201,9 +204,14 @@ namespace Framework.Editor
             {
                 Asset = treeAsset;
                 AssetPath = AssetDatabase.GetAssetPath(Asset);
-            }
 
-            //View.RecreateParameterList();
+                Asset.Notifiers.Add(this);
+            }
+            
+            PathBuilder<ActionGraph> builder = new PathBuilder<ActionGraph>();
+            ParameterPath = builder
+                .ByListOf<Framework.Parameter>(a => nameof(a.Parameters))
+                .Path();
 
             RecreateNodes();
         }
@@ -519,6 +527,33 @@ namespace Framework.Editor
         public void OnLeftClick(Vector2 mousePos)
         {
             Selection.activeObject = Asset;
+        }
+
+        public bool IsFromPath(PropertyPath path)
+        {
+            return ParameterPath.Equals(path);
+        }
+
+        public void OnReordered(PropertyPath path, int oldIndex, int newIndex)
+        {
+            EnsureSaved();
+        }
+
+        public void OnAdded(PropertyPath path)
+        {
+            EnsureSaved();
+        }
+
+        public void OnRemoved(PropertyPath path, int index)
+        {
+            EnsureSaved();
+        }
+
+        private void EnsureSaved()
+        {
+            EditorUtility.SetDirty(Asset);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
         }
     }
 }

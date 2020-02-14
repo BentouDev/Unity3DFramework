@@ -219,6 +219,25 @@ public static class SpaceEditorStyles
         }
     }
 
+    private static GUIStyle _invisibleText;
+
+    public static GUIStyle InvisibleText
+    {
+        get
+        {
+            if (_invisibleText == null)
+            {
+                _invisibleText = new GUIStyle();
+                _invisibleText.normal.textColor = Color.clear;
+                _invisibleText.onNormal.textColor = Color.clear;                
+                _invisibleText.active.textColor = Color.clear;                
+                _invisibleText.onActive.textColor = Color.clear;                
+            }
+
+            return _invisibleText;
+        }
+    }
+
     private static GUIStyle _countBadge;
     public static GUIStyle CountBadge
     {

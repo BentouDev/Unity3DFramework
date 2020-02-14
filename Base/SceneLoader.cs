@@ -7,6 +7,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices.ComTypes;
 using UnityEngine.Events;
+using UnityEngine.Experimental.AI;
 using UnityEngine.SceneManagement;
 using UnityEngine.Serialization;
 
@@ -229,26 +230,36 @@ namespace Framework
             FadeToBlack().Then(() =>
             {
                 SceneManager.SetActiveScene(SceneManager.GetSceneByPath(BaseScene.SceneName));
+            }).Then(() => {
+                gameObject.BroadcastToAll("PreOnLoadingScreenOn");
             }).Then(
                 () => LoadScene(LoadingScreen)
-            ).Then(
+            ).Then(() => {
+                gameObject.BroadcastToAll("PostOnLoadingScreenOn");
+            }).Then(
                 UnfadeFromBlack
             ).Then(
                 UnloadStrayScenes
             ).Then(
                 () => LoadScene(targetScene)
-            ).Then(
+            ).Then(() => {
+                gameObject.BroadcastToAll("PreOnLoadingScreenOff");
+            }).Then(
                 FadeToBlack
             ).Then(
                 () => UnloadScene(LoadingScreen)
             ).Then(() => {
+                gameObject.BroadcastToAll("PostOnLoadingScreenOff");
                 SceneManager.SetActiveScene(SceneManager.GetSceneByPath(targetScene.SceneName));
             }).Then(
                 UnfadeFromBlack
             ).Then
             (
                 () => EndLoadScene()
-            );
+            ).Catch(exception =>
+            {
+                Debug.LogError($"Scene loading failed with following exception: {exception.ToString()}");
+            });
         }
 
         private IList<string> GetLoadedScenes()
@@ -264,6 +275,24 @@ namespace Framework
                     continue;
 
                 loadedScenes.Add(scene.path);
+            }
+
+            return loadedScenes;
+        }
+        
+        public IList<Scene> GetLoadedGameScenes()
+        {
+            List<Scene> loadedScenes = new List<Scene>();
+            for (int i = 0; i < SceneManager.sceneCount; i++)
+            {
+                var scene = SceneManager.GetSceneAt(i);
+                
+                if (scene.path == LoadingScreen.SceneName)
+                    continue;
+                if (scene.path == BaseScene.SceneName)
+                    continue;
+
+                loadedScenes.Add(scene);
             }
 
             return loadedScenes;
@@ -291,6 +320,14 @@ namespace Framework
             // StartCoroutine(ExecuteLoading(i, () => EndLoadScene()));
             
             CommenceLoading(desiredScene);
+        }
+
+        public IList<Scene> GetCurrentSystemScenes()
+        {
+            var scene = SceneManager.GetActiveScene();
+            if (scene.path == BaseScene.SceneName)
+                return new []{SceneManager.GetSceneByPath(BaseScene), SceneManager.GetSceneByPath(LoadingScreen)};
+            return new []{SceneManager.GetSceneByPath(BaseScene)};
         }
     }
 }

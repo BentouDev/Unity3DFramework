@@ -102,7 +102,7 @@ namespace Framework
 
             foreach (Parameter parameter in Serialized)
             {
-                InsertFromParameter(parameter);
+                InsertFromParameter(parameter, false);
             }
         }
         
@@ -150,7 +150,10 @@ namespace Framework
             Index.Clear();
             for (int i = 0; i < Serialized.Count; i++)
             {
-                Index[Serialized[i].Name] = i;
+                if (Serialized[i] != null && !string.IsNullOrEmpty(Serialized[i].Name))
+                    Index[Serialized[i].Name] = i;
+                else 
+                    Debug.LogError($"DataBank '{this}' has property at index {i} serialized as null!");
             }
         }
 
@@ -161,6 +164,14 @@ namespace Framework
 
         public void InsertFromParameter(Parameter parameter)
         {
+            InsertFromParameter(parameter, true);
+        }
+
+        private void InsertFromParameter(Parameter parameter, bool insertIfMissing)
+        {
+            if (parameter == null || string.IsNullOrEmpty(parameter.Name))
+                return;
+
             int index = GetIndexOf(parameter.Name);
             if (index == -1)
             {
@@ -171,7 +182,7 @@ namespace Framework
                     val.GetFrom(parameter.Value);
                     Runtime.Add(val);
                 }
-                else
+                else if (insertIfMissing)
                 {
                     index = Serialized.Count;
                     Serialized.Add(parameter);

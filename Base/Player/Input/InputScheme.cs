@@ -5,6 +5,7 @@ using UnityEngine;
 namespace Framework
 {
     [CreateAssetMenu(fileName = "New Input Scheme", menuName = "Data/Input Scheme")]
+    [System.Serializable]
     public class InputScheme : BaseScriptableObject
     {
 //        [Header("Misc")]
@@ -17,14 +18,16 @@ namespace Framework
 
         [Header("Movement Axis")]
         [RequireValue]
+        [SerializeField]
         public string MoveX;
 
         [RequireValue]
+        [SerializeField]
         public string MoveY;
 
         [SerializeField]
         [Validate("ValidateButtons")]
-        public List<ButtonInfo> Buttons;
+        public List<ButtonInfo> Buttons = new List<ButtonInfo>();
 
 //        private Vector2 _currentInput;
 //        public Vector2 CurrentInput => _currentInput;
@@ -44,10 +47,10 @@ namespace Framework
 //            if (!InitOnStart)
 //                return;
 //
-//            Init();
+//            AdjustCamera();
 //        }
 
-//        public void Init()
+//        public void AdjustCamera()
 //        {
 //            Buffer.DefineButtons(Buttons.ConvertAll(b => b.Name));
 //        }

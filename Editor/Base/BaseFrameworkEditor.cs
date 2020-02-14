@@ -51,6 +51,12 @@ namespace Framework.Editor
                     {
                         IsVisible = false;   
                     }
+
+                    if (attrib.AttributeType == typeof(SpaceAttribute) 
+                    ||  attrib.AttributeType == typeof(HeaderAttribute))
+                    {
+                        Spaced = true;
+                    }
                 }
             }
 
@@ -63,12 +69,19 @@ namespace Framework.Editor
                 instance.UpdateValidation(Info.Name, result);                
             }
 
-            public static bool HasPropertyValue(SerializedProperty property)
+            public static bool HasPropertyValue(UnityEngine.Object instance, SerializedProperty property)
             {
                 if (property.isArray)
                     return property.arraySize > 0;
 
-                return !(property.objectReferenceValue == null && !property.hasVisibleChildren);
+                var path = property.GetPath();
+                var fieldInfo = path.MaterializeToFieldInfo(instance.GetType());
+                if (fieldInfo.GetValue(instance) is IValueChecker obj)
+                {
+                    return obj.HasValue();
+                }
+
+                return !(!property.hasVisibleChildren && property.objectReferenceValue == null);
             }
 
             // Move storage of last result to actual instance
@@ -81,7 +94,7 @@ namespace Framework.Editor
 
                 else if (RequireValue)
                 {
-                    if (!HasPropertyValue(property))
+                    if (!HasPropertyValue(instance, property))
                         result = new ValidationResult(ValidationStatus.Error, $"{Info.Name} is required!");
                 }
 
@@ -90,6 +103,7 @@ namespace Framework.Editor
                 return result;
             }
 
+            internal bool Spaced = false;
             internal bool IsVisible = true;
             internal bool RequireValue = false;
             internal string ValidateMethodName;
@@ -110,8 +124,14 @@ namespace Framework.Editor
             typeof(BaseEditorAttribute)
         };
 
-        private static Dictionary<System.Type, List<ReflectionInfo>> ReflectionCache = new Dictionary<Type, List<ReflectionInfo>>();
-        private WeakReference<List<ReflectionInfo>> Cache;
+        class TypeData
+        {
+            internal List<ReflectionInfo> Members = new List<ReflectionInfo>();
+            internal List<CustomAttributeData> Attributes = new List<CustomAttributeData>();
+        }
+
+        private static Dictionary<Type, TypeData> ReflectionCache = new Dictionary<Type, TypeData>();
+        private WeakReference<TypeData> Cache;
         
         public static Func<UnityEngine.Object, ValidationResult> BuildValidationCaller(Type targetType, MethodInfo method)
         {
@@ -122,7 +142,7 @@ namespace Framework.Editor
             return Expression.Lambda<Func<UnityEngine.Object, ValidationResult>>(call, obj).Compile();
         }
 
-        private void ProcessClassMember(List<ReflectionInfo> cache, System.Type targetType, MemberInfo member)
+        private void ProcessClassMember(TypeData cache, System.Type targetType, MemberInfo member)
         {
             ReflectionInfo info = null;
 
@@ -146,19 +166,28 @@ namespace Framework.Editor
                         info.Validator = BuildValidationCaller(targetType, methodInfo);
                 }
 
-                cache.Add(info);
+                cache.Members.Add(info);
             }            
         }
 
         private void Initialize()
         {
-            List<ReflectionInfo> cache;
+            TypeData cache;
             if (Cache == null || !Cache.TryGetTarget(out cache))
             {
                 var targetType = serializedObject.targetObject.GetType();
                 if (!ReflectionCache.TryGetValue(targetType, out cache))
                 {
-                    cache = new List<ReflectionInfo>();
+                    cache = new TypeData();
+
+                    foreach (var attrib in targetType.GetCustomAttributesData())
+                    {
+                        foreach (Type attributeType in AttributeTypes)
+                        {
+                            if (attrib.AttributeType.IsSubclassOf(attributeType))
+                                cache.Attributes.Add(attrib);
+                        }
+                    }
 
                     foreach (var member in targetType.GetMembers().OrderBy(m => m.MetadataToken))
                     {
@@ -171,7 +200,7 @@ namespace Framework.Editor
                 if (Cache != null)
                     Cache.SetTarget(cache);
                 else
-                    Cache = new WeakReference<List<ReflectionInfo>>(cache);
+                    Cache = new WeakReference<TypeData>(cache);
             }
         }
 
@@ -196,7 +225,7 @@ namespace Framework.Editor
 
         private void DrawType()
         {
-            List<ReflectionInfo> cache;
+            TypeData cache;
             Cache.TryGetTarget(out cache);
 
             InspectorUtils.DrawDefaultScriptField(serializedObject);
@@ -205,7 +234,7 @@ namespace Framework.Editor
 
             EditorGUI.BeginChangeCheck();
             {
-                foreach (ReflectionInfo info in cache)
+                foreach (ReflectionInfo info in cache.Members)
                 {
                     var property = serializedObject.FindProperty(info.Info.Name);
                     if (property != null)
@@ -248,9 +277,22 @@ namespace Framework.Editor
             if (!result)
             {
                 ValidatorWindow.GetInstance().RegisterValidation(result, target);
-                GUILayout.BeginVertical(EditorStyles.helpBox);
+
+                var rect = GUILayoutUtility.GetLastRect();
+                var spacedPadding = (info.Spaced ? 24 : 0);
+                var notSpacedPadding = (info.Spaced ? 0 : 0);
+                rect.y += rect.height + spacedPadding + notSpacedPadding;
+                rect.height = EditorGUI.GetPropertyHeight(property) - spacedPadding;
+                rect.y += 1;
+                rect.width += rect.x+4;
+                rect.x = 0;
+                rect.height += 2;
+                GUI.color = new Color(0.6f,0f,0f,0.6f);
+                GUI.Box(rect, GUIContent.none, SpaceEditorStyles.LightBox);
+                GUI.color = Color.white;
+                GUILayout.BeginVertical();
             }
-            
+
             if (!property.isArray || property.type == "string")
             {
                 // Somehow check if this type can be drawn other way
