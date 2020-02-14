@@ -6,6 +6,7 @@ using Framework;
 using Framework.Editor;
 using Framework.Utils;
 using UnityEditor;
+using UnityEngine;
 
 public static class SerializedPropertyExtension
 {
@@ -77,6 +78,7 @@ public static class SerializedPropertyExtension
 
             targetType = newTarget.GetType();
             path = path.Substring(endIndex + ArraySuffix.Length);
+            baseType = newTarget?.GetType();
         }
         else
         {

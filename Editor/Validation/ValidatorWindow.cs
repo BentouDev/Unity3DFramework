@@ -11,7 +11,7 @@ namespace Framework.Editor
         private bool ShowErrors = true;
         private bool ShowWarnings = true;
         
-        [MenuItem("Gameplay/Validator")]
+        [MenuItem("Framework/Validator", false, 1)]
         public static void MenuShowEditor()
         {
             FocusOrCreate();

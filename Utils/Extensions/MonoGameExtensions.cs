@@ -23,6 +23,12 @@ public static class MonoBehaviourExtenions
     {
         return GameObject.FindGameObjectWithTag(tag)?.GetComponent<T>();
     }
+
+    public static T GetComponentInHierarchy<T>(this Component mono, bool includeInactive = false) where T : Component
+    {
+        var inChildren = mono.GetComponentInChildren<T>(includeInactive);
+        return inChildren ? inChildren : mono.GetComponentInParent<T>();
+    }
     
     /// <summary>
     /// Gets or add a component. Usage example:

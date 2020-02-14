@@ -322,7 +322,7 @@ namespace Framework.Editor
 
         private List<System.Type> NodeEditors = new List<System.Type>();
 
-        [MenuItem("Gameplay/Action Graph Editor")]
+        [MenuItem("Framework/Action Graph Editor", false, 1)]
         public static void MenuShowEditor()
         {
             FocusOrCreate();

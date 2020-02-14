@@ -138,10 +138,8 @@ namespace Framework
         {
             ObtainStates();
             
-            //var go = GameObject.FindWithTag("MainState");
-            //var levelState = go ? go.GetComponent<GameState>() : null;
-            var levelState = AllStates.FirstOrDefault(s => s.gameObject.scene.path != Loader.BaseScene
-                                                          && s.CompareTag("MainState"));
+            var levelState = Loader ? AllStates.FirstOrDefault(s => s.gameObject.scene.path != Loader.BaseScene
+                                                          && s.CompareTag("MainState")) : null;
 
             gameObject.BroadcastToAll("OnPreLevelLoaded");
             
@@ -202,7 +200,13 @@ namespace Framework
 
         public TState FindState<TState>() where TState : GameState
         {
-            return (TState) AllStates.FirstOrDefault(s => s is TState);
+            TState state = AllStates.FirstOrDefault(s => s is TState) as TState;
+            if (!state)
+            {
+                Debug.LogWarning($"Requested state change to {typeof(TState)}, which instance was not found!");
+            }
+
+            return state;
         }
 
         public void QuitGame()
@@ -263,8 +267,10 @@ namespace Framework
 
             if (Controllers)
                 Controllers.Tick();
-        }
 
+            OnTick();
+        }
+        
         void FixedUpdate()
         {
             if (Loader && !Loader.IsReady)
@@ -287,7 +293,15 @@ namespace Framework
             
             if (Controllers)
                 Controllers.LateTick();
+
+            OnLateTick();
         }
+
+        protected virtual void OnTick()
+        { }
+
+        protected virtual void OnLateTick()
+        { }
 
         public ValidationResult ValidateLoadOnStart()
         {
