@@ -15,6 +15,8 @@ namespace Framework
         public bool UseDefaultFade;
         public bool UseDefaultCinematics;
         public bool StartFromDefaultFade;
+
+        [Header("Default Fade")]
         public float DefaultFadeTime = 1.25f;
         public int DefaultFadeDepth = -1000;
         
@@ -100,6 +102,9 @@ namespace Framework
                 Cinematic.FadePlayer.Play();
             if (Cinematic.UnfadePlayer.IsPlaying)
                 Cinematic.UnfadePlayer.Play();
+
+            if (StartFromDefaultFade)
+                PlayUnfade();
         }
     
         void Update()

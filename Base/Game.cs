@@ -115,6 +115,8 @@ namespace Framework
 
             if (Loader)
             {
+                ObtainStates();
+
                 Loader.OnSceneLoad -= SceneLoaded;
                 Loader.OnSceneLoad += SceneLoaded;
 
