@@ -15,6 +15,7 @@ namespace Framework
         bool CanEditObject(UnityEngine.Object obj);
         bool HasObject(UnityEngine.Object obj);
 
+        IDataSet GetDataSet();
     }
 
     public delegate void Validation();

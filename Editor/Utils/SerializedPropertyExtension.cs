@@ -78,7 +78,6 @@ public static class SerializedPropertyExtension
 
             targetType = newTarget.GetType();
             path = path.Substring(endIndex + ArraySuffix.Length);
-            baseType = newTarget?.GetType();
         }
         else
         {
